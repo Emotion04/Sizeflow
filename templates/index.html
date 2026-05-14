@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工厂尺码表转换工具</title>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card: #fff;
+  --border: #e0e4e8;
+  --text: #2c3e50;
+  --text2: #6b7c93;
+  --primary: #4a6cf7;
+  --primary-h: #3b5de7;
+  --danger: #e74c3c;
+  --success: #27ae60;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font:14px/1.6 -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+header { background:var(--primary); color:#fff; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+header h1 { font-size:18px; font-weight:600; }
+header .ver { font-size:12px; opacity:.75; }
+.container { max-width:1300px; margin:0 auto; padding:20px; }
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; margin-bottom:16px; }
+.card-title { font-size:15px; font-weight:600; margin-bottom:14px; color:var(--text); display:flex; align-items:center; gap:8px; }
+.card-title .icon { font-size:18px; }
+
+/* upload area */
+.upload-zone { border:2px dashed var(--border); border-radius:var(--radius); padding:40px; text-align:center; cursor:pointer; transition:all .2s; background:#fafbfc; }
+.upload-zone:hover, .upload-zone.dragover { border-color:var(--primary); background:#f0f4ff; }
+.upload-zone .icon { font-size:48px; margin-bottom:10px; opacity:.5; }
+.upload-zone .hint { color:var(--text2); font-size:13px; margin-top:6px; }
+
+/* file path input */
+.filepath-row { display:flex; gap:8px; margin-top:12px; }
+.filepath-row input { flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:6px; font-size:13px; outline:none; }
+.filepath-row input:focus { border-color:var(--primary); }
+.btn { padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500; transition:all .15s; white-space:nowrap; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-h); }
+.btn-outline { background:#fff; color:var(--primary); border:1px solid var(--primary); }
+.btn-outline:hover { background:#f0f4ff; }
+.btn-success { background:var(--success); color:#fff; }
+.btn-success:hover { background:#219a52; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-sm { padding:4px 10px; font-size:12px; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* layout */
+.two-col { display:grid; grid-template-columns:1fr 320px; gap:16px; }
+@media (max-width:900px) { .two-col { grid-template-columns:1fr; } }
+
+/* image preview */
+.preview-wrap { text-align:center; max-height:400px; overflow:hidden; position:relative; }
+.preview-wrap img { max-width:100%; max-height:380px; border-radius:6px; border:1px solid var(--border); object-fit:contain; }
+.preview-wrap .clear-img { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:14px; line-height:28px; }
+
+/* mapping panel */
+.mapping-list { max-height:420px; overflow-y:auto; }
+.mapping-row { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+.mapping-row span.arrow { color:var(--text2); flex:0 0 auto; }
+.mapping-row input { flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px; outline:none; }
+.mapping-row input:focus { border-color:var(--primary); }
+.mapping-row .key-input { background:#fafbfc; }
+.add-mapping { margin-top:8px; display:flex; gap:8px; align-items:center; }
+.add-mapping input { flex:1; padding:6px 8px; border:1px dashed var(--border); border-radius:4px; font-size:12px; outline:none; }
+
+/* result table */
+.table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th, td { border:1px solid var(--border); padding:8px 12px; text-align:center; white-space:nowrap; }
+th { background:#f5f7fa; font-weight:600; position:sticky; top:0; z-index:1; }
+td { background:#fff; }
+td[contenteditable] { outline:2px solid transparent; cursor:text; transition:outline .15s; }
+td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb; }
+.row-actions { display:flex; gap:4px; justify-content:center; }
+.col-actions { display:flex; gap:4px; }
+
+/* loading */
+.spinner { display:inline-block; width:20px; height:20px; border:2px solid #ddd; border-top-color:var(--primary); border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; }
+@keyframes spin { to {transform:rotate(360deg);} }
+.loading-overlay { display:flex; align-items:center; justify-content:center; gap:10px; padding:40px; color:var(--text2); }
+
+/* toast */
+.toast { position:fixed; top:20px; right:20px; z-index:9999; padding:12px 20px; border-radius:8px; color:#fff; font-size:13px; animation:slideIn .3s ease; box-shadow:0 4px 16px rgba(0,0,0,.2); }
+.toast.error { background:var(--danger); }
+.toast.success { background:var(--success); }
+.toast.info { background:var(--primary); }
+@keyframes slideIn { from {transform:translateX(120%); opacity:0;} to {transform:translateX(0); opacity:1;} }
+
+.empty-state { text-align:center; padding:60px 20px; color:var(--text2); }
+.empty-state .icon { font-size:56px; margin-bottom:12px; opacity:.3; }
+
+/* action bar */
+.action-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.spacer { flex:1; }
+
+/* hidden */
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div><h1>工厂→用户尺码表转换</h1></div>
+  <span class="ver">Canary 1.6</span>
+</header>
+
+<div class="container">
+
+  <!-- Upload Section -->
+  <div class="card" id="uploadCard">
+    <div class="two-col">
+      <div>
+        <div class="card-title"><span class="icon">&#128206;</span>上传工厂尺码表图片</div>
+        <div class="upload-zone" id="dropZone">
+          <div class="icon">&#128444;</div>
+          <div><b>拖拽图片到此处</b> 或 <b>点击选择</b></div>
+          <div class="hint">支持 JPG / PNG / WebP，也可 Ctrl+V 粘贴截图</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+        <div style="margin-top:8px;font-size:12px;color:var(--text2);">
+          或者输入本地文件路径（适合大图）：
+        </div>
+        <div class="filepath-row">
+          <input type="text" id="filePathInput" placeholder="例如：D:\工厂图片\尺码表.png">
+          <button class="btn btn-outline btn-sm" id="loadPathBtn">加载路径</button>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div>
+        <div class="card-title"><span class="icon">&#128065;</span>图片预览</div>
+        <div class="empty-state" id="noPreview">
+          <div class="icon">&#128247;</div>
+          <div>上传图片后显示预览</div>
+        </div>
+        <div class="preview-wrap hidden" id="previewWrap">
+          <img id="previewImg" alt="预览">
+          <button class="clear-img" id="clearImgBtn" title="清除图片">&times;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapping Config -->
+  <div class="card" id="mappingCard">
+    <div class="card-title">
+      <span class="icon">&#128295;</span>字段映射配置
+      <span style="font-size:12px;color:var(--text2);font-weight:400;">
+        （左边=工厂表头名称，右边=用户表头名称）
+      </span>
+    </div>
+    <div class="two-col">
+      <div class="mapping-list" id="mappingList"></div>
+      <div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:6px;">添加新映射</div>
+        <div class="add-mapping">
+          <input type="text" id="newKey" placeholder="工厂表头名称">
+          <span class="arrow">&rarr;</span>
+          <input type="text" id="newVal" placeholder="用户表头名称">
+          <button class="btn btn-primary btn-sm" id="addMappingBtn">添加</button>
+        </div>
+        <div style="margin-top:12px;">
+          <button class="btn btn-outline btn-sm" id="resetMappingsBtn">恢复默认映射</button>
+          <button class="btn btn-outline btn-sm" id="saveMappingsBtn">保存映射</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action -->
+  <div class="card hidden" id="actionCard">
+    <div class="action-bar">
+      <button class="btn btn-primary" id="analyzeBtn">
+        &#128269; 开始识别
+      </button>
+      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;">
+        模型：
+        <select id="modelSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;"></select>
+      </label>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="card hidden" id="loadingCard">
+    <div class="loading-overlay">
+      <span class="spinner"></span>
+      <span>AI 正在识别尺码表，请稍候...</span>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card hidden" id="resultCard">
+    <div class="card-title">
+      <span class="icon">&#128203;</span>识别结果
+      <span style="font-size:12px;color:var(--text2);font-weight:400;" id="modelInfo"></span>
+      <span style="font-size:12px;color:var(--text2);font-weight:400;">
+        （点击单元格可直接编辑，支持添加/删除行列）
+      </span>
+    </div>
+    <div class="table-wrap" id="tableWrap"></div>
+    <div class="action-bar" style="margin-top:12px;">
+      <button class="btn btn-success" id="exportCsvBtn">&#128190; 导出 CSV</button>
+      <button class="btn btn-outline" id="copyTableBtn">&#128203; 复制表格</button>
+      <button class="btn btn-outline" id="addRowBtn">+ 添加行</button>
+      <button class="btn btn-outline" id="addColBtn">+ 添加列</button>
+    </div>
+    <details style="margin-top:12px;font-size:12px;color:var(--text2);" id="rawDetails">
+      <summary style="cursor:pointer;">查看 AI 原始返回（调试用）</summary>
+      <pre id="rawResponse" style="background:#f5f7fa;padding:12px;border-radius:6px;overflow-x:auto;white-space:pre-wrap;max-height:300px;overflow-y:auto;margin-top:6px;"></pre>
+    </details>
+  </div>
+
+</div>
+
+<script>
+// ======== State ========
+let currentImage = null;   // base64 data URI or file path string
+let currentImageB64 = null; // always base64 for preview
+let resultData = null;
+let mappings = {};
+
+let currentModel = 'qwen3.6-plus';
+
+// ======== Init ========
+async function init() {
+  await Promise.all([loadMappings(), loadModels()]);
+  bindEvents();
+}
+
+async function loadMappings() {
+  try {
+    const r = await fetch('/api/mappings');
+    const d = await r.json();
+    mappings = d.mappings;
+    renderMappings();
+  } catch (e) {
+    toast('加载映射配置失败: ' + e.message, 'error');
+  }
+}
+
+async function loadModels() {
+  try {
+    const r = await fetch('/api/model');
+    const d = await r.json();
+    currentModel = d.model;
+    const sel = document.getElementById('modelSelect');
+    sel.innerHTML = d.models.map(m =>
+      `<option value="${m.id}" ${m.id === d.model ? 'selected' : ''}>${m.name} - ${m.desc}</option>`
+    ).join('');
+    sel.addEventListener('change', async () => {
+      currentModel = sel.value;
+      await fetch('/api/model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: currentModel })
+      });
+      toast(`已切换到: ${sel.options[sel.selectedIndex].text}`, 'info');
+    });
+  } catch (e) {
+    toast('加载模型列表失败: ' + e.message, 'error');
+  }
+}
+
+function renderMappings() {
+  const list = document.getElementById('mappingList');
+  list.innerHTML = Object.entries(mappings).map(([k, v], i) =>
+    `<div class="mapping-row">
+      <input class="key-input" value="${esc(k)}" data-idx="${i}" data-field="key" placeholder="工厂表头">
+      <span class="arrow">&rarr;</span>
+      <input value="${esc(v)}" data-idx="${i}" data-field="val" placeholder="用户表头">
+      <button class="btn btn-danger btn-sm" data-idx="${i}" data-action="del" title="删除">&times;</button>
+    </div>`
+  ).join('');
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ======== Events ========
+function bindEvents() {
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  document.addEventListener('paste', e => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        handleFile(item.getAsFile());
+        break;
+      }
+    }
+  });
+
+  document.getElementById('clearImgBtn').addEventListener('click', clearImage);
+  document.getElementById('loadPathBtn').addEventListener('click', loadFromPath);
+  document.getElementById('filePathInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadFromPath();
+  });
+
+  document.getElementById('analyzeBtn').addEventListener('click', analyze);
+
+  document.getElementById('addMappingBtn').addEventListener('click', addMapping);
+  document.getElementById('resetMappingsBtn').addEventListener('click', resetMappings);
+  document.getElementById('saveMappingsBtn').addEventListener('click', saveMappings);
+
+  document.getElementById('mappingList').addEventListener('change', onMappingEdit);
+  document.getElementById('mappingList').addEventListener('click', onMappingClick);
+
+  document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+  document.getElementById('copyTableBtn').addEventListener('click', copyTable);
+  document.getElementById('addRowBtn').addEventListener('click', addRow);
+  document.getElementById('addColBtn').addEventListener('click', addCol);
+}
+
+// ======== Image handling ========
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    currentImageB64 = reader.result;
+    currentImage = reader.result; // send base64 to server
+    showPreview(reader.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadFromPath() {
+  const path = document.getElementById('filePathInput').value.trim();
+  if (!path) return toast('请输入文件路径', 'error');
+
+  // For local file paths, we send the path string to the server
+  // No base64 preview available — we show a placeholder
+  currentImage = path;
+  currentImageB64 = null;
+
+  // Try to show preview via a simple trick: use file:// URL (may not work in all browsers)
+  document.getElementById('noPreview').classList.add('hidden');
+  const wrap = document.getElementById('previewWrap');
+  wrap.classList.remove('hidden');
+  document.getElementById('previewImg').src = '';
+
+  // Show path as text in preview area
+  const img = document.getElementById('previewImg');
+  img.alt = `文件路径: ${path}`;
+  img.style.display = 'none';
+  // Simple placeholder
+  if (!document.getElementById('pathPlaceholder')) {
+    const div = document.createElement('div');
+    div.id = 'pathPlaceholder';
+    div.style.cssText = 'padding:40px;color:var(--text2);font-size:14px;';
+    wrap.appendChild(div);
+  }
+  const ph = document.getElementById('pathPlaceholder');
+  ph.innerHTML = `&#128194; 使用文件路径模式<br><small>${esc(path)}</small>`;
+  ph.style.display = '';
+
+  document.getElementById('actionCard').classList.remove('hidden');
+  toast('已加载文件路径', 'info');
+}
+
+function showPreview(src) {
+  document.getElementById('noPreview').classList.add('hidden');
+  const wrap = document.getElementById('previewWrap');
+  wrap.classList.remove('hidden');
+  const img = document.getElementById('previewImg');
+  img.src = src;
+  img.style.display = '';
+  const ph = document.getElementById('pathPlaceholder');
+  if (ph) ph.style.display = 'none';
+
+  document.getElementById('actionCard').classList.remove('hidden');
+}
+
+function clearImage() {
+  currentImage = null;
+  currentImageB64 = null;
+  document.getElementById('noPreview').classList.remove('hidden');
+  document.getElementById('previewWrap').classList.add('hidden');
+  document.getElementById('actionCard').classList.add('hidden');
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('filePathInput').value = '';
+}
+
+// ======== Analysis ========
+async function analyze() {
+  if (!currentImage) return toast('请先上传图片', 'error');
+
+  // Refresh mappings from UI
+  syncMappingsFromUI();
+
+  document.getElementById('loadingCard').classList.remove('hidden');
+  document.getElementById('resultCard').classList.add('hidden');
+
+  try {
+    const r = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: currentImage, mappings, model: currentModel })
+    });
+
+    const d = await r.json();
+    document.getElementById('loadingCard').classList.add('hidden');
+
+    if (!d.success) {
+      toast('识别失败: ' + d.error, 'error');
+      console.log('Raw:', d.raw);
+      return;
+    }
+
+    resultData = d.data;
+    renderTable(resultData);
+    document.getElementById('modelInfo').textContent =
+      d.model ? ` | 模型: ${d.model}` : '';
+    document.getElementById('rawResponse').textContent = d.raw || '(无)';
+    document.getElementById('resultCard').classList.remove('hidden');
+    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+    toast('识别成功！结果可编辑，确认后导出 CSV', 'success');
+
+  } catch (e) {
+    document.getElementById('loadingCard').classList.add('hidden');
+    toast('请求失败: ' + e.message, 'error');
+  }
+}
+
+// ======== Table rendering ========
+function renderTable(data) {
+  const wrap = document.getElementById('tableWrap');
+  if (!data.headers || !data.rows) {
+    wrap.innerHTML = '<div class="empty-state">识别结果格式异常</div>';
+    return;
+  }
+
+  const { headers, rows } = data;
+  let html = '<table><thead><tr>';
+  headers.forEach((h, i) => {
+    html += `<th contenteditable="true" data-col="${i}" class="col-header">${esc(h)}</th>`;
+  });
+  html += '<th style="width:60px;">操作</th>';
+  html += '</tr></thead><tbody>';
+
+  rows.forEach((row, ri) => {
+    html += '<tr>';
+    row.forEach((cell, ci) => {
+      const val = cell !== null && cell !== undefined ? esc(String(cell)) : '';
+      html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}">${val}</td>`;
+    });
+    // Fill remaining cells if row is shorter than headers
+    for (let ci = row.length; ci < headers.length; ci++) {
+      html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}"></td>`;
+    }
+    html += `<td><div class="row-actions"><button class="btn btn-danger btn-sm" data-delrow="${ri}" title="删除此行">&times;</button></div></td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  // Bind row delete
+  wrap.querySelectorAll('[data-delrow]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ri = parseInt(btn.dataset.delrow);
+      resultData.rows.splice(ri, 1);
+      renderTable(resultData);
+      toast('已删除行', 'info');
+    });
+  });
+
+  // Bind cell edits
+  wrap.querySelectorAll('td[contenteditable]').forEach(td => {
+    td.addEventListener('input', () => syncTableFromUI());
+  });
+
+  // Bind header edits
+  wrap.querySelectorAll('th[contenteditable]').forEach(th => {
+    th.addEventListener('input', () => syncTableFromUI());
+  });
+}
+
+function syncTableFromUI() {
+  if (!resultData) return;
+  const headers = [];
+  document.querySelectorAll('th.col-header').forEach(th => {
+    headers.push(th.textContent.trim());
+  });
+  resultData.headers = headers;
+
+  const rows = [];
+  document.querySelectorAll('tbody tr').forEach(tr => {
+    const row = [];
+    tr.querySelectorAll('td[contenteditable]').forEach(td => {
+      const v = td.textContent.trim();
+      row.push(v === '' ? null : v);
+    });
+    if (row.length > 0) rows.push(row);
+  });
+  resultData.rows = rows;
+}
+
+// ======== Row/Col operations ========
+function addRow() {
+  if (!resultData) return;
+  const newRow = resultData.headers.map(() => '');
+  resultData.rows.push(newRow);
+  renderTable(resultData);
+  toast('已添加空行', 'info');
+}
+
+function addCol() {
+  if (!resultData) return;
+  const name = prompt('新列表头名称：');
+  if (!name) return;
+  resultData.headers.push(name);
+  resultData.rows.forEach(row => row.push(''));
+  renderTable(resultData);
+  toast(`已添加列: ${name}`, 'info');
+}
+
+// ======== Export ========
+function buildCsv() {
+  syncTableFromUI();
+  const { headers, rows } = resultData;
+  const escapeCsv = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+  const lines = [];
+  lines.push(headers.map(escapeCsv).join(','));
+  rows.forEach(row => {
+    lines.push(row.map(escapeCsv).join(','));
+  });
+  return lines.join('\n');
+}
+
+function exportCsv() {
+  if (!resultData) return;
+  const csv = buildCsv();
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '用户尺码表_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV 文件已下载，可用 Excel 打开', 'success');
+}
+
+async function copyTable() {
+  if (!resultData) return;
+  const csv = buildCsv();
+  // Use tab-separated for better Excel paste
+  const tsv = csv.replace(/,/g, '\t');
+  try {
+    await navigator.clipboard.writeText(tsv);
+    toast('已复制到剪贴板，可直接粘贴到 Excel', 'success');
+  } catch {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = tsv;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('已复制到剪贴板', 'success');
+  }
+}
+
+// ======== Mapping management ========
+function syncMappingsFromUI() {
+  const newMappings = {};
+  document.querySelectorAll('.mapping-row').forEach(row => {
+    const keyInp = row.querySelector('[data-field="key"]');
+    const valInp = row.querySelector('[data-field="val"]');
+    if (keyInp && valInp && keyInp.value.trim()) {
+      newMappings[keyInp.value.trim()] = valInp.value.trim();
+    }
+  });
+  mappings = newMappings;
+}
+
+function onMappingEdit(e) {
+  if (!e.target.matches('input')) return;
+  syncMappingsFromUI();
+}
+
+function onMappingClick(e) {
+  if (e.target.dataset.action === 'del') {
+    const idx = parseInt(e.target.dataset.idx);
+    const keys = Object.keys(mappings);
+    if (idx >= 0 && idx < keys.length) {
+      delete mappings[keys[idx]];
+      renderMappings();
+      saveMappings();
+    }
+  }
+}
+
+function addMapping() {
+  const key = document.getElementById('newKey').value.trim();
+  const val = document.getElementById('newVal').value.trim();
+  if (!key || !val) return toast('请输入工厂表头和用户表头名称', 'error');
+  mappings[key] = val;
+  renderMappings();
+  saveMappings();
+  document.getElementById('newKey').value = '';
+  document.getElementById('newVal').value = '';
+}
+
+async function resetMappings() {
+  try {
+    const r = await fetch('/api/mappings/reset', { method: 'POST' });
+    const d = await r.json();
+    mappings = d.mappings;
+    renderMappings();
+    toast('已恢复默认映射', 'info');
+  } catch (e) {
+    toast('操作失败: ' + e.message, 'error');
+  }
+}
+
+async function saveMappings() {
+  syncMappingsFromUI();
+  try {
+    await fetch('/api/mappings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mappings)
+    });
+    toast('映射已保存', 'success');
+  } catch (e) {
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+// ======== Toast ========
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.remove(); }, 3000);
+}
+
+// ======== Start ========
+init();
+</script>
+</body>
+</html>
