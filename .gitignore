@@ -1,0 +1,11 @@
+# Build
+build/
+dist/
+*.spec
+
+# Env (contains API key)
+.env
+
+# Python
+__pycache__/
+*.pyc

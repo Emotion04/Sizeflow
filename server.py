@@ -4,6 +4,7 @@
 """
 
 import os
+import sys
 import re
 import json
 import base64
@@ -17,9 +18,19 @@ from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
 import dashscope
 
-load_dotenv()
+# ---- 环境变量加载（优先 exe 同级目录） ----
+if getattr(sys, 'frozen', False):
+    exe_dir = os.path.dirname(sys.executable)
+    env_path = os.path.join(exe_dir, '.env')
+    load_dotenv(env_path)
+else:
+    load_dotenv()
 
 app = Flask(__name__)
+
+# ---- 模板路径（兼容 PyInstaller 打包） ----
+if getattr(sys, 'frozen', False):
+    app.template_folder = os.path.join(sys._MEIPASS, 'templates')
 
 dashscope.base_http_api_url = "https://dashscope.aliyuncs.com/api/v1"
 
