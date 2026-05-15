@@ -72,7 +72,12 @@ header .ver { font-size:12px; opacity:.75; }
 .table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; }
 table { border-collapse:collapse; width:100%; font-size:13px; }
 th, td { border:1px solid var(--border); padding:8px 12px; text-align:center; white-space:nowrap; }
-th { background:#f5f7fa; font-weight:600; position:sticky; top:0; z-index:1; }
+th { background:#f5f7fa; font-weight:600; position:sticky; top:0; z-index:1; cursor:grab; user-select:none; }
+th:active { cursor:grabbing; }
+th.drag-over { border-left:3px solid var(--primary); }
+th.dragging { opacity:.4; }
+th .resize-handle { position:absolute; right:0; top:0; bottom:0; width:6px; cursor:col-resize; z-index:2; }
+th .resize-handle:hover { background:var(--primary); }
 td { background:#fff; }
 td[contenteditable] { outline:2px solid transparent; cursor:text; transition:outline .15s; }
 td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb; }
@@ -207,8 +212,14 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
       <span class="icon">&#128203;</span>识别结果
       <span style="font-size:12px;color:var(--text2);font-weight:400;" id="modelInfo"></span>
       <span style="font-size:12px;color:var(--text2);font-weight:400;">
-        （点击单元格可直接编辑，支持添加/删除行列）
+        （拖拽表头排序列 | 点击单元格编辑 | 拖拽列右边缘调列宽）
       </span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-size:12px;color:var(--text2);">统一列宽：</span>
+      <input type="range" id="colWidthSlider" min="60" max="200" value="100" style="width:120px;cursor:pointer;">
+      <input type="number" id="colWidthInput" value="100" min="40" max="400" style="width:55px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <span style="font-size:11px;color:var(--text2);">px</span>
     </div>
     <div class="table-wrap" id="tableWrap"></div>
     <div class="action-bar" style="margin-top:12px;">
@@ -358,6 +369,14 @@ function bindEvents() {
   document.getElementById('apiKeyInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') saveApiKey();
   });
+
+  // Column width control
+  const slider = document.getElementById('colWidthSlider');
+  const input = document.getElementById('colWidthInput');
+  slider.addEventListener('input', () => { input.value = slider.value; applyColWidth(slider.value); });
+  input.addEventListener('input', () => { slider.value = input.value; applyColWidth(input.value); });
+  // Apply width when rendering (defer, table might not exist yet)
+  input.addEventListener('change', () => { if (resultData) renderTable(resultData); });
 }
 
 async function saveApiKey() {
@@ -499,12 +518,13 @@ function renderTable(data) {
     return;
   }
 
+  const colW = document.getElementById('colWidthInput').value || 100;
   const { headers, rows } = data;
-  let html = '<table><thead><tr>';
+  let html = '<table id="resultTable"><thead><tr>';
   headers.forEach((h, i) => {
-    html += `<th contenteditable="true" data-col="${i}" class="col-header">${esc(h)}</th>`;
+    html += `<th draggable="true" data-col="${i}" class="col-header" style="width:${colW}px;min-width:${colW}px;">${esc(h)}<span class="resize-handle" data-col="${i}"></span></th>`;
   });
-  html += '<th style="width:60px;">操作</th>';
+  html += '<th style="width:60px;min-width:60px;cursor:default;" data-col="actions">操作</th>';
   html += '</tr></thead><tbody>';
 
   rows.forEach((row, ri) => {
@@ -513,7 +533,6 @@ function renderTable(data) {
       const val = cell !== null && cell !== undefined ? esc(String(cell)) : '';
       html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}">${val}</td>`;
     });
-    // Fill remaining cells if row is shorter than headers
     for (let ci = row.length; ci < headers.length; ci++) {
       html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}"></td>`;
     }
@@ -523,6 +542,78 @@ function renderTable(data) {
 
   html += '</tbody></table>';
   wrap.innerHTML = html;
+
+  // ---- Drag-to-reorder columns ----
+  let dragSrc = -1;
+  wrap.querySelectorAll('th.col-header').forEach(th => {
+    th.addEventListener('dragstart', e => {
+      dragSrc = parseInt(th.dataset.col);
+      th.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    th.addEventListener('dragend', e => {
+      th.classList.remove('dragging');
+      wrap.querySelectorAll('th').forEach(h => h.classList.remove('drag-over'));
+    });
+    th.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const tgt = parseInt(th.dataset.col);
+      if (tgt !== dragSrc) {
+        wrap.querySelectorAll('th').forEach(h => h.classList.remove('drag-over'));
+        th.classList.add('drag-over');
+      }
+    });
+    th.addEventListener('drop', e => {
+      e.preventDefault();
+      th.classList.remove('drag-over');
+      const tgt = parseInt(th.dataset.col);
+      if (tgt !== dragSrc && dragSrc >= 0) {
+        // Reorder headers
+        const h = resultData.headers.splice(dragSrc, 1)[0];
+        resultData.headers.splice(tgt, 0, h);
+        // Reorder each row
+        resultData.rows.forEach(row => {
+          if (row.length > dragSrc) {
+            const v = row.splice(dragSrc, 1)[0];
+            row.splice(tgt, 0, v);
+          }
+        });
+        renderTable(resultData);
+      }
+    });
+  });
+
+  // ---- Column resize handles ----
+  let resizing = null, startX, startW;
+  wrap.querySelectorAll('.resize-handle').forEach(handle => {
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      resizing = parseInt(handle.dataset.col);
+      startX = e.clientX;
+      startW = handle.parentElement.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+  });
+  document.addEventListener('mousemove', e => {
+    if (resizing == null) return;
+    const newW = Math.max(40, startW + (e.clientX - startX));
+    document.getElementById('colWidthInput').value = newW;
+    applyColWidth(newW);
+  });
+  document.addEventListener('mouseup', () => {
+    if (resizing != null) {
+      const finalW = document.getElementById('colWidthInput').value;
+      // Save individual width on the header
+      const th = document.querySelector(`th.col-header[data-col="${resizing}"]`);
+      if (th && finalW) th.style.width = finalW + 'px';
+      resizing = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
 
   // Bind row delete
   wrap.querySelectorAll('[data-delrow]').forEach(btn => {
@@ -539,9 +630,23 @@ function renderTable(data) {
     td.addEventListener('input', () => syncTableFromUI());
   });
 
-  // Bind header edits
-  wrap.querySelectorAll('th[contenteditable]').forEach(th => {
-    th.addEventListener('input', () => syncTableFromUI());
+  // Bind header edits (double-click to edit name)
+  wrap.querySelectorAll('th.col-header').forEach(th => {
+    th.addEventListener('dblclick', () => {
+      th.contentEditable = 'true';
+      th.focus();
+    });
+    th.addEventListener('blur', () => {
+      th.contentEditable = 'false';
+      syncTableFromUI();
+    });
+  });
+}
+
+function applyColWidth(w) {
+  document.querySelectorAll('th.col-header').forEach(th => {
+    th.style.width = w + 'px';
+    th.style.minWidth = w + 'px';
   });
 }
 

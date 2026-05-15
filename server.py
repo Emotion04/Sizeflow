@@ -78,8 +78,11 @@ DEFAULT_MAPPINGS = {
     "腰围": "腰围",
     "座围": "臀围",
     "脾围": "大腿围",
+    "脚围": "脚围",
+    "外长连腰C": "常规裤长",
     "外长连腰A": "加长裤长",
     "外长连腰B": "高个子裤长",
+    "外长连腰D": "小个子裤长",
 }
 
 current_mappings = _config.get("mappings") or dict(DEFAULT_MAPPINGS)
@@ -142,10 +145,12 @@ def build_prompt(mappings):
 {mapping_lines}
 
 最终输出严格JSON（不要markdown标记）：
-{{"headers":[{headers_str}],"rows":[["尺码值","腰围值","臀围值","大腿围值","加长裤长值","高个子裤长值"],...]}}
+{{"headers":[{headers_str}],"rows":[["26","68","94","52","50","98","102","104","96"],...]}}
 
 要求：
 - headers 第一项固定"尺码"，后面按上述顺序排列
+- 如果某个部位在图片中完全找不到对应行，从 headers 和 rows 中完全移除该列（不要输出 null 列）
+- 例如：图片中没有"脚围"行，则 headers 中不包含"脚围"，rows 中也不包含对应值
 - rows 每个数组第一项是尺码代号（如26/27/28或S/M/L），后面依次是各部位数值
 - 数值用字符串类型
 - 只输出JSON，不要别的"""
