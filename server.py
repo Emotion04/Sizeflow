@@ -77,12 +77,12 @@ current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3-vl-plus")
 TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))
 
 DEFAULT_MAPPINGS = {
-    "腰围": "腰围",
-    "座围": "臀围",
     "脾围": "大腿围",
-    "脚围": "脚围",
-    "外长连腰C": "常规裤长",
+    "座围": "臀围",
     "外长连腰A": "加长裤长",
+    "外长连腰B": "高个子裤长",
+    "外长连腰C": "常规裤长",
+    "外长连腰D": "小个子裤长",
 }
 
 current_mappings = _config.get("mappings") or dict(DEFAULT_MAPPINGS)
@@ -144,7 +144,7 @@ def build_prompt(mappings):
 {keys_list}
 
 重要：用户最终表格只需要这 {len(mappings)} 个字段：{headers_str}
-抄写结果中其他所有部位（如裤长、前浪、后浪、膝围、拉链长、高个子裤长、小个子裤长等）全部丢弃，不得输出。
+抄写结果中其他所有部位（如拉链长、前浪、后浪、膝围、袋口宽等无关字段）全部丢弃，不得输出。只有映射关系中列出的字段才能出现在 JSON 中。
 
 按下面映射关系重命名：
 {mapping_lines}
@@ -167,7 +167,7 @@ def call_qwen_vision(image_path, mappings, model):
     messages = [
         {
             "role": "system",
-            "content": [{"text": "你是一台精确的表格OCR机器。你的唯一任务是：只读取图片中最上方的尺码表，严格忽略下方标注了\"大货洗前尺寸表\"的任何副表。逐行抄写上方的“大货洗后尺寸表表格后，只提取6个指定字段（腰围、臀围、大腿围、脚围、常规裤长、加长裤长），清洗掉其他所有无关部位。你绝不编造数据，绝不修改数值，绝不跳过步骤。"}],
+            “content”: [{“text”: “你是一台精确的表格OCR机器。你的唯一任务是：只读取图片中最上方的主尺码表，严格忽略下方标注了\”大货洗前尺寸表\”或\”洗前\”、\”洗后\”、\”成衣\”的任何副表。逐行抄写主表格后，只提取映射关系中指定的工厂字段，清洗掉所有无关部位。你绝不编造数据，绝不修改数值，绝不跳过步骤。”}],
         },
         {
             "role": "user",
