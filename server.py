@@ -1,235 +1,28 @@
-"""
-工厂尺码表转换工具 - 后端服务
-使用阿里云 DashScope Qwen 多模态模型识别工厂尺码表图片
-"""
+"""工厂尺码表转换工具 — Flask 路由入口"""
 
 import os
 import sys
-import re
-import json
-import base64
-import tempfile
 import traceback
 import threading
 import time
 import webbrowser
 
 from flask import Flask, request, jsonify, render_template
-from dotenv import load_dotenv
-import dashscope
 
-# ---- 路径 & 环境变量 ----
-if getattr(sys, 'frozen', False):
-    APP_DIR = os.path.dirname(sys.executable)
-    env_path = os.path.join(APP_DIR, '.env')
-    load_dotenv(env_path)
-else:
-    APP_DIR = os.path.dirname(os.path.abspath(__file__))
-    load_dotenv()
+from config import (
+    APP_DIR, AVAILABLE_MODELS, DEFAULT_MAPPINGS,
+    current_model, current_mappings, _api_key,
+    set_api_key, persist,
+)
+from vision import call_ocr_vision, extract_json, save_base64_image
 
-CONFIG_FILE = os.path.join(APP_DIR, "config.json")
-
+# ---- Flask App ----
 app = Flask(__name__)
 
 if getattr(sys, 'frozen', False):
     app.template_folder = os.path.join(sys._MEIPASS, 'templates')
 
-dashscope.base_http_api_url = "https://dashscope.aliyuncs.com/api/v1"
-
-# ---- 持久化配置读写 ----
-def load_config():
-    try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
-def save_config(data):
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False)
-    except Exception:
-        pass
-
-_config = load_config()
-
-# ---- API Key（界面输入 > 配置文件 > .env > 内置默认） ----
-DEFAULT_API_KEY = "sk-2b658dc600cf44579e57db89c88a3273"
-
-_api_key = _config.get("api_key", "") or os.getenv("DASHSCOPE_API_KEY", "") or DEFAULT_API_KEY
-
-def get_api_key():
-    if not _api_key:
-        raise ValueError("未配置 API Key，请在页面右上角输入 DashScope API Key")
-    return _api_key
-
-# ---- 模型配置 ----
-AVAILABLE_MODELS = [
-    {"id": "qwen3-vl-plus",   "name": "Qwen3-VL Plus",  "desc": "擅长文档解析，推荐"},
-    {"id": "qwen3.6-plus",    "name": "Qwen3.6 Plus",   "desc": "最新一代多模态"},
-    {"id": "qwen3.6-flash",   "name": "Qwen3.6 Flash",  "desc": "速度更快，成本更低"},
-    {"id": "qwen3-vl-flash",  "name": "Qwen3-VL Flash",  "desc": "视觉快速版"},
-    {"id": "qwen3.5-plus",    "name": "Qwen3.5 Plus",    "desc": "上代视觉旗舰"},
-    {"id": "qwen3.5-flash",   "name": "Qwen3.5 Flash",   "desc": "上代快速版"},
-]
-
-current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3-vl-plus")
-TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))
-
-DEFAULT_MAPPINGS = {
-    "脾围": "大腿围",
-    "座围": "臀围",
-    "外长连腰A": "加长裤长",
-    "外长连腰B": "高个子裤长",
-    "外长连腰C": "常规裤长",
-    "外长连腰D": "小个子裤长",
-}
-
-current_mappings = _config.get("mappings") or dict(DEFAULT_MAPPINGS)
-
-
-def save_base64_image(b64_string):
-    if "," in b64_string:
-        b64_string = b64_string.split(",", 1)[1]
-    raw = base64.b64decode(b64_string)
-
-    ext = ".jpg"
-    if raw[:4] == b"\x89PNG":
-        ext = ".png"
-    elif raw[:2] == b"\xff\xd8":
-        ext = ".jpg"
-    elif raw[:4] == b"RIFF":
-        ext = ".webp"
-
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-    tmp.write(raw)
-    tmp.close()
-    return tmp.name
-
-
-def build_prompt(mappings):
-    factory_keys = list(mappings.keys())
-    user_vals = list(mappings.values())
-    mapping_lines = "\n".join([f'  "{k}" → "{v}"' for k, v in mappings.items()])
-    keys_list = "、".join([f'"{k}"' for k in factory_keys])
-    headers_str = ", ".join(['"尺码"'] + [f'"{v}"' for v in user_vals])
-
-    return f"""你是一台精确的表格OCR机器。你必须分两步完成任务，绝不跳过任何一步。
-
-══════════════════════════════════════
-第一步：逐行转录表格（必须完成）
-══════════════════════════════════════
-图片中是一张服装尺码表。表格结构：最左侧列是"部位名称"，顶部行是"尺码代号"。
-图片可能包含多张表格（上下排列），请你只读取最上方那张主尺码表的数据，严格忽略下方的"大货洗前尺寸表"或任何标注了"洗前"、"洗后"、"成衣"字样的表格，也忽略"大货"相关文字下方的所有内容。
-
-
-请逐行抄写表格内容，每一行格式为：
-  部位名称 | 数值1 | 数值2 | 数值3 | ...
-
-例如（这是示例，你必须抄写图片中的实际内容）：
-  腰围 | 68 | 72 | 76 | 80 | 84
-  座围 | 94 | 98 | 102 | 106 | 110
-  ...
-
-规则：
-- 只抄写最上方的主尺码表，下方任何副表（洗前/洗后/成衣）一概忽略
-- 每个数值严格按图片中显示的原样抄写，不要四舍五入、不要自己添加或删除小数点
-- 图片里写"52"就抄"52"，写"52.5"才抄"52.5"，绝不擅自改变
-- 看不清的格子用"?"代替
-
-══════════════════════════════════════
-第二步：匹配映射并输出JSON
-══════════════════════════════════════
-现在，从上一步抄写的结果中，只提取包含以下工厂名称的行：
-{keys_list}
-
-重要：用户最终表格只需要这 {len(mappings)} 个字段：{headers_str}
-抄写结果中其他所有部位（如拉链长、前浪、后浪、膝围、袋口宽等无关字段）全部丢弃，不得输出。只有映射关系中列出的字段才能出现在 JSON 中。
-
-按下面映射关系重命名：
-{mapping_lines}
-
-最终输出严格JSON（不要markdown标记）：
-{{"headers":[{headers_str}],"rows":[["26","68","94","52","50","98","102"],...]}}
-
-要求：
-- 最终表格只保留 headers 中列出的字段，其他字段全部清洗掉
-- headers 第一项固定"尺码"，后面按上述顺序排列
-- 如果某个部位在图片中完全找不到对应行，从 headers 和 rows 中完全移除该列（不要输出 null 列）
-- 例如：图片中没有"脚围"行，则 headers 中不包含"脚围"，rows 中也不包含对应值
-- rows 每个数组第一项是尺码代号（如26/27/28或S/M/L），后面依次是各部位数值
-- 数值用字符串类型
-- 只输出JSON，不要别的"""
-
-
-def call_qwen_vision(image_path, mappings, model):
-    prompt = build_prompt(mappings)
-    messages = [
-        {
-            "role": "system",
-            "content": [{"text": "你是一台精确的表格OCR机器。你的唯一任务是：只读取图片中最上方的主尺码表，忽略下方的大货洗前尺寸表等任何副表。逐行抄写后只提取映射关系中指定的字段，清洗无关部位。绝不编造数据，绝不修改数值。"}],
-        },
-        {
-            "role": "user",
-            "content": [
-                {"image": f"file://{image_path}"},
-                {"text": prompt},
-            ],
-        }
-    ]
-
-    print(f"[API] 调用模型: {model}, temperature={TEMPERATURE}")
-    print(f"[API] 图片: {image_path}")
-
-    response = dashscope.MultiModalConversation.call(
-        api_key=get_api_key(),
-        model=model,
-        messages=messages,
-        temperature=TEMPERATURE,
-        top_p=0.01,
-    )
-
-    if response.status_code != 200:
-        raise Exception(
-            f"API 调用失败 (HTTP {response.status_code})："
-            f"错误码 {response.code} — {response.message}"
-        )
-
-    content = response.output.choices[0].message.content
-    if isinstance(content, list):
-        text = content[0]["text"]
-    else:
-        text = content
-
-    print(f"[API] 模型返回长度: {len(text)} 字符")
-    print(f"[API] 返回前300字: {text[:300]}")
-    return text
-
-
-def extract_json(text):
-    text = text.strip()
-    # 去掉可能的 markdown 代码块
-    text = re.sub(r"```(?:json)?\s*\n?", "", text)
-    text = re.sub(r"```\s*", "", text)
-
-    # 尝试直接解析
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-
-    # 尝试提取最外层 JSON
-    match = re.search(r"\{[\s\S]*\}", text)
-    if match:
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-
-    raise ValueError(f"无法从模型回复中提取 JSON，原始回复前500字：{text[:500]}")
-
-
-# ---- routes ----
+# ---- Routes ----
 
 @app.route("/")
 def index():
@@ -248,7 +41,6 @@ def analyze():
         if not image_source:
             return jsonify({"success": False, "error": "未提供图片数据"}), 400
 
-        # 判断图片来源：base64 或文件路径
         if image_source.startswith("data:") or (
             len(image_source) > 200 and "/" not in image_source[:20]
         ):
@@ -257,17 +49,12 @@ def analyze():
         elif os.path.isfile(image_source):
             image_path = image_source
         else:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": f"无效的图片数据或文件不存在：{image_source[:80]}...",
-                    }
-                ),
-                400,
-            )
+            return jsonify({
+                "success": False,
+                "error": f"无效的图片数据或文件不存在：{image_source[:80]}...",
+            }), 400
 
-        raw_text = call_qwen_vision(image_path, mappings, model)
+        raw_text = call_ocr_vision(image_path, mappings, model)
         result = extract_json(raw_text)
 
         return jsonify({
@@ -290,22 +77,14 @@ def analyze():
                 pass
 
 
-def _persist():
-    save_config({
-        "api_key": _api_key,
-        "model": current_model,
-        "mappings": current_mappings,
-    })
-
-
 @app.route("/api/key", methods=["GET", "POST"])
 def key_handler():
     global _api_key
     if request.method == "POST":
         data = request.json or {}
         new_key = (data.get("api_key") or "").strip()
-        _api_key = new_key
-        _persist()
+        set_api_key(new_key)
+        persist()
         return jsonify({"success": True, "has_key": bool(_api_key)})
     return jsonify({"success": True, "has_key": bool(_api_key)})
 
@@ -317,7 +96,7 @@ def mappings_handler():
         data = request.json
         if isinstance(data, dict):
             current_mappings = dict(data)
-            _persist()
+            persist()
         return jsonify({"success": True, "mappings": current_mappings})
     return jsonify({"success": True, "mappings": current_mappings})
 
@@ -326,7 +105,7 @@ def mappings_handler():
 def reset_mappings():
     global current_mappings
     current_mappings = dict(DEFAULT_MAPPINGS)
-    _persist()
+    persist()
     return jsonify({"success": True, "mappings": current_mappings})
 
 
@@ -339,7 +118,7 @@ def model_handler():
         valid_ids = [m["id"] for m in AVAILABLE_MODELS]
         if new_model in valid_ids:
             current_model = new_model
-            _persist()
+            persist()
         return jsonify({"success": True, "model": current_model})
     return jsonify({
         "success": True,
@@ -348,7 +127,7 @@ def model_handler():
     })
 
 
-# ---- startup ----
+# ---- Startup ----
 
 def open_browser():
     time.sleep(1.2)
@@ -358,7 +137,7 @@ def open_browser():
 if __name__ == "__main__":
     print("=" * 48)
     print("  工厂尺码表转换工具 v1.0")
-    print(f"  模型: {current_model}  |  temperature: {TEMPERATURE}")
+    print(f"  模型: {current_model}  |  temperature: {os.getenv('QWEN_TEMPERATURE', '0.0')}")
     print(f"  打开浏览器: http://localhost:5800")
     print("=" * 48)
     threading.Thread(target=open_browser, daemon=True).start()
