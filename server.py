@@ -14,7 +14,8 @@ from config import (
     current_model, current_mappings, _api_key,
     set_api_key, persist,
 )
-from vision import call_ocr_vision, extract_json, save_base64_image
+from vision import call_ocr_vision, extract_json, save_base64_image, call_qwen
+from stylegen import generate_table_style, generate_table_from_image
 
 # ---- Flask App ----
 app = Flask(__name__)
@@ -125,6 +126,61 @@ def model_handler():
         "model": current_model,
         "models": AVAILABLE_MODELS,
     })
+
+
+@app.route("/api/generate-style", methods=["POST"])
+def generate_style():
+    """生成带样式的 HTML 尺码表"""
+    try:
+        data = request.json or {}
+        table_data = data.get("data", {})
+        style_desc = data.get("style", "简洁、现代、适合服装行业")
+        model = data.get("model", "qwen3.6-plus")
+
+        if not table_data.get("headers") or not table_data.get("rows"):
+            return jsonify({"success": False, "error": "缺少表格数据"}), 400
+
+        html = generate_table_style(table_data, style_desc, model)
+        return jsonify({"success": True, "html": html})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/generate-style-from-image", methods=["POST"])
+def generate_style_from_image():
+    """从参考图提取风格并生成 HTML 尺码表"""
+    tmp_path = None
+    try:
+        data = request.json or {}
+        table_data = data.get("data", {})
+        image_source = data.get("image", "")
+        model = data.get("model", "qwen3-vl-plus")
+
+        if not table_data.get("headers") or not table_data.get("rows"):
+            return jsonify({"success": False, "error": "缺少表格数据"}), 400
+        if not image_source:
+            return jsonify({"success": False, "error": "未提供参考图片"}), 400
+
+        if image_source.startswith("data:"):
+            tmp_path = save_base64_image(image_source)
+            image_path = tmp_path
+        elif os.path.isfile(image_source):
+            image_path = image_source
+        else:
+            return jsonify({"success": False, "error": "图片无效"}), 400
+
+        html = generate_table_from_image(table_data, image_path, model)
+        return jsonify({"success": True, "html": html})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
 
 
 # ---- Startup ----
