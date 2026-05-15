@@ -96,18 +96,14 @@ def fill_template(html, table_data):
 
 
 async def render_html_to_png(html):
-    """将 HTML 渲染为 PNG，返回 bytes"""
+    """将 HTML 渲染为 PNG，包含完整背景，返回 bytes"""
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page(viewport={"width": 1000, "height": 700})
+        page = await browser.new_page(viewport={"width": 1200, "height": 900})
         await page.set_content(html, wait_until="networkidle")
-        table = await page.query_selector("table")
-        if table:
-            bbox = await table.bounding_box()
-            if bbox:
-                img = await table.screenshot(type="png")
-                await browser.close()
-                return img
+        # 等字体和背景渲染完
+        await page.wait_for_timeout(300)
+        # 截全页，带背景
         img = await page.screenshot(type="png", full_page=True)
         await browser.close()
         return img
