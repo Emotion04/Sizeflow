@@ -6,32 +6,58 @@
 <title>工厂尺码表转换工具</title>
 <style>
 :root {
-  --bg: #f0f2f5;
-  --card: #fff;
-  --border: #e0e4e8;
-  --text: #2c3e50;
-  --text2: #6b7c93;
-  --primary: #4a6cf7;
-  --primary-h: #3b5de7;
-  --danger: #e74c3c;
-  --success: #27ae60;
-  --radius: 10px;
-  --shadow: 0 2px 12px rgba(0,0,0,.06);
+  --bg: #e8ecf1;
+  --glass: rgba(255,255,255,.72);
+  --glass-hover: rgba(255,255,255,.85);
+  --border: rgba(255,255,255,.5);
+  --text: #1a2332;
+  --text2: #5a6b7f;
+  --primary: #4f6ef6;
+  --primary-h: #3b5ce0;
+  --danger: #e0556a;
+  --success: #2ea87a;
+  --radius: 14px;
+  --shadow: 0 8px 32px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --blur: 18px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font:14px/1.6 -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-header { background:var(--primary); color:#fff; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
-header h1 { font-size:18px; font-weight:600; }
-header .ver { font-size:12px; opacity:.75; }
-.container { max-width:1300px; margin:0 auto; padding:20px; }
-.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; margin-bottom:16px; }
-.card-title { font-size:15px; font-weight:600; margin-bottom:14px; color:var(--text); display:flex; align-items:center; gap:8px; }
+body {
+  font:14px/1.6 -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+  color:var(--text); min-height:100vh;
+  background: linear-gradient(135deg, #e8eef5 0%, #dce3ed 30%, #e2e8f2 60%, #d5dfea 100%);
+  background-attachment: fixed;
+}
+body::before {
+  content:''; position:fixed; top:-20%; right:-10%; width:500px; height:500px;
+  background:radial-gradient(circle, rgba(79,110,246,.12) 0%, transparent 70%);
+  border-radius:50%; pointer-events:none; z-index:0;
+}
+body::after {
+  content:''; position:fixed; bottom:-15%; left:-8%; width:400px; height:400px;
+  background:radial-gradient(circle, rgba(46,168,122,.08) 0%, transparent 70%);
+  border-radius:50%; pointer-events:none; z-index:0;
+}
+header {
+  background:rgba(255,255,255,.55); backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur));
+  color:var(--text); border-bottom:1px solid var(--border); padding:14px 28px;
+  display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100;
+}
+header h1 { font-size:18px; font-weight:700; letter-spacing:-.3px; }
+header .ver { font-size:11px; opacity:.5; font-weight:500; }
+.container { max-width:1300px; margin:0 auto; padding:24px 20px; position:relative; z-index:1; }
+.card {
+  background:var(--glass); backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur));
+  border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--border);
+  padding:24px; margin-bottom:18px; transition:transform .15s, box-shadow .15s;
+}
+.card:hover { box-shadow:0 12px 40px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04); }
+.card-title { font-size:15px; font-weight:700; margin-bottom:14px; color:var(--text); display:flex; align-items:center; gap:8px; }
 .card-title .icon { font-size:18px; }
 
 /* upload area */
-.upload-zone { border:2px dashed var(--border); border-radius:var(--radius); padding:40px; text-align:center; cursor:pointer; transition:all .2s; background:#fafbfc; }
-.upload-zone:hover, .upload-zone.dragover { border-color:var(--primary); background:#f0f4ff; }
-.upload-zone .icon { font-size:48px; margin-bottom:10px; opacity:.5; }
+	.upload-zone { border:2px dashed rgba(79,110,246,.25); border-radius:var(--radius); padding:40px; text-align:center; cursor:pointer; transition:all .25s; background:rgba(255,255,255,.35); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+	.upload-zone:hover, .upload-zone.dragover { border-color:var(--primary); background:rgba(79,110,246,.06); transform:translateY(-1px); }
+	.upload-zone .icon { font-size:48px; margin-bottom:10px; opacity:.4; }
 .upload-zone .hint { color:var(--text2); font-size:13px; margin-top:6px; }
 
 /* file path input */
@@ -65,6 +91,11 @@ header .ver { font-size:12px; opacity:.75; }
 .mapping-row input { flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px; outline:none; }
 .mapping-row input:focus { border-color:var(--primary); }
 .mapping-row .key-input { background:#fafbfc; }
+.mapping-new { animation:highlightRow .8s ease; }
+@keyframes highlightRow {
+  0% { background:rgba(79,110,246,.12); transform:scale(1.01); }
+  100% { background:transparent; transform:scale(1); }
+}
 .add-mapping { margin-top:8px; display:flex; gap:8px; align-items:center; }
 .add-mapping input { flex:1; padding:6px 8px; border:1px dashed var(--border); border-radius:4px; font-size:12px; outline:none; }
 
@@ -72,13 +103,13 @@ header .ver { font-size:12px; opacity:.75; }
 .table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; }
 table { border-collapse:collapse; width:100%; font-size:13px; }
 th, td { border:1px solid var(--border); padding:8px 12px; text-align:center; white-space:nowrap; }
-th { background:#f5f7fa; font-weight:600; position:sticky; top:0; z-index:1; cursor:grab; user-select:none; }
+th { background:rgba(245,247,250,.7); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); font-weight:600; position:sticky; top:0; z-index:1; cursor:grab; user-select:none; }
 th:active { cursor:grabbing; }
 th.drag-over { border-left:3px solid var(--primary); }
 th.dragging { opacity:.4; }
 th .resize-handle { position:absolute; right:0; top:0; bottom:0; width:6px; cursor:col-resize; z-index:2; }
 th .resize-handle:hover { background:var(--primary); }
-td { background:#fff; }
+td { background:rgba(255,255,255,.45); }
 td[contenteditable] { outline:2px solid transparent; cursor:text; transition:outline .15s; }
 td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb; }
 .row-actions { display:flex; gap:4px; justify-content:center; }
@@ -112,11 +143,11 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
 <header>
   <div><h1>工厂→用户尺码表转换</h1></div>
   <div style="display:flex;align-items:center;gap:10px;">
-    <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);border-radius:6px;padding:4px 10px;">
+    <div style="display:flex;align-items:center;gap:4px;background:rgba(79,110,246,.06);border-radius:8px;padding:5px 12px;border:1px solid rgba(79,110,246,.12);">
       <span style="font-size:12px;">&#128273;</span>
-      <input type="password" id="apiKeyInput" placeholder="输入 DashScope API Key" style="background:transparent;border:none;color:#fff;outline:none;width:200px;font-size:12px;">
-      <button id="saveKeyBtn" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;white-space:nowrap;">保存</button>
-      <span id="keyStatus" style="font-size:11px;"></span>
+      <input type="password" id="apiKeyInput" placeholder="输入 DashScope API Key" style="background:transparent;border:none;color:var(--text);outline:none;width:200px;font-size:12px;">
+      <button id="saveKeyBtn" style="background:var(--primary);border:none;color:#fff;border-radius:6px;padding:3px 12px;cursor:pointer;font-size:11px;white-space:nowrap;font-weight:500;">保存</button>
+      <span id="keyStatus" style="font-size:11px;color:var(--text2);"></span>
     </div>
     <span class="ver">Canary 1.6</span>
   </div>
@@ -259,10 +290,10 @@ async function loadKeyStatus() {
     if (d.has_key) {
       document.getElementById('apiKeyInput').placeholder = 'API Key 已配置';
       st.textContent = '✓';
-      st.style.color = '#a0f0a0';
+      st.style.color = 'var(--success)';
     } else {
       st.textContent = '未设置';
-      st.style.color = '#ffaaaa';
+      st.style.color = 'var(--danger)';
     }
   } catch (e) {}
 }
@@ -301,16 +332,18 @@ async function loadModels() {
   }
 }
 
-function renderMappings() {
+function renderMappings(highlightKey) {
   const list = document.getElementById('mappingList');
   list.innerHTML = Object.entries(mappings).map(([k, v], i) =>
-    `<div class="mapping-row">
+    `<div class="mapping-row ${k === highlightKey ? 'mapping-new' : ''}">
       <input class="key-input" value="${esc(k)}" data-idx="${i}" data-field="key" placeholder="工厂表头">
       <span class="arrow">&rarr;</span>
       <input value="${esc(v)}" data-idx="${i}" data-field="val" placeholder="用户表头">
       <button class="btn btn-danger btn-sm" data-idx="${i}" data-action="del" title="删除">&times;</button>
     </div>`
   ).join('');
+  // 滚动到底部
+  list.scrollTop = list.scrollHeight;
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -393,7 +426,7 @@ async function saveApiKey() {
       document.getElementById('apiKeyInput').value = '';
       document.getElementById('apiKeyInput').placeholder = 'API Key 已配置';
       document.getElementById('keyStatus').textContent = '✓';
-      document.getElementById('keyStatus').style.color = '#a0f0a0';
+      document.getElementById('keyStatus').style.color = 'var(--success)';
       toast('API Key 已保存', 'success');
     }
   } catch (e) {
@@ -777,10 +810,11 @@ function addMapping() {
   const val = document.getElementById('newVal').value.trim();
   if (!key || !val) return toast('请输入工厂表头和用户表头名称', 'error');
   mappings[key] = val;
-  renderMappings();
+  renderMappings(key);
   saveMappings();
   document.getElementById('newKey').value = '';
   document.getElementById('newVal').value = '';
+  document.getElementById('newKey').focus();
 }
 
 async function resetMappings() {
