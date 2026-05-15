@@ -100,8 +100,8 @@ header .ver { font-size:11px; opacity:.5; font-weight:500; }
 .add-mapping input { flex:1; min-width:0; width:0; padding:6px 8px; border:1px dashed var(--border); border-radius:4px; font-size:12px; outline:none; }
 
 /* result table */
-.table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; }
-table { border-collapse:collapse; width:100%; font-size:13px; }
+.table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; display:flex; justify-content:center; }
+table { border-collapse:collapse; width:auto; margin:0 auto; font-size:13px; }
 th, td { border:1px solid var(--border); padding:8px 12px; text-align:center; white-space:nowrap; }
 th { background:rgba(245,247,250,.7); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); font-weight:600; position:sticky; top:0; z-index:1; cursor:grab; user-select:none; }
 th:active { cursor:grabbing; }
@@ -263,8 +263,8 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <span style="font-size:12px;color:var(--text2);">统一列宽：</span>
-      <input type="range" id="colWidthSlider" min="60" max="200" value="100" style="width:120px;cursor:pointer;">
-      <input type="number" id="colWidthInput" value="100" min="40" max="400" style="width:55px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="colWidthSlider" min="30" max="200" value="80" style="width:120px;cursor:pointer;">
+      <input type="number" id="colWidthInput" value="80" min="24" max="400" style="width:55px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
     </div>
     <div class="table-wrap" id="tableWrap"></div>
@@ -566,7 +566,7 @@ function renderTable(data) {
     return;
   }
 
-  const colW = document.getElementById('colWidthInput').value || 100;
+  const colW = document.getElementById('colWidthInput').value || 80;
   const { headers, rows } = data;
   let html = '<table id="resultTable"><thead><tr>';
   headers.forEach((h, i) => {
@@ -647,7 +647,7 @@ function renderTable(data) {
   });
   document.addEventListener('mousemove', e => {
     if (resizing == null) return;
-    const newW = Math.max(40, startW + (e.clientX - startX));
+    const newW = Math.max(24, startW + (e.clientX - startX));
     document.getElementById('colWidthInput').value = newW;
     applyColWidth(newW);
   });
