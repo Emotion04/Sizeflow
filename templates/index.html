@@ -106,7 +106,15 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
 
 <header>
   <div><h1>工厂→用户尺码表转换</h1></div>
-  <span class="ver">Canary 1.6</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);border-radius:6px;padding:4px 10px;">
+      <span style="font-size:12px;">&#128273;</span>
+      <input type="password" id="apiKeyInput" placeholder="输入 DashScope API Key" style="background:transparent;border:none;color:#fff;outline:none;width:200px;font-size:12px;">
+      <button id="saveKeyBtn" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;white-space:nowrap;">保存</button>
+      <span id="keyStatus" style="font-size:11px;"></span>
+    </div>
+    <span class="ver">Canary 1.6</span>
+  </div>
 </header>
 
 <div class="container">
@@ -228,8 +236,24 @@ let currentModel = 'qwen3.6-plus';
 
 // ======== Init ========
 async function init() {
-  await Promise.all([loadMappings(), loadModels()]);
+  await Promise.all([loadMappings(), loadModels(), loadKeyStatus()]);
   bindEvents();
+}
+
+async function loadKeyStatus() {
+  try {
+    const r = await fetch('/api/key');
+    const d = await r.json();
+    const st = document.getElementById('keyStatus');
+    if (d.has_key) {
+      document.getElementById('apiKeyInput').placeholder = 'API Key 已配置';
+      st.textContent = '✓';
+      st.style.color = '#a0f0a0';
+    } else {
+      st.textContent = '未设置';
+      st.style.color = '#ffaaaa';
+    }
+  } catch (e) {}
 }
 
 async function loadMappings() {
@@ -328,6 +352,34 @@ function bindEvents() {
   document.getElementById('copyTableBtn').addEventListener('click', copyTable);
   document.getElementById('addRowBtn').addEventListener('click', addRow);
   document.getElementById('addColBtn').addEventListener('click', addCol);
+
+  // API Key
+  document.getElementById('saveKeyBtn').addEventListener('click', saveApiKey);
+  document.getElementById('apiKeyInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveApiKey();
+  });
+}
+
+async function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return toast('请输入 API Key', 'error');
+  try {
+    const r = await fetch('/api/key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: key })
+    });
+    const d = await r.json();
+    if (d.success) {
+      document.getElementById('apiKeyInput').value = '';
+      document.getElementById('apiKeyInput').placeholder = 'API Key 已配置';
+      document.getElementById('keyStatus').textContent = '✓';
+      document.getElementById('keyStatus').style.color = '#a0f0a0';
+      toast('API Key 已保存', 'success');
+    }
+  } catch (e) {
+    toast('保存失败: ' + e.message, 'error');
+  }
 }
 
 // ======== Image handling ========

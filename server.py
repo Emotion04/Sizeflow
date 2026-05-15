@@ -18,21 +18,48 @@ from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
 import dashscope
 
-# ---- 环境变量加载（优先 exe 同级目录） ----
+# ---- 路径 & 环境变量 ----
 if getattr(sys, 'frozen', False):
-    exe_dir = os.path.dirname(sys.executable)
-    env_path = os.path.join(exe_dir, '.env')
+    APP_DIR = os.path.dirname(sys.executable)
+    env_path = os.path.join(APP_DIR, '.env')
     load_dotenv(env_path)
 else:
+    APP_DIR = os.path.dirname(os.path.abspath(__file__))
     load_dotenv()
+
+CONFIG_FILE = os.path.join(APP_DIR, "config.json")
 
 app = Flask(__name__)
 
-# ---- 模板路径（兼容 PyInstaller 打包） ----
 if getattr(sys, 'frozen', False):
     app.template_folder = os.path.join(sys._MEIPASS, 'templates')
 
 dashscope.base_http_api_url = "https://dashscope.aliyuncs.com/api/v1"
+
+# ---- 持久化配置读写 ----
+def load_config():
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_config(data):
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+_config = load_config()
+
+# ---- API Key（界面输入 > 配置文件 > .env 环境变量） ----
+_api_key = _config.get("api_key", "") or os.getenv("DASHSCOPE_API_KEY", "")
+
+def get_api_key():
+    if not _api_key:
+        raise ValueError("未配置 API Key，请在页面右上角输入 DashScope API Key")
+    return _api_key
 
 # ---- 模型配置 ----
 AVAILABLE_MODELS = [
@@ -44,8 +71,7 @@ AVAILABLE_MODELS = [
     {"id": "qwen3.5-flash",   "name": "Qwen3.5 Flash",   "desc": "上代快速版"},
 ]
 
-# 当前模型（可在 .env 中覆盖初始值，也可前端切换）
-current_model = os.getenv("QWEN_MODEL", "qwen3-vl-plus")
+current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3-vl-plus")
 TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))
 
 DEFAULT_MAPPINGS = {
@@ -56,15 +82,7 @@ DEFAULT_MAPPINGS = {
     "外长连腰B": "高个子裤长",
 }
 
-current_mappings = dict(DEFAULT_MAPPINGS)
-
-# ---- helpers ----
-
-def get_api_key():
-    key = os.getenv("DASHSCOPE_API_KEY")
-    if not key:
-        raise ValueError("未配置 DASHSCOPE_API_KEY，请在 .env 文件中设置")
-    return key
+current_mappings = _config.get("mappings") or dict(DEFAULT_MAPPINGS)
 
 
 def save_base64_image(b64_string):
@@ -261,6 +279,26 @@ def analyze():
                 pass
 
 
+def _persist():
+    save_config({
+        "api_key": _api_key,
+        "model": current_model,
+        "mappings": current_mappings,
+    })
+
+
+@app.route("/api/key", methods=["GET", "POST"])
+def key_handler():
+    global _api_key
+    if request.method == "POST":
+        data = request.json or {}
+        new_key = (data.get("api_key") or "").strip()
+        _api_key = new_key
+        _persist()
+        return jsonify({"success": True, "has_key": bool(_api_key)})
+    return jsonify({"success": True, "has_key": bool(_api_key)})
+
+
 @app.route("/api/mappings", methods=["GET", "POST"])
 def mappings_handler():
     global current_mappings
@@ -268,6 +306,7 @@ def mappings_handler():
         data = request.json
         if isinstance(data, dict):
             current_mappings = dict(data)
+            _persist()
         return jsonify({"success": True, "mappings": current_mappings})
     return jsonify({"success": True, "mappings": current_mappings})
 
@@ -276,6 +315,7 @@ def mappings_handler():
 def reset_mappings():
     global current_mappings
     current_mappings = dict(DEFAULT_MAPPINGS)
+    _persist()
     return jsonify({"success": True, "mappings": current_mappings})
 
 
@@ -285,10 +325,10 @@ def model_handler():
     if request.method == "POST":
         data = request.json or {}
         new_model = data.get("model", "")
-        # 验证是否为有效模型
         valid_ids = [m["id"] for m in AVAILABLE_MODELS]
         if new_model in valid_ids:
             current_model = new_model
+            _persist()
         return jsonify({"success": True, "model": current_model})
     return jsonify({
         "success": True,

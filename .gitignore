@@ -3,8 +3,9 @@ build/
 dist/
 *.spec
 
-# Env (contains API key)
+# Env & Config (contains API key)
 .env
+config.json
 
 # Python
 __pycache__/
