@@ -183,6 +183,47 @@ def generate_style_from_image():
                 pass
 
 
+@app.route("/api/render-png", methods=["POST"])
+def render_png():
+    """将 HTML 渲染为 PNG"""
+    import asyncio
+    from playwright.async_api import async_playwright
+
+    try:
+        data = request.json or {}
+        html = data.get("html", "")
+        if not html:
+            return jsonify({"success": False, "error": "缺少 HTML"}), 400
+
+        async def _render():
+            async with async_playwright() as p:
+                browser = await p.chromium.launch()
+                page = await browser.new_page(viewport={"width": 800, "height": 600})
+                await page.set_content(html, wait_until="networkidle")
+                # 获取表格元素的实际尺寸
+                table = await page.query_selector("table")
+                if table:
+                    bbox = await table.bounding_box()
+                    if bbox:
+                        # 截表格元素
+                        img = await table.screenshot(type="png")
+                        await browser.close()
+                        return img
+                # fallback: 截全页
+                img = await page.screenshot(type="png", full_page=True)
+                await browser.close()
+                return img
+
+        png_bytes = asyncio.run(_render())
+
+        from flask import Response
+        return Response(png_bytes, mimetype="image/png",
+                        headers={"Content-Disposition": "attachment; filename=sizechart.png"})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ---- Startup ----
 
 def open_browser():

@@ -61,13 +61,18 @@ TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))
 
 # ---- 字段映射 ----
 DEFAULT_MAPPINGS = {
-    "脾围": "大腿围",
+    "腰围": "腰围",
     "座围": "臀围",
+    "脾围": "大腿围",
+    "脚围": "脚围",
     "外长连腰A": "加长裤长",
     "外长连腰B": "高个子裤长",
     "外长连腰C": "常规裤长",
     "外长连腰D": "小个子裤长",
 }
+
+# 输出表头固定顺序（最终表格必须包含这些列）
+OUTPUT_HEADERS = ["腰围", "臀围", "大腿围", "脚围", "常规裤长", "加长裤长"]
 
 current_mappings = _config.get("mappings") or dict(DEFAULT_MAPPINGS)
 

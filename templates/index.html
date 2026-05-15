@@ -273,6 +273,7 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
       <button class="btn btn-outline" id="copyTableBtn">&#128203; 复制表格</button>
       <button class="btn btn-outline" id="addRowBtn">+ 添加行</button>
       <button class="btn btn-outline" id="addColBtn">+ 添加列</button>
+      <button class="btn btn-outline btn-sm" id="delColBtn" style="color:var(--danger);border-color:var(--danger);" title="点击后选择要删除的列">删除列</button>
     </div>
     <details style="margin-top:12px;font-size:12px;color:var(--text2);" id="rawDetails">
       <summary style="cursor:pointer;">查看 AI 原始返回（调试用）</summary>
@@ -411,6 +412,7 @@ function bindEvents() {
   document.getElementById('copyTableBtn').addEventListener('click', copyTable);
   document.getElementById('addRowBtn').addEventListener('click', addRow);
   document.getElementById('addColBtn').addEventListener('click', addCol);
+  document.getElementById('delColBtn').addEventListener('click', deleteCol);
 
   // API Key
   document.getElementById('saveKeyBtn').addEventListener('click', saveApiKey);
@@ -735,6 +737,17 @@ function addCol() {
   resultData.rows.forEach(row => row.push(''));
   renderTable(resultData);
   toast(`已添加列: ${name}`, 'info');
+}
+
+function deleteCol() {
+  if (!resultData) return;
+  syncTableFromUI();
+  const idx = parseInt(prompt(`输入要删除的列序号（1-${resultData.headers.length}）：\n${resultData.headers.map((h,i)=>`${i+1}.${h}`).join(' ')}`));
+  if (isNaN(idx) || idx < 1 || idx > resultData.headers.length) return;
+  resultData.headers.splice(idx - 1, 1);
+  resultData.rows.forEach(row => row.splice(idx - 1, 1));
+  renderTable(resultData);
+  toast(`已删除列`, 'info');
 }
 
 // ======== Export ========
