@@ -134,6 +134,14 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
 .action-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .spacer { flex:1; }
 
+/* style grid */
+.style-grid { display:flex; gap:12px; flex-wrap:wrap; }
+.style-card { border:2px solid transparent; border-radius:var(--radius); overflow:hidden; cursor:pointer; transition:all .2s; background:rgba(255,255,255,.5); width:160px; }
+.style-card:hover { border-color:var(--primary); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,.1); }
+.style-card.selected { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,110,246,.15); }
+.style-card img { width:100%; height:120px; object-fit:cover; display:block; }
+.style-card .style-name { padding:8px 10px; font-size:12px; font-weight:600; text-align:center; }
+
 /* hidden */
 .hidden { display:none !important; }
 
@@ -281,6 +289,22 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
     </details>
   </div>
 
+  <!-- Style Selection Card -->
+  <div class="card hidden" id="styleCard">
+    <div class="card-title">
+      <span class="icon">&#127912;</span>尺码表样式
+      <span style="font-size:12px;color:var(--text2);font-weight:400;">（选择模板套用样式，点击导出下载PNG）</span>
+    </div>
+    <div class="style-grid" id="styleGrid"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+      <span style="font-size:12px;color:var(--text2);">预览：</span>
+      <iframe id="stylePreview" style="width:100%;height:360px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;"></iframe>
+    </div>
+    <div class="action-bar" style="margin-top:12px;">
+      <button class="btn btn-success" id="exportPngBtn">&#128190; 导出当前样式为PNG</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -294,7 +318,7 @@ let currentModel = 'qwen3.6-plus';
 
 // ======== Init ========
 async function init() {
-  await Promise.all([loadMappings(), loadModels(), loadKeyStatus()]);
+  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates()]);
   bindEvents();
 }
 
@@ -425,8 +449,10 @@ function bindEvents() {
   const input = document.getElementById('colWidthInput');
   slider.addEventListener('input', () => { input.value = slider.value; applyColWidth(slider.value); });
   input.addEventListener('input', () => { slider.value = input.value; applyColWidth(input.value); });
-  // Apply width when rendering (defer, table might not exist yet)
   input.addEventListener('change', () => { if (resultData) renderTable(resultData); });
+
+  // Style export
+  document.getElementById('exportPngBtn').addEventListener('click', exportPng);
 }
 
 async function saveApiKey() {
@@ -551,8 +577,9 @@ async function analyze() {
       d.model ? ` | 模型: ${d.model}` : '';
     document.getElementById('rawResponse').textContent = d.raw || '(无)';
     document.getElementById('resultCard').classList.remove('hidden');
+    document.getElementById('styleCard').classList.remove('hidden');
     document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
-    toast('识别成功！结果可编辑，确认后导出 CSV', 'success');
+    toast('识别成功！下方可选样式生成尺码表图片', 'success');
 
   } catch (e) {
     document.getElementById('loadingCard').classList.add('hidden');
@@ -878,6 +905,75 @@ function toast(msg, type) {
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => { el.remove(); }, 3000);
+}
+
+// ======== Style Selection ========
+let selectedTemplate = null;
+let filledHtml = '';
+
+async function loadTemplates() {
+  try {
+    const r = await fetch('/api/templates');
+    const d = await r.json();
+    if (!d.success) return;
+    const grid = document.getElementById('styleGrid');
+    grid.innerHTML = d.templates.map(t => `
+      <div class="style-card" data-id="${t.id}" onclick="selectTemplate('${t.id}')">
+        <img src="${t.preview}" alt="${t.name}" loading="lazy">
+        <div class="style-name">${t.name}</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('loadTemplates:', e);
+  }
+}
+
+async function selectTemplate(tplId) {
+  if (!resultData) return toast('请先识别尺码表', 'error');
+  selectedTemplate = tplId;
+  document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.style-card[data-id="${tplId}"]`)?.classList.add('selected');
+
+  syncTableFromUI();
+  try {
+    const r = await fetch('/api/apply-template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template: tplId, data: resultData })
+    });
+    const d = await r.json();
+    if (d.success) {
+      filledHtml = d.html;
+      document.getElementById('stylePreview').srcdoc = d.html;
+    } else {
+      toast(d.error, 'error');
+    }
+  } catch (e) {
+    toast('应用模板失败: ' + e.message, 'error');
+  }
+}
+
+async function exportPng() {
+  if (!selectedTemplate || !resultData) return toast('请先选择模板', 'error');
+  syncTableFromUI();
+  try {
+    const r = await fetch('/api/render-template-png', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template: selectedTemplate, data: resultData })
+    });
+    if (!r.ok) { toast('导出失败', 'error'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '尺码表_' + selectedTemplate.replace('.html', '') + '.png';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('PNG 已下载', 'success');
+  } catch (e) {
+    toast('导出失败: ' + e.message, 'error');
+  }
 }
 
 // ======== Start ========

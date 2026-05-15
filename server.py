@@ -224,6 +224,88 @@ def render_png():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/templates", methods=["GET"])
+def list_templates_route():
+    """列出所有模板（含预览图路径）"""
+    from template_service import list_templates, get_preview_path
+    templates = list_templates()
+    for t in templates:
+        t["preview"] = f"/api/template-preview/{t['id']}"
+    return jsonify({"success": True, "templates": templates})
+
+
+@app.route("/api/template-preview/<template_id>")
+def template_preview(template_id):
+    """返回模板预览图 PNG"""
+    from template_service import get_preview_path
+    from flask import send_file
+    try:
+        png_path = get_preview_path(template_id)
+        return send_file(png_path, mimetype="image/png")
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+
+
+@app.route("/api/apply-template", methods=["POST"])
+def apply_template():
+    """将 OCR 数据填入模板，返回 HTML"""
+    import os as _os
+    from template_service import TEMPLATE_DIR, fill_template
+
+    try:
+        data = request.json or {}
+        template_id = data.get("template", "")
+        table_data = data.get("data", {})
+
+        if not template_id or not table_data:
+            return jsonify({"success": False, "error": "缺少参数"}), 400
+
+        tpl_path = _os.path.join(TEMPLATE_DIR, template_id)
+        if not _os.path.isfile(tpl_path):
+            return jsonify({"success": False, "error": "模板不存在"}), 404
+
+        with open(tpl_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        filled_html = fill_template(html, table_data)
+        return jsonify({"success": True, "html": filled_html})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/render-template-png", methods=["POST"])
+def render_template_png():
+    """填入数据并渲染为 PNG 下载"""
+    import os as _os
+    from template_service import TEMPLATE_DIR, fill_template, render_png
+
+    try:
+        data = request.json or {}
+        template_id = data.get("template", "")
+        table_data = data.get("data", {})
+
+        if not template_id or not table_data:
+            return jsonify({"success": False, "error": "缺少参数"}), 400
+
+        tpl_path = _os.path.join(TEMPLATE_DIR, template_id)
+        if not _os.path.isfile(tpl_path):
+            return jsonify({"success": False, "error": "模板不存在"}), 404
+
+        with open(tpl_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        filled_html = fill_template(html, table_data)
+        png_bytes = render_png(filled_html)
+
+        from flask import Response
+        return Response(png_bytes, mimetype="image/png",
+                        headers={"Content-Disposition": f"attachment; filename=sizechart_{template_id.replace('.html','')}.png"})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ---- Startup ----
 
 def open_browser():
