@@ -48,15 +48,14 @@ def set_api_key(key):
 
 # ---- 模型配置 ----
 AVAILABLE_MODELS = [
-    {"id": "qwen3-vl-plus",   "name": "Qwen3-VL Plus",  "desc": "曾经强大的视觉模型"},
-    {"id": "qwen3-vl-flash",  "name": "Qwen3-VL Flash",  "desc": "曾经强大且快速"},
-    {"id": "qwen3.6-plus",    "name": "Qwen3.6 Plus",   "desc": "【持续出错可用】最强大的多模态模型"},
-    {"id": "qwen3.6-flash",   "name": "Qwen3.6 Flash",  "desc": "最新极速款，识别精准"},
-    {"id": "qwen3.5-plus",    "name": "Qwen3.5 Plus",    "desc": "上代视觉旗舰"},
-    {"id": "qwen3.5-flash",   "name": "Qwen3.5 Flash",   "desc": "【推荐】均衡首选,快速准确"},
+    {"id": "qwen3.6-flash",   "name": "Qwen3.6 Flash",   "desc": "最新最速，表格识别精准"},
+    {"id": "qwen3.6-plus",    "name": "Qwen3.6 Plus",    "desc": "最新最强，复杂表格推荐"},
+    {"id": "qwen3-vl-flash",  "name": "Qwen3-VL Flash",  "desc": "视觉快速版"},
+    {"id": "qwen3-vl-plus",   "name": "Qwen3-VL Plus",   "desc": "视觉增强版"},
+
 ]
 
-current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3.5 Flash")
+current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3.6-flash")
 TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))
 
 # ---- 字段映射 ----
