@@ -65,11 +65,115 @@ header .ver { font-size:11px; opacity:.5; font-weight:500; }
 .card-title { font-size:15px; font-weight:700; margin-bottom:14px; color:var(--text); display:flex; align-items:center; gap:8px; }
 .card-title .icon { font-size:18px; }
 
-/* upload area */
+/*
+<!--
+  /* upload area *
 	.upload-zone { border:2px dashed rgba(79,110,246,.25); border-radius:var(--radius); padding:40px; text-align:center; cursor:pointer; transition:all .25s; background:rgba(255,255,255,.35); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
 	.upload-zone:hover, .upload-zone.dragover { border-color:var(--primary); background:rgba(79,110,246,.06); transform:translateY(-1px); }
 	.upload-zone .icon { font-size:48px; margin-bottom:10px; opacity:.4; }
 .upload-zone .hint { color:var(--text2); font-size:13px; margin-top:6px; }
+-->
+
+/* upload area - iOS 26 液态玻璃效果 */
+.upload-zone {
+  /* 核心：高透玻璃基底 */
+  background: rgba(255, 255, 255, 0.16);
+  border: none;
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  /* 常态 = 磨砂玻璃（iOS 官方效果） */
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+
+  /* ======================
+     液态玻璃 3大核心特征
+  ====================== */
+
+  /* 1. 边缘膨胀折射变形（最关键） */
+  transform: scale(1) translateZ(0);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.25), /* 内玻璃边 */
+    0 12px 32px -8px rgba(79,110,246,0.18), /* 浮动阴影 */
+    0 4px 12px rgba(0,0,0,0.05); /* 柔和投影 */
+
+  /* 2. 液态边缘高光（模拟液体边缘反光） */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255,255,255,0.85) 50%,
+      transparent 100%
+    );
+    opacity: 0.8;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* 3. 液态膨胀轮廓（边缘变形） */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: var(--radius);
+    padding: 1.5px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.7) 0%,
+      rgba(255,255,255,0.2) 50%,
+      rgba(255,255,255,0.5) 100%
+    );
+    -webkit-mask: linear-gradient(#fff,#fff) content-box, linear-gradient(#fff,#fff);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 2;
+  }
+}
+
+/* 悬浮 / 拖拽状态 = 高透玻璃（无磨砂）+ 膨胀上浮 */
+.upload-zone:hover,
+.upload-zone.dragover {
+  /* 切换为高透玻璃（iOS 26 官方行为） */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.08);
+
+  /* 液态膨胀效果 */
+  transform: translateY(-3px) scale(1.02);
+
+  /* 强化浮动阴影 */
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.15),
+    0 20px 44px -10px rgba(79,110,246,0.16),
+    0 8px 20px rgba(0,0,0,0.08);
+
+  border-color: transparent;
+}
+
+.upload-zone .icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  opacity: 0.45;
+  transition: opacity 0.25s;
+  position: relative;
+  z-index: 3;
+}
+.upload-zone:hover .icon { opacity: 0.7; }
+
+.upload-zone .hint {
+  color: var(--text2);
+  font-size: 13px;
+  margin-top: 6px;
+  position: relative;
+  z-index: 3;
+}
 
 /* file path input */
 .filepath-row { display:flex; gap:8px; margin-top:12px; }
@@ -126,6 +230,7 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
 .row-actions { display:flex; gap:4px; justify-content:center; }
 .col-actions { display:flex; gap:4px; }
 
+
 /* loading */
 .spinner { display:inline-block; width:20px; height:20px; border:2px solid #ddd; border-top-color:var(--primary); border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; }
 @keyframes spin { to {transform:rotate(360deg);} }
@@ -137,6 +242,33 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
 .toast.success { background:var(--success); }
 .toast.info { background:var(--primary); }
 @keyframes slideIn { from {transform:translateX(120%); opacity:0;} to {transform:translateX(0); opacity:1;} }
+
+/* update banner */
+.update-banner {
+  display:none; align-items:center; gap:12px; padding:10px 20px;
+  background: linear-gradient(135deg, rgba(255,193,7,.18), rgba(255,152,0,.12));
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,152,0,.25); border-radius:12px;
+  margin-bottom:16px; font-size:13px; color:#b45309;
+  animation:slideDown .35s ease;
+}
+.update-banner.show { display:flex; }
+.update-banner .update-icon { font-size:20px; }
+.update-banner .update-text { flex:1; line-height:1.4; }
+.update-banner .update-text b { color:#92400e; }
+.update-banner .btn-update {
+  padding:6px 14px; border:none; border-radius:6px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color:#fff; font-size:12px; font-weight:600; cursor:pointer;
+  white-space:nowrap; transition:all .15s;
+}
+.update-banner .btn-update:hover { transform:scale(1.04); box-shadow:0 2px 12px rgba(217,119,6,.3); }
+.update-banner .btn-update-close {
+  background:transparent; border:none; color:#b45309; font-size:18px;
+  cursor:pointer; padding:0 4px; opacity:.5; line-height:1;
+}
+.update-banner .btn-update-close:hover { opacity:1; }
+@keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
 
 .empty-state { text-align:center; padding:60px 20px; color:var(--text2); }
 .empty-state .icon { font-size:56px; margin-bottom:12px; opacity:.3; }
@@ -236,6 +368,14 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
 </div>
 
 <div class="container">
+
+  <!-- Update Banner -->
+  <div class="update-banner" id="updateBanner">
+    <span class="update-icon">&#128640;</span>
+    <span class="update-text" id="updateText"></span>
+    <button class="btn-update" id="btnDownloadUpdate">下载新版</button>
+    <button class="btn-update-close" id="btnCloseUpdate">&times;</button>
+  </div>
 
   <!-- Upload Section -->
   <div class="card" id="uploadCard">
@@ -377,7 +517,7 @@ let currentModel = 'qwen3.6-plus';
 
 // ======== Init ========
 async function init() {
-  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList()]);
+  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate()]);
   // 恢复上次壁纸
   const wp = loadWallpaper();
   if (wp) applyWallpaper(wp.url);
@@ -432,6 +572,25 @@ async function loadModels() {
   } catch (e) {
     toast('加载模型列表失败: ' + e.message, 'error');
   }
+}
+
+async function checkAppUpdate() {
+  try {
+    const r = await fetch('/api/check-update');
+    const d = await r.json();
+    if (!d.has_update) return;
+    const banner = document.getElementById('updateBanner');
+    const text = document.getElementById('updateText');
+    text.innerHTML = `发现新版本 <b>${d.latest}</b>（当前 ${d.current}），建议更新。`;
+    banner.classList.add('show');
+    document.getElementById('btnDownloadUpdate').onclick = () => {
+      fetch('/api/open-download', { method: 'POST' });
+      window.open(d.url, '_blank');
+    };
+    document.getElementById('btnCloseUpdate').onclick = () => {
+      banner.classList.remove('show');
+    };
+  } catch (e) { /* 静默失败 */ }
 }
 
 function renderMappings(highlightKey) {

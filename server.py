@@ -12,12 +12,13 @@ import webbrowser
 from flask import Flask, request, jsonify, render_template
 
 from config import (
-    APP_DIR, AVAILABLE_MODELS, DEFAULT_MAPPINGS,
+    APP_DIR, APP_VERSION, AVAILABLE_MODELS, DEFAULT_MAPPINGS,
     current_model, current_mappings, _api_key,
     set_api_key, persist,
 )
-from vision import call_ocr_vision, extract_json, save_base64_image, call_qwen
+from vision import call_ocr_vision, extract_json, format_numbers, save_base64_image, call_qwen
 from stylegen import generate_table_style, generate_table_from_image
+from updater import check_update
 
 # ---- Flask App ----
 app = Flask(__name__)
@@ -59,6 +60,7 @@ def analyze():
 
         raw_text = call_ocr_vision(image_path, mappings, model)
         result = extract_json(raw_text)
+        format_numbers(result)
 
         return jsonify({
             "success": True,
@@ -308,6 +310,20 @@ def render_template_png():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/check-update", methods=["GET"])
+def api_check_update():
+    """检查新版本（仅 EXE 模式生效）"""
+    return jsonify(check_update())
+
+
+@app.route("/api/open-download", methods=["POST"])
+def api_open_download():
+    """手动打开下载页面"""
+    from updater import open_download_page
+    open_download_page()
+    return jsonify({"success": True})
+
+
 @app.route("/api/wallpapers", methods=["GET"])
 def list_wallpapers():
     """列出所有可用壁纸：本地文件 + Bing 每日"""
@@ -355,9 +371,10 @@ def open_browser():
 
 if __name__ == "__main__":
     print("=" * 48)
-    print("  工厂尺码表转换工具 v1.0")
+    print(f"  工厂尺码表转换工具 v{APP_VERSION}")
     print(f"  模型: {current_model}  |  temperature: {os.getenv('QWEN_TEMPERATURE', '0.0')}")
     print(f"  打开浏览器: http://localhost:5800")
     print("=" * 48)
+    check_update()
     threading.Thread(target=open_browser, daemon=True).start()
     app.run(host="0.0.0.0", port=5800, debug=False)

@@ -82,6 +82,21 @@ def call_ocr_vision(image_path, mappings, model):
     return text
 
 
+def format_numbers(data):
+    """清理数值格式：整数去掉小数点，小数保留一位"""
+    for row in data.get("rows", []):
+        for i, cell in enumerate(row):
+            if cell is not None and isinstance(cell, str):
+                try:
+                    num = float(cell)
+                    if num == int(num):
+                        row[i] = str(int(num))
+                    else:
+                        row[i] = f"{num:.1f}"
+                except (ValueError, TypeError):
+                    pass
+
+
 def extract_json(text):
     text = text.strip()
     text = re.sub(r"```(?:json)?\s*\n?", "", text)

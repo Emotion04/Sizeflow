@@ -6,6 +6,7 @@ import json
 from dotenv import load_dotenv
 
 # ---- 路径 & 环境变量 ----
+APP_VERSION = "2.1.7-Canary"
 if getattr(sys, 'frozen', False):
     APP_DIR = os.path.dirname(sys.executable)
     env_path = os.path.join(APP_DIR, '.env')
@@ -49,13 +50,14 @@ def set_api_key(key):
 # ---- 模型配置 ----
 AVAILABLE_MODELS = [
     {"id": "qwen3.6-flash",   "name": "Qwen3.6 Flash",   "desc": "最新最速，表格识别精准"},
-    {"id": "qwen3.6-plus",    "name": "Qwen3.6 Plus",    "desc": "最新最强，复杂表格推荐"},
-    {"id": "qwen3-vl-flash",  "name": "Qwen3-VL Flash",  "desc": "视觉快速版"},
+    {"id": "qwen3.6-plus",    "name": "Qwen3.6 Plus",    "desc": "【屡次错误使用】最新最强，复杂表格推荐"},
+    {"id": "qwen3-vl-flash",  "name": "Qwen3-VL Flash",  "desc": "【推荐】视觉快速版"},
     {"id": "qwen3-vl-plus",   "name": "Qwen3-VL Plus",   "desc": "视觉增强版"},
+    {"id": "qwen3.5-flash",    "name": "Qwen3.5 flash",    "desc": "更快速"},
 
 ]
 
-current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3.6-flash")
+current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3-vl-flash")
 TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))
 
 # ---- 字段映射 ----
