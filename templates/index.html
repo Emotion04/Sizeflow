@@ -32,22 +32,22 @@ body {
 /* 鼠标追光层 */
 #cursor-glow {
   position:fixed; pointer-events:none; z-index:0;
-  width:300px; height:300px;
+  width:200px; height:200px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.35) 0%, rgba(255,255,255,.12) 30%, transparent 70%);
+  background:radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.18) 25%, transparent 60%);
   transform:translate(-50%, -50%);
   transition:left .6s cubic-bezier(.15,.85,.35,1), top .6s cubic-bezier(.15,.85,.35,1);
 }
 #cursor-glow-ambient {
   position:fixed; pointer-events:none; z-index:0;
-  width:400px; height:400px;
+  width:280px; height:280px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.2) 0%, rgba(255,255,255,.04) 40%, transparent 70%);
+  background:radial-gradient(circle, rgba(255,255,255,.3) 0%, rgba(255,255,255,.08) 45%, transparent 75%);
   transform:translate(-50%, -50%);
   transition:left 1.2s cubic-bezier(.2,.8,.4,1), top 1.2s cubic-bezier(.2,.8,.4,1);
 }
 header {
-  background:rgba(255,255,255,.25); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  background:rgba(255,255,255,.25); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   color:var(--text); border-bottom:1px solid rgba(255,255,255,.2); padding:14px 28px;
   display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100;
 }
@@ -554,14 +554,43 @@ async function saveApiKey() {
 }
 
 // ======== Image handling ========
+// 图片压缩阈值：小于此值不压缩 (500KB)
+const COMPRESS_THRESHOLD = 500 * 1024;
+const MAX_IMAGE_WIDTH = 1500;
+const JPEG_QUALITY = 0.85;
+
 function handleFile(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    currentImageB64 = reader.result;
-    currentImage = reader.result; // send base64 to server
-    showPreview(reader.result);
+  if (file.size <= COMPRESS_THRESHOLD) {
+    // 小图片直接读
+    const reader = new FileReader();
+    reader.onload = () => {
+      currentImageB64 = reader.result;
+      currentImage = reader.result;
+      showPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+  // 大图片压缩后再发
+  compressImage(file, MAX_IMAGE_WIDTH, JPEG_QUALITY, (b64) => {
+    currentImageB64 = b64;
+    currentImage = b64;
+    showPreview(b64);
+  });
+}
+
+function compressImage(file, maxW, quality, callback) {
+  const img = new Image();
+  img.onload = () => {
+    let w = img.width, h = img.height;
+    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', quality));
+    toast(`图片已压缩: ${(file.size/1024).toFixed(0)}KB → ${(canvas.toDataURL('image/jpeg', quality).length*3/4/1024).toFixed(0)}KB`, 'info');
   };
-  reader.readAsDataURL(file);
+  img.src = URL.createObjectURL(file);
 }
 
 function loadFromPath() {
