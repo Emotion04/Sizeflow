@@ -26,16 +26,25 @@ body {
   color:var(--text); min-height:100vh;
   background: linear-gradient(135deg, #e8eef5 0%, #dce3ed 30%, #e2e8f2 60%, #d5dfea 100%);
   background-attachment: fixed;
+  overflow-x:hidden;
 }
-body::before {
-  content:''; position:fixed; top:-20%; right:-10%; width:500px; height:500px;
-  background:radial-gradient(circle, rgba(79,110,246,.12) 0%, transparent 70%);
-  border-radius:50%; pointer-events:none; z-index:0;
+
+/* 鼠标追光层 */
+#cursor-glow {
+  position:fixed; pointer-events:none; z-index:0;
+  width:600px; height:600px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(79,110,246,.15) 0%, rgba(79,110,246,.06) 25%, rgba(46,168,122,.03) 50%, transparent 70%);
+  transform:translate(-50%, -50%);
+  transition:left .6s cubic-bezier(.15,.85,.35,1), top .6s cubic-bezier(.15,.85,.35,1);
 }
-body::after {
-  content:''; position:fixed; bottom:-15%; left:-8%; width:400px; height:400px;
-  background:radial-gradient(circle, rgba(46,168,122,.08) 0%, transparent 70%);
-  border-radius:50%; pointer-events:none; z-index:0;
+#cursor-glow-ambient {
+  position:fixed; pointer-events:none; z-index:0;
+  width:800px; height:800px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(79,110,246,.06) 0%, transparent 60%);
+  transform:translate(-50%, -50%);
+  transition:left 1.2s cubic-bezier(.2,.8,.4,1), top 1.2s cubic-bezier(.2,.8,.4,1);
 }
 header {
   background:rgba(255,255,255,.55); backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur));
@@ -182,6 +191,9 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
 </style>
 </head>
 <body>
+
+<div id="cursor-glow-ambient"></div>
+<div id="cursor-glow"></div>
 
 <header>
   <div><h1>尺码表转换至尊版</h1></div>
@@ -995,6 +1007,28 @@ async function exportPng() {
     toast('导出失败: ' + e.message, 'error');
   }
 }
+
+// ======== Mouse glow ========
+const glow = document.getElementById('cursor-glow');
+const glowAmbient = document.getElementById('cursor-glow-ambient');
+let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+function updateGlow() {
+  glow.style.left = mx + 'px';
+  glow.style.top = my + 'px';
+  glowAmbient.style.left = mx + 'px';
+  glowAmbient.style.top = my + 'px';
+  requestAnimationFrame(updateGlow);
+}
+requestAnimationFrame(updateGlow);
+
+// Also move on touch for mobile
+document.addEventListener('touchmove', e => {
+  mx = e.touches[0].clientX;
+  my = e.touches[0].clientY;
+}, {passive: true});
 
 // ======== Start ========
 init();
