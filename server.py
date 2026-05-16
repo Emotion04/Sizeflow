@@ -2,6 +2,8 @@
 
 import os
 import sys
+import json
+import glob
 import traceback
 import threading
 import time
@@ -304,6 +306,44 @@ def render_template_png():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/wallpapers", methods=["GET"])
+def list_wallpapers():
+    """列出所有可用壁纸：本地文件 + Bing 每日"""
+    import os as _os, glob
+    wp_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "static", "wallpapers")
+    _os.makedirs(wp_dir, exist_ok=True)
+    local = []
+    for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
+        for f in glob.glob(_os.path.join(wp_dir, ext)):
+            local.append({
+                "id": _os.path.basename(f),
+                "name": _os.path.basename(f).rsplit(".", 1)[0],
+                "url": f"/static/wallpapers/{_os.path.basename(f)}",
+                "source": "local",
+            })
+    return jsonify({
+        "success": True,
+        "wallpapers": [
+            {"id": "bing-daily", "name": "Bing 每日壁纸", "url": "/api/bing-wallpaper", "source": "bing"},
+        ] + local,
+    })
+
+
+@app.route("/api/bing-wallpaper")
+def bing_wallpaper():
+    """代理 Bing 每日壁纸，避免跨域"""
+    import urllib.request
+    try:
+        r = urllib.request.urlopen("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1", timeout=10)
+        data = json.loads(r.read())
+        img_url = "https://www.bing.com" + data["images"][0]["url"]
+        img_data = urllib.request.urlopen(img_url, timeout=15).read()
+        from flask import Response
+        return Response(img_data, mimetype="image/jpeg")
+    except Exception:
+        return jsonify({"error": "Bing 壁纸获取失败"}), 502
 
 
 # ---- Startup ----

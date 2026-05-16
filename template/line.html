@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>尺码表</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .size-table {
+    width: 100%;
+    max-width: 1200px;
+    border-collapse: separate;
+    border-spacing: 0;
+    position: relative; /* 必须保留 */
+  }
+
+  /* 表头下方的横向渐变线（不动） */
+  .size-table::after {
+    content: "";
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      #ccc 15%,
+      #ccc 85%,
+      transparent 100%
+    );
+  }
+
+  /* ✅ 整条贯通的竖向渐变线：只在表格顶端、底端渐变 */
+  .size-table::before {
+    content: "";
+    position: absolute;
+    left: 92px;      /* 第一列宽度，精准对齐 */
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #ccc 5%,
+      #ccc 95%,
+      transparent 100%
+    );
+    z-index: 1;
+  }
+
+  .size-table th,
+  .size-table td {
+    padding: 20px 16px;
+    text-align: center;
+    font-size: 16px;
+    position: relative;
+    font-weight: 400;
+  }
+
+  /* 表头字体和第一列内容字体稍突出 */
+  .size-table th {
+    font-weight: 500;
+  }
+
+  .size-table td:first-child {
+    font-weight: 500;
+  }
+</style>
+</head>
+
+<body>
+<table class="size-table">
+<thead>
+  <tr>
+    <th>尺码</th>
+    <th>腰围</th>
+    <th>臀围</th>
+    <th>大腿围</th>
+    <th>脚围</th>
+    <th>常规裤长</th>
+    <th>加长裤长</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>XS</td>
+    <td>59</td>
+    <td>82</td>
+    <td>50</td>
+    <td>61.5</td>
+    <td>98</td>
+    <td>103</td>
+  </tr>
+  <tr>
+    <td>S</td>
+    <td>67</td>
+    <td>86</td>
+    <td>52</td>
+    <td>63</td>
+    <td>99</td>
+    <td>104</td>
+  </tr>
+  <tr>
+    <td>M</td>
+    <td>71</td>
+    <td>90</td>
+    <td>54</td>
+    <td>64.5</td>
+    <td>100</td>
+    <td>105</td>
+  </tr>
+  <tr>
+    <td>L</td>
+    <td>75</td>
+    <td>94</td>
+    <td>56</td>
+    <td>66</td>
+    <td>101</td>
+    <td>106</td>
+  </tr>
+</tbody>
+</table>
+</body>
+</html>

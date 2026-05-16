@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>尺码表 Size Chart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #EAE7E2; /* 浅米色背景，匹配原图风格 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .size-chart-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: transparent;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: 500;
+            color: #2D2D2D;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .title span {
+            font-size: 24px;
+            font-weight: 400;
+            margin-left: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th {
+            background-color: #B8A99A; /* 表头浅棕色 */
+            color: #FFFFFF;
+            font-weight: 600;
+            padding: 16px 12px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        th:first-child {
+            border-top-left-radius: 12px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 12px;
+        }
+
+        td {
+            background-color: rgba(255, 255, 255, 0.3); /* 半透明白色单元格背景 */
+            color: #2D2D2D;
+            padding: 16px 12px;
+            text-align: center;
+            font-size: 16px;
+            border-bottom: 1px solid rgba(184, 169, 154, 0.2);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) td {
+            background-color: rgba(240, 237, 232, 0.5); /* 浅米色交替行 */
+        }
+
+        .tips {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666666;
+            line-height: 1.6;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 28px;
+            }
+            .title span {
+                font-size: 18px;
+            }
+            th, td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="size-chart-container">
+        <h1 class="title">Size chart <span>/ 尺码</span></h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>尺码<br>(CM)</th>
+                    <th>腰围</th>
+                    <th>臀围</th>
+                    <th>大腿围</th>
+                    <th>脚围</th>
+                    <th>裤长<br>(常规)</th>
+                    <th>裤长<br>(高个子)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>25</td>
+                    <td>64</td>
+                    <td>94.5</td>
+                    <td>62.7</td>
+                    <td>48.5</td>
+                    <td>98</td>
+                    <td>103</td>
+                </tr>
+                <tr>
+                    <td>26</td>
+                    <td>66.5</td>
+                    <td>97</td>
+                    <td>64.0</td>
+                    <td>49.5</td>
+                    <td>99</td>
+                    <td>104</td>
+                </tr>
+                <tr>
+                    <td>27</td>
+                    <td>69</td>
+                    <td>99.5</td>
+                    <td>65.3</td>
+                    <td>50.5</td>
+                    <td>100</td>
+                    <td>105</td>
+                </tr>
+                <tr>
+                    <td>28</td>
+                    <td>71.5</td>
+                    <td>102</td>
+                    <td>66.5</td>
+                    <td>51.5</td>
+                    <td>101</td>
+                    <td>106</td>
+                </tr>
+                <tr>
+                    <td>29</td>
+                    <td>74</td>
+                    <td>104.5</td>
+                    <td>67.8</td>
+                    <td>52.5</td>
+                    <td>102</td>
+                    <td>107</td>
+                </tr>
+                <tr>
+                    <td>30</td>
+                    <td>76.5</td>
+                    <td>107</td>
+                    <td>69.1</td>
+                    <td>53.5</td>
+                    <td>102.5</td>
+                    <td>107.5</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="tips">Tips: 手工测量，可能存在1~2厘米的误差，属于正常范围，非质量问题。</p>
+    </div>
+</body>
+</html>
