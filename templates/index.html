@@ -224,6 +224,10 @@ th.drag-over { border-left:3px solid var(--primary); }
 th.dragging { opacity:.4; }
 th .resize-handle { position:absolute; right:0; top:0; bottom:0; width:6px; cursor:col-resize; z-index:2; }
 th .resize-handle:hover { background:var(--primary); }
+th .col-del-btn { padding:2px 8px; font-size:11px; line-height:1.4; border-radius:4px; }
+.col-del-row th { background:transparent; border:none; position:sticky; top:0; z-index:2; }
+.col-del-cell { text-align:center; }
+th.col-header { top:26px; }
 td { background:rgba(255,255,255,.45); }
 td[contenteditable] { outline:2px solid transparent; cursor:text; transition:outline .15s; }
 td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb; }
@@ -480,7 +484,6 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
       <button class="btn btn-outline" id="copyTableBtn">&#128203; 复制表格</button>
       <button class="btn btn-outline" id="addRowBtn">+ 添加行</button>
       <button class="btn btn-outline" id="addColBtn">+ 添加列</button>
-      <button class="btn btn-outline btn-sm" id="delColBtn" style="color:var(--danger);border-color:var(--danger);" title="点击后选择要删除的列">删除列</button>
     </div>
     <details style="margin-top:12px;font-size:12px;color:var(--text2);" id="rawDetails">
       <summary style="cursor:pointer;">查看 AI 原始返回（调试用）</summary>
@@ -657,7 +660,6 @@ function bindEvents() {
   document.getElementById('copyTableBtn').addEventListener('click', copyTable);
   document.getElementById('addRowBtn').addEventListener('click', addRow);
   document.getElementById('addColBtn').addEventListener('click', addCol);
-  document.getElementById('delColBtn').addEventListener('click', deleteCol);
 
   // API Key
   document.getElementById('saveKeyBtn').addEventListener('click', saveApiKey);
@@ -861,21 +863,28 @@ function renderTable(data) {
 
   const colW = document.getElementById('colWidthInput').value || 80;
   const { headers, rows } = data;
-  let html = '<table id="resultTable"><thead><tr>';
+  let html = '<table id="resultTable"><thead>';
+  // Column delete button row
+  html += '<tr class="col-del-row">';
   headers.forEach((h, i) => {
-    html += `<th draggable="true" data-col="${i}" class="col-header" style="width:${colW}px;min-width:${colW}px;">${esc(h)}<span class="resize-handle" data-col="${i}"></span></th>`;
+    html += `<th class="col-del-cell" style="width:${colW}px;min-width:${colW}px;padding:2px;"><button class="btn btn-danger btn-sm col-del-btn" data-delcol="${i}" title="删除此列">&times;</button></th>`;
+  });
+  html += '<th class="col-del-cell" style="width:60px;min-width:60px;padding:2px;"></th>';
+  html += '</tr>';
+  // Header row
+  html += '<tr>';
+  headers.forEach((h, i) => {
+    html += `<th draggable="true" data-col="${i}" data-header="${esc(h)}" class="col-header" style="width:${colW}px;min-width:${colW}px;"><span class="col-label" contenteditable="false">${esc(h)}</span><span class="resize-handle" data-col="${i}"></span></th>`;
   });
   html += '<th style="width:60px;min-width:60px;cursor:default;" data-col="actions">操作</th>';
   html += '</tr></thead><tbody>';
 
   rows.forEach((row, ri) => {
     html += '<tr>';
-    row.forEach((cell, ci) => {
+    for (let ci = 0; ci < headers.length; ci++) {
+      const cell = ci < row.length ? row[ci] : null;
       const val = cell !== null && cell !== undefined ? esc(String(cell)) : '';
       html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}">${val}</td>`;
-    });
-    for (let ci = row.length; ci < headers.length; ci++) {
-      html += `<td contenteditable="true" data-row="${ri}" data-col="${ci}"></td>`;
     }
     html += `<td><div class="row-actions"><button class="btn btn-danger btn-sm" data-delrow="${ri}" title="删除此行">&times;</button></div></td>`;
     html += '</tr>';
@@ -921,6 +930,7 @@ function renderTable(data) {
           }
         });
         renderTable(resultData);
+        refreshPreview();
       }
     });
   });
@@ -962,7 +972,28 @@ function renderTable(data) {
       const ri = parseInt(btn.dataset.delrow);
       resultData.rows.splice(ri, 1);
       renderTable(resultData);
+      refreshPreview();
       toast('已删除行', 'info');
+    });
+  });
+
+  // Bind column delete
+  wrap.querySelectorAll('[data-delcol]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const ci = parseInt(btn.dataset.delcol);
+      if (resultData.headers.length <= 1) {
+        toast('至少保留一列', 'error');
+        return;
+      }
+      resultData.headers.splice(ci, 1);
+      resultData.rows.forEach(row => {
+        row.splice(ci, 1);
+        if (row.length > resultData.headers.length) row.length = resultData.headers.length;
+      });
+      renderTable(resultData);
+      refreshPreview();
+      toast('已删除列', 'info');
     });
   });
 
@@ -972,20 +1003,22 @@ function renderTable(data) {
   });
 
   // Bind header edits (double-click to edit name)
-  wrap.querySelectorAll('th.col-header').forEach(th => {
-    th.addEventListener('dblclick', () => {
-      th.contentEditable = 'true';
-      th.focus();
+  wrap.querySelectorAll('th.col-header .col-label').forEach(label => {
+    label.addEventListener('dblclick', () => {
+      label.contentEditable = 'true';
+      label.focus();
     });
-    th.addEventListener('blur', () => {
-      th.contentEditable = 'false';
+    label.addEventListener('blur', () => {
+      label.contentEditable = 'false';
+      const th = label.closest('th');
+      if (th) th.dataset.header = label.textContent.trim();
       syncTableFromUI();
     });
   });
 }
 
 function applyColWidth(w) {
-  document.querySelectorAll('th.col-header').forEach(th => {
+  document.querySelectorAll('th.col-header, th.col-del-cell').forEach(th => {
     th.style.width = w + 'px';
     th.style.minWidth = w + 'px';
   });
@@ -995,7 +1028,8 @@ function syncTableFromUI() {
   if (!resultData) return;
   const headers = [];
   document.querySelectorAll('th.col-header').forEach(th => {
-    headers.push(th.textContent.trim());
+    const label = th.querySelector('.col-label');
+    headers.push(label ? label.textContent.trim() : (th.dataset.header || ''));
   });
   resultData.headers = headers;
 
@@ -1017,6 +1051,7 @@ function addRow() {
   const newRow = resultData.headers.map(() => '');
   resultData.rows.push(newRow);
   renderTable(resultData);
+  refreshPreview();
   toast('已添加空行', 'info');
 }
 
@@ -1027,18 +1062,24 @@ function addCol() {
   resultData.headers.push(name);
   resultData.rows.forEach(row => row.push(''));
   renderTable(resultData);
+  refreshPreview();
   toast(`已添加列: ${name}`, 'info');
 }
 
-function deleteCol() {
-  if (!resultData) return;
+// ======== Preview sync ========
+function refreshPreview() {
+  if (!selectedTemplate || !resultData) return;
   syncTableFromUI();
-  const idx = parseInt(prompt(`输入要删除的列序号（1-${resultData.headers.length}）：\n${resultData.headers.map((h,i)=>`${i+1}.${h}`).join(' ')}`));
-  if (isNaN(idx) || idx < 1 || idx > resultData.headers.length) return;
-  resultData.headers.splice(idx - 1, 1);
-  resultData.rows.forEach(row => row.splice(idx - 1, 1));
-  renderTable(resultData);
-  toast(`已删除列`, 'info');
+  fetch('/api/apply-template', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ template: selectedTemplate, data: resultData })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      filledHtml = d.html;
+      document.getElementById('stylePreview').srcdoc = d.html;
+    }
+  }).catch(e => console.error('refreshPreview:', e));
 }
 
 // ======== Export ========

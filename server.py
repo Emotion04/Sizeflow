@@ -16,7 +16,7 @@ from config import (
     current_model, current_mappings, _api_key,
     set_api_key, persist,
 )
-from vision import call_ocr_vision, extract_json, format_numbers, save_base64_image, call_qwen
+from vision import call_ocr_vision, extract_json, format_numbers, normalize_headers, save_base64_image, call_qwen
 from stylegen import generate_table_style, generate_table_from_image
 from updater import check_update
 
@@ -61,6 +61,7 @@ def analyze():
         raw_text = call_ocr_vision(image_path, mappings, model)
         result = extract_json(raw_text)
         format_numbers(result)
+        result = normalize_headers(result, mappings)
 
         return jsonify({
             "success": True,

@@ -8,23 +8,6 @@ from playwright.async_api import async_playwright
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "template")
 
-# 列名模糊匹配映射（模板列名 → OCR 输出列名）
-HEADER_ALIAS = {
-    "尺码(CM)": "尺码",
-    "尺码/cm": "尺码",
-    "腰围": "腰围",
-    "臀围": "臀围",
-    "大腿围": "大腿围",
-    "脚围": "脚围",
-    "裤长(常规)": "常规裤长",
-    "常规裤长": "常规裤长",
-    "裤长(高个子)": "加长裤长",
-    "裤长(加长)": "加长裤长",
-    "加长裤长": "加长裤长",
-    "裤长(小个子)": "小个子裤长",
-}
-
-
 def list_templates():
     """列出所有模板"""
     result = []
@@ -51,47 +34,47 @@ def parse_template_headers(html):
 
 
 def fill_template(html, table_data):
-    """将 OCR 数据填入模板 HTML，替换 tbody 内容"""
+    """将 OCR 数据填入模板 HTML，动态生成 thead 和 tbody"""
     headers = table_data.get("headers", [])
     rows = table_data.get("rows", [])
 
+    if not headers:
+        return html
+
     soup = BeautifulSoup(html, "html.parser")
 
-    # 解析模板表头
-    tpl_headers = parse_template_headers(html)
-    if not tpl_headers:
-        return html  # 无法解析，返回原样
-
-    # 建立 OCR 列 → 模板列索引的映射
-    col_map = {}  # ocr_col_index → tpl_col_index
-    for ti, th_text in enumerate(tpl_headers):
-        matched = HEADER_ALIAS.get(th_text, th_text)
-        for oi, oh in enumerate(headers):
-            if oh == matched:
-                col_map[oi] = ti
-                break
-
-    # 重建 tbody
-    tbody = soup.find("tbody")
-    if not tbody:
+    table = soup.find("table")
+    if not table:
         return html
+
+    # 重建 thead：只包含数据中实际有的列
+    thead = table.find("thead")
+    if thead:
+        thead.clear()
+        tr = soup.new_tag("tr")
+        for h in headers:
+            th = soup.new_tag("th")
+            # 如果第一列是"尺码"，保留模板里第一列的原始格式（如尺码(CM)）
+            th.string = str(h)
+            tr.append(th)
+        thead.append(tr)
+
+    # 重建 tbody：只输出数据中实际有的列
+    tbody = table.find("tbody")
+    if not tbody:
+        tbody = soup.new_tag("tbody")
+        table.append(tbody)
     tbody.clear()
 
     for row in rows:
         tr = soup.new_tag("tr")
-        for ti in range(len(tpl_headers)):
+        for ci in range(len(headers)):
             td = soup.new_tag("td")
-            # 查找这个模板列对应的 OCR 数据
-            data_val = ""
-            for oi, ti_mapped in col_map.items():
-                if ti_mapped == ti:
-                    data_val = row[oi] if oi < len(row) and row[oi] is not None else ""
-                    break
-            td.string = str(data_val)
+            val = row[ci] if ci < len(row) and row[ci] is not None else ""
+            td.string = str(val)
             tr.append(td)
         tbody.append(tr)
 
-    # 保留所有 <style> 和原有结构
     return str(soup)
 
 

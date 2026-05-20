@@ -1,13 +1,14 @@
 """Prompt 构建 —— 两步式 OCR 表格提取"""
 
-from config import OUTPUT_HEADERS
+from config import get_output_headers
 
 
 def build_ocr_prompt(mappings):
     factory_keys = list(mappings.keys())
     mapping_lines = "\n".join([f'  "{k}" → "{v}"' for k, v in mappings.items()])
     keys_list = "、".join([f'"{k}"' for k in factory_keys])
-    headers_str = ", ".join(['"尺码"'] + [f'"{h}"' for h in OUTPUT_HEADERS])
+    output_headers = get_output_headers(mappings)
+    headers_str = ", ".join(['"尺码"'] + [f'"{h}"' for h in output_headers])
 
     return f"""你是一台精确的表格OCR机器。你必须分两步完成任务，绝不跳过任何一步。
 
@@ -35,24 +36,30 @@ def build_ocr_prompt(mappings):
 ══════════════════════════════════════
 第二步：匹配映射并输出JSON
 ══════════════════════════════════════
-现在，从上一步抄写的结果中，只提取包含以下工厂名称的行：
+从第一步抄写结果中，找出工厂名称与以下列表匹配的行：
 {keys_list}
 
-按下面映射关系重命名：
+按映射关系重命名后输出：
 {mapping_lines}
-
-重要：最终输出的JSON必须在 headers 中包含这些字段：{headers_str}
-（即 headers 第一项固定"尺码"，后面必须依次包含 {", ".join(OUTPUT_HEADERS)}，一个不能少）
 
 最终输出严格JSON（不要markdown标记）：
 {{"headers":[{headers_str}],"rows":[["26","68","94","52","50","98","102"],...]}}
 
 要求：
-- headers 必须包含上述全部字段，顺序固定，不可省略任何列
-- 如果某个字段在抄写结果中完全找不到对应数据，该列所有行的值填 null（列本身必须保留）
-- rows 每个数组第一项是尺码代号（如26/27/28或S/M/L），后面依次是各部位数值
+- headers 必须包含上述全部字段，顺序也按上述顺序，一个不能少
+- rows 每个数组的第一项是尺码代号，后面依次对应每个 header 的数值
 - 数值用字符串类型
-- 只输出JSON，不要别的"""
+- 只输出JSON，不要别的
+
+【最重要规则 —— 缺失数据直接填 null】
+对于每个映射字段，去第一步抄写结果中查找对应的工厂名称：
+- 找到了 → 填入该行对应的数值
+- 找不到 → 该列全部填 null，绝！不！能！从其他行搬运数据来填充
+- 例如抄写结果里有"外长连腰B"但没有"外长连腰C"，那"高个子裤长"列填实际数据，"常规裤长"列全填 null
+- null 不是 0，不是空字符串，就是 null"""
 
 
-OCR_SYSTEM_MESSAGE = f"你是一台精确的表格OCR机器。你的唯一任务是：只读取图片中最上方的主尺码表，忽略下方的大货洗后尺寸表等任何副表。逐行抄写后只提取映射关系中指定的字段，清洗无关部位。整数不要保留小数点，有小数点的保留一位。最终JSON的headers必须包含：尺码、{', '.join(OUTPUT_HEADERS)}。找不到数据的列填null，绝不删除列。绝不编造数据，绝不修改数值。"
+def build_ocr_system_message(mappings):
+    output_headers = get_output_headers(mappings)
+    headers_list_str = "、".join(output_headers)
+    return f"你是一台精确的表格OCR机器。你的唯一任务是：只读取图片中最上方的主尺码表，忽略下方的任何副表。逐行抄写后提取映射关系中指定的字段，输出全部映射列。找不到对应工厂名称的列填 null，绝不允许从其他行搬运数据冒充。整数不要保留小数点。绝不编造数据，绝不修改数值。"
