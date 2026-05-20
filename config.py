@@ -62,7 +62,7 @@ TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))
 
 # ---- 字段映射 ----
 DEFAULT_MAPPINGS = {
-    "腰围": "腰围",
+    "腰围（拉平量）": "腰围",
     "脚围": "脚围",
     "座围": "臀围",
     "脾围": "大腿围",

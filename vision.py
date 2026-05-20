@@ -1,4 +1,4 @@
-"""DashScope Qwen 多模态 API 调用 — 两步式：先转录再映射"""
+"""DashScope Qwen 多模态 API 调用 —— AI纯转录，服务器端映射"""
 
 import re
 import json
@@ -58,24 +58,23 @@ def call_qwen(messages, model="qwen3-vl-plus", temperature=None):
     return text
 
 
-def call_transcribe_image(image_path, model):
-    """第一步：看图纯转录（不涉及映射），返回原始抄写文本"""
-    prompt = """你是一台精确的表格转录机器。请逐行抄写图片中最上方的主尺码表。
+def call_ocr_vision(image_path, mappings, model):
+    """AI 只做纯转录，返回原始文本"""
+    prompt = """逐行抄写图片中最上方那张尺码表的数据。表格上方可能有合并单元格的标题行，跳过标题行，只抄表格内容。
+严格忽略下方任何附属表格（洗前、洗后、成衣等副表一概不要）。
 
-图片中是一张服装尺码表。表格结构：最左侧列是"部位名称"，顶部行是"尺码代号"。
-严格忽略下方的"洗前尺寸表"、"洗后尺寸表"、"成衣尺寸表"等任何副表，只读最上方的主表。
-
-每行格式：部位名称 | 数值1 | 数值2 | 数值3 | ...
-
-例如：
-  腰围 | 68 | 72 | 76 | 80 | 84
-  座围 | 94 | 98 | 102 | 106 | 110
-  外长连腰A | 98 | 99 | 100 | 101 | 102
+输出格式（每行用"|"分隔，第一行必须是尺码代号）：
+尺码 | 26 | 27 | 28 | 29 | 30
+腰围 | 68 | 72 | 76 | 80 | 84
+座围 | 94 | 98 | 102 | 106 | 110
+外长连腰A | 98 | 99 | 100 | 101 | 102
+...
 
 规则：
-- 只抄最上方的主尺码表
+- 第一行必须是尺码代号（如26/27/28或S/M/L），以"尺码 |"开头
+- 部位名称原样抄写（包括括号、字母等，不要省略）
 - 数值原样抄写，不要增减小数点
-- 看不清用"?"
+- 看不清填"?"
 - 只输出抄写文本，不要JSON，不要解释"""
 
     messages = [
@@ -88,76 +87,118 @@ def call_transcribe_image(image_path, model):
         }
     ]
 
-    print(f"[STEP1-转录] model={model}, path={image_path}")
+    print(f"[OCR-转录] model={model}")
     text = call_qwen(messages, model=model)
-    print(f"[STEP1-转录] len={len(text)}, preview={text[:400]}")
+    print(f"[OCR-转录] result:\n{text[:600]}")
     return text
 
 
-def call_map_transcription(transcription, mappings):
-    """第二步：纯文本映射（不看图），将抄写文本转为结构化 JSON"""
-    factory_keys = list(mappings.keys())
-    mapping_lines = "\n".join([f'  "{k}" → "{v}"' for k, v in mappings.items()])
-    keys_list = "、".join([f'"{k}"' for k in factory_keys])
+def _normalize_name(s):
+    """标准化工厂名称，返回多个候选名以支持模糊匹配"""
+    s = s.replace("（", "(").replace("）", ")")
+    s = re.sub(r"\s+", "", s)
+    candidates = [s]
+    # 策略A：只去括号保留内容 "外长连腰(C)" → "外长连腰C"
+    bare = s.replace("(", "").replace(")", "")
+    if bare != s:
+        candidates.append(bare)
+    # 策略B：去括号及内容 "腰围（拉平量）" → "腰围"
+    stripped = re.sub(r"\([^)]*\)", "", s)
+    if stripped and stripped != s and stripped not in candidates:
+        candidates.append(stripped)
+    return candidates
+
+
+def parse_transcription(text, mappings):
+    """服务器端解析转录文本，确定性匹配工厂名称 → 输出JSON"""
+    lines = text.strip().split("\n")
+    factory_rows = {}  # factory_name → [values]
+    size_codes = []
+
+    # 建立映射表的标准化查找：候选名 → (original_key, output_name)
+    norm_map = {}
+    for fk, ov in mappings.items():
+        for nk in _normalize_name(fk):
+            norm_map[nk] = (fk, ov)
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) < 2:
+            continue
+        name, values = parts[0], parts[1:]
+        # 尝试所有候选名匹配
+        matched = False
+        for nn in _normalize_name(name):
+            if nn == "尺码":
+                size_codes = values
+                matched = True
+                break
+            if nn in norm_map:
+                orig_key, _ = norm_map[nn]
+                factory_rows[orig_key] = values
+                matched = True
+                break
+        # 兜底：规范化后子串匹配（如"腰围拉平量"包含"腰围"）
+        if not matched and name != "尺码":
+            for nn in _normalize_name(name):
+                if matched:
+                    break
+                for nk, (orig_key, _) in norm_map.items():
+                    if nk in nn or nn in nk:
+                        factory_rows[orig_key] = values
+                        matched = True
+                        break
+        if not matched and name != "尺码":
+            factory_rows[name] = values
+
+    if not size_codes:
+        print("[parse] WARNING: 未找到尺码行，尝试从其他行推断")
+        # 取最长的一行值作为尺码
+        if factory_rows:
+            longest = max(factory_rows.values(), key=len)
+            size_codes = longest
+
+    # 构建输出
     output_headers = get_output_headers(mappings)
-    headers_str = ", ".join(['"尺码"'] + [f'"{h}"' for h in output_headers])
+    headers = ["尺码"] + [h for h in output_headers]
+    print(f"[parse] 输出表头: {headers}")
+    print(f"[parse] 找到工厂行: {list(factory_rows.keys())}")
 
-    prompt = f"""以下是一张服装尺码表的逐行抄写文本：
+    # 找到实际存在数据的列索引，按顺序排列
+    present_cols = {}  # output_name → factory_name
+    for fname, oname in mappings.items():
+        if fname in factory_rows:
+            present_cols[oname] = fname
 
-```
-{transcription}
-```
+    # 为每个尺码构建一行
+    num_sizes = len(size_codes)
+    rows = []
+    for si in range(num_sizes):
+        row = [size_codes[si] if si < len(size_codes) else "/"]
+        for oname in output_headers:
+            if oname in present_cols:
+                fname = present_cols[oname]
+                vals = factory_rows[fname]
+                row.append(vals[si] if si < len(vals) and vals[si] not in ("", "?", "？") else "/")
+            else:
+                row.append("/")
+        rows.append(row)
 
-请从抄写文本中，找出与以下工厂名称匹配的行：
-{keys_list}
+    print(f"[parse] 实际数据列: {list(present_cols.keys())}")
+    print(f"[parse] 缺失列(填/): {[h for h in output_headers if h not in present_cols]}")
+    print(f"[parse] 首行: {rows[0] if rows else 'N/A'}")
 
-按映射关系重命名：
-{mapping_lines}
-
-输出严格JSON（不要markdown标记）：
-{{"headers":[{headers_str}],"rows":[["26","68","94","52","50","98","102"],...]}}
-
-规则：
-- headers 必须包含上述全部字段，顺序一致，一个不能少
-- 对于每个映射字段，去抄写文本中查找对应工厂名称：
-  * 找到了 → 填入数值
-  * 找不到 → 整列填 null
-- 绝！不！能！用其他行的数据来填充缺失列
-- 绝！不！能！自己编造数字
-- rows 第一项是尺码代号，后面依次对应每个 header 的数值
-- 数值用字符串类型
-- 只输出JSON"""
-
-    messages = [
-        {
-            "role": "user",
-            "content": [{"text": prompt}],
-        }
-    ]
-
-    print(f"[STEP2-映射] factory keys: {factory_keys}")
-    # Use text-only model for mapping (no vision needed)
-    text = call_qwen(messages, model="qwen3.5-flash")
-    print(f"[STEP2-映射] len={len(text)}, preview={text[:400]}")
-    return text
-
-
-def call_ocr_vision(image_path, mappings, model):
-    """两步式 OCR：先转录后映射，杜绝视觉数据串扰"""
-    # 第一步：看图转录
-    transcription = call_transcribe_image(image_path, model)
-
-    # 第二步：纯文本映射（不看图，只看转录文字）
-    result_text = call_map_transcription(transcription, mappings)
-
-    return result_text
+    return {"headers": headers, "rows": rows}
 
 
 def format_numbers(data):
     """清理数值格式：整数去掉小数点，小数保留一位"""
     for row in data.get("rows", []):
         for i, cell in enumerate(row):
-            if cell is not None and isinstance(cell, str):
+            if cell is not None and isinstance(cell, str) and cell != "/":
                 try:
                     num = float(cell)
                     if num == int(num):
@@ -168,62 +209,19 @@ def format_numbers(data):
                     pass
 
 
-def normalize_headers(result, mappings):
-    """补全缺失的映射列，填 '/' 示意无数据"""
-    expected = get_output_headers(mappings)
-    headers = [str(h).strip() for h in result.get("headers", [])]
-    rows = result.get("rows", [])
-
-    print(f"[normalize] AI headers: {headers}")
-    print(f"[normalize] expected  : {expected}")
-
-    if not headers:
-        return result
-
-    # 剥离可能的前缀"尺码"（AI可能把"尺码"放在第一列）
-    data_headers = headers[1:] if headers[0] in ("尺码", "尺码(CM)", "尺码/cm") else headers
-
-    # 新表头：尺码 + 所有映射字段
-    new_headers = ["尺码"] + [h for h in expected]
-    new_rows = []
-
-    for old_row in rows:
-        new_row = ["/"] * len(new_headers)
-        # 尺码列
-        size_val = old_row[0] if old_row and old_row[0] is not None else "/"
-        if headers[0] in ("尺码", "尺码(CM)", "尺码/cm"):
-            new_row[0] = str(size_val)
-        # 按名称匹配其余列
-        for ei, eh in enumerate(expected):
-            if eh in data_headers:
-                oi = data_headers.index(eh)
-                real_oi = oi + 1 if headers[0] in ("尺码", "尺码(CM)", "尺码/cm") else oi
-                if real_oi < len(old_row) and old_row[real_oi] is not None and str(old_row[real_oi]).strip() not in ("", "null", "None"):
-                    new_row[ei + 1] = str(old_row[real_oi])
-        new_rows.append(new_row)
-
-    result["headers"] = new_headers
-    result["rows"] = new_rows
-    print(f"[normalize] result headers: {new_headers}")
-    print(f"[normalize] result row[0] : {new_rows[0] if new_rows else 'N/A'}")
-    return result
-
-
 def extract_json(text):
+    """extract_json 保留兼容旧路径，新流程不使用"""
     text = text.strip()
     text = re.sub(r"```(?:json)?\s*\n?", "", text)
     text = re.sub(r"```\s*", "", text)
-
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-
     match = re.search(r"\{[\s\S]*\}", text)
     if match:
         try:
             return json.loads(match.group())
         except json.JSONDecodeError:
             pass
-
     raise ValueError(f"无法从模型回复中提取 JSON，原始回复前500字：{text[:500]}")
