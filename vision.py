@@ -167,6 +167,17 @@ def parse_transcription(text, mappings):
     print(f"[parse] 输出表头: {headers}")
     print(f"[parse] 找到工厂行: {list(factory_rows.keys())}")
 
+    # 对齐：数据行可能比尺码行多出前导列（如公差列），自动切除
+    num_sizes = len(size_codes)
+    aligned_rows = {}  # factory_name → trimmed values
+    for fname, vals in factory_rows.items():
+        if len(vals) > num_sizes:
+            trim = len(vals) - num_sizes
+            aligned_rows[fname] = vals[trim:]
+            print(f"[parse] 对齐切除: {fname} 前{trim}列 → {aligned_rows[fname]}")
+        else:
+            aligned_rows[fname] = vals
+
     # 找到实际存在数据的列索引，按顺序排列
     present_cols = {}  # output_name → factory_name
     for fname, oname in mappings.items():
@@ -174,18 +185,26 @@ def parse_transcription(text, mappings):
             present_cols[oname] = fname
 
     # 为每个尺码构建一行
-    num_sizes = len(size_codes)
     rows = []
     for si in range(num_sizes):
         row = [size_codes[si] if si < len(size_codes) else "/"]
         for oname in output_headers:
             if oname in present_cols:
                 fname = present_cols[oname]
-                vals = factory_rows[fname]
+                vals = aligned_rows.get(fname, factory_rows[fname])
                 row.append(vals[si] if si < len(vals) and vals[si] not in ("", "?", "？") else "/")
             else:
                 row.append("/")
         rows.append(row)
+
+    # 清理尺码列 .00 后缀
+    for row in rows:
+        try:
+            n = float(row[0])
+            if n == int(n):
+                row[0] = str(int(n))
+        except (ValueError, TypeError):
+            pass
 
     print(f"[parse] 实际数据列: {list(present_cols.keys())}")
     print(f"[parse] 缺失列(填/): {[h for h in output_headers if h not in present_cols]}")
@@ -195,18 +214,19 @@ def parse_transcription(text, mappings):
 
 
 def format_numbers(data):
-    """清理数值格式：整数去掉小数点，小数保留一位"""
+    """清理数值格式：整数去掉小数点，小数保留一位（跳过第一列尺码）"""
     for row in data.get("rows", []):
         for i, cell in enumerate(row):
-            if cell is not None and isinstance(cell, str) and cell != "/":
-                try:
-                    num = float(cell)
-                    if num == int(num):
-                        row[i] = str(int(num))
-                    else:
-                        row[i] = f"{num:.1f}"
-                except (ValueError, TypeError):
-                    pass
+            if i == 0 or cell is None or not isinstance(cell, str) or cell == "/":
+                continue
+            try:
+                num = float(cell)
+                if num == int(num):
+                    row[i] = str(int(num))
+                else:
+                    row[i] = f"{num:.1f}"
+            except (ValueError, TypeError):
+                pass
 
 
 def extract_json(text):
