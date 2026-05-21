@@ -347,9 +347,22 @@ def list_wallpapers():
     })
 
 
+@app.route("/api/bing-wallpaper-url")
+def bing_wallpaper_url():
+    """获取 Bing 每日壁纸直链（轻量，只返回URL）"""
+    import urllib.request
+    try:
+        r = urllib.request.urlopen("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1", timeout=8)
+        data = json.loads(r.read())
+        img_url = "https://www.bing.com" + data["images"][0]["url"]
+        return jsonify({"success": True, "url": img_url})
+    except Exception:
+        return jsonify({"success": False}), 502
+
+
 @app.route("/api/bing-wallpaper")
 def bing_wallpaper():
-    """代理 Bing 每日壁纸，避免跨域"""
+    """代理 Bing 每日壁纸图片数据（壁纸面板预览用）"""
     import urllib.request
     try:
         r = urllib.request.urlopen("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1", timeout=10)

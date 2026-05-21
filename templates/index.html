@@ -522,9 +522,15 @@ let currentModel = 'qwen3.6-plus';
 // ======== Init ========
 async function init() {
   await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate()]);
-  // 恢复上次壁纸
+  // 恢复上次壁纸，没有则默认Bing每日壁纸
   const wp = loadWallpaper();
-  if (wp) applyWallpaper(wp.url);
+  if (wp) {
+    applyWallpaper(wp.url);
+  } else {
+    fetch('/api/bing-wallpaper-url').then(r => r.json()).then(d => {
+      if (d.url) applyWallpaper(d.url);
+    }).catch(() => {});
+  }
   bindEvents();
 }
 
@@ -1408,7 +1414,7 @@ function startEasterEggTimer() {
   _easterTimer = setInterval(() => {
     const realSec = (Date.now() - _easterStart) / 1000;
     // 前2秒正常，之后指数加速
-    if (realSec > 2) _easterMultiplier = Math.pow(realSec - 1, 16);
+    if (realSec > 2) _easterMultiplier = Math.pow(realSec - 1, 5);
     const fakeSec = Math.floor(realSec * Math.max(1, _easterMultiplier));
     if (fakeSec < 60) {
       el.textContent = '(已耗时: ' + fakeSec + ' 秒)';
