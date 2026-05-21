@@ -83,8 +83,8 @@ async def render_html_to_png(html):
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         page = await browser.new_page(viewport={"width": 1200, "height": 900})
-        await page.set_content(html, wait_until="networkidle")
-        await page.wait_for_timeout(300)
+        await page.set_content(html, wait_until="load")
+        await page.wait_for_timeout(200)
         container = await page.query_selector(".size-chart-container, .size-table, table")
         if not container:
             container = await page.query_selector("body")
