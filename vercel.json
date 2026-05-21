@@ -1,4 +1,5 @@
 {
+  "buildCommand": "playwright install chromium",
   "builds": [
     {
       "src": "api/index.py",
@@ -6,6 +7,14 @@
     }
   ],
   "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/template/(.*)",
+      "dest": "/template/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "api/index.py"
