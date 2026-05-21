@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>尺码表转换工具</title>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
 :root {
   --bg: #e8ecf1;
@@ -1264,29 +1265,41 @@ async function selectTemplate(tplId) {
 async function exportPng() {
   if (!selectedTemplate || !resultData) return toast('请先选择模板', 'error');
   syncTableFromUI();
+  // 优先尝试服务端渲染（本地 Playwright）
   try {
     const r = await fetch('/api/render-template-png', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ template: selectedTemplate, data: resultData })
     });
-    if (!r.ok) {
-      try {
-        const err = await r.json();
-        toast('导出失败: ' + (err.error || r.statusText), 'error');
-      } catch {
-        toast('导出失败', 'error');
-      }
+    if (r.ok) {
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '尺码表_' + selectedTemplate.replace('.html', '') + '.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('PNG 已下载', 'success');
       return;
     }
-    const blob = await r.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '尺码表_' + selectedTemplate.replace('.html', '') + '.png';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast('PNG 已下载', 'success');
+  } catch (e) { /* 降级客户端渲染 */ }
+  // 客户端渲染（Vercel兜底）
+  try {
+    const iframe = document.getElementById('stylePreview');
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    const table = iframeDoc.querySelector('table');
+    if (!table) { toast('导出失败: 预览未加载', 'error'); return; }
+    const canvas = await html2canvas(table, { backgroundColor: '#ffffff', scale: 2 });
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '尺码表_' + selectedTemplate.replace('.html', '') + '.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('PNG 已下载', 'success');
+    }, 'image/png');
   } catch (e) {
     toast('导出失败: ' + e.message, 'error');
   }
