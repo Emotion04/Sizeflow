@@ -475,8 +475,8 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <span style="font-size:12px;color:var(--text2);">统一列宽：</span>
-      <input type="range" id="colWidthSlider" min="30" max="200" value="80" style="width:120px;cursor:pointer;">
-      <input type="number" id="colWidthInput" value="80" min="24" max="400" style="width:55px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="colWidthSlider" min="1" max="200" value="80" style="width:120px;cursor:pointer;">
+      <input type="number" id="colWidthInput" value="80" min="1" max="400" style="width:55px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
     </div>
     <div class="table-wrap" id="tableWrap"></div>
@@ -506,15 +506,15 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
     <!-- 导出列宽控制 -->
     <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:12px;color:var(--text2);">导出列宽：</span>
-      <input type="range" id="exportColWidthSlider" min="30" max="200" value="80" style="width:100px;cursor:pointer;">
-      <input type="number" id="exportColWidthInput" value="80" min="24" max="400" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="exportColWidthSlider" min="1" max="200" value="80" style="width:100px;cursor:pointer;">
+      <input type="number" id="exportColWidthInput" value="80" min="1" max="400" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <button class="btn btn-outline btn-sm" id="fineTuneBtn" title="逐列微调宽度">微调列宽 ▾</button>
     </div>
     <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:12px;color:var(--text2);">导出行高：</span>
-      <input type="range" id="exportRowHeightSlider" min="20" max="80" value="36" style="width:100px;cursor:pointer;">
-      <input type="number" id="exportRowHeightInput" value="36" min="16" max="200" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="exportRowHeightSlider" min="1" max="80" value="36" style="width:100px;cursor:pointer;">
+      <input type="number" id="exportRowHeightInput" value="36" min="1" max="200" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <button class="btn btn-outline btn-sm" id="fineTuneRowBtn" title="逐行微调高度">微调行高 ▾</button>
     </div>
@@ -1175,8 +1175,8 @@ function refreshFineTunePanel() {
     const w = exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth;
     html += `<div style="display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px;">
       <span style="width:70px;text-align:right;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(h)}">${esc(h)}</span>
-      <input type="range" min="24" max="300" value="${w}" data-col="${i}" class="fine-slider" style="flex:1;cursor:pointer;">
-      <input type="number" value="${w}" min="24" max="400" data-col="${i}" class="fine-input" style="width:45px;padding:1px 3px;border:1px solid var(--border);border-radius:4px;font-size:11px;text-align:center;">
+      <input type="range" min="1" max="300" value="${w}" data-col="${i}" class="fine-slider" style="flex:1;cursor:pointer;">
+      <input type="number" value="${w}" min="1" max="400" data-col="${i}" class="fine-input" style="width:45px;padding:1px 3px;border:1px solid var(--border);border-radius:4px;font-size:11px;text-align:center;">
       <span style="font-size:10px;color:var(--text2);width:16px;">px</span>
       <button class="btn btn-sm" data-reset="${i}" style="padding:1px 5px;font-size:10px;" title="重置此列">↺</button>
     </div>`;
@@ -1246,8 +1246,8 @@ function refreshFineTuneRowPanel() {
     const label = row[0] ? esc(String(row[0])) : ('行' + (ri + 1));
     html += `<div style="display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px;">
       <span style="width:60px;text-align:right;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${label}">${label}</span>
-      <input type="range" min="16" max="120" value="${h}" data-row="${ri}" class="fine-row-slider" style="flex:1;cursor:pointer;">
-      <input type="number" value="${h}" min="12" max="200" data-row="${ri}" class="fine-row-input" style="width:45px;padding:1px 3px;border:1px solid var(--border);border-radius:4px;font-size:11px;text-align:center;">
+      <input type="range" min="1" max="120" value="${h}" data-row="${ri}" class="fine-row-slider" style="flex:1;cursor:pointer;">
+      <input type="number" value="${h}" min="1" max="200" data-row="${ri}" class="fine-row-input" style="width:45px;padding:1px 3px;border:1px solid var(--border);border-radius:4px;font-size:11px;text-align:center;">
       <span style="font-size:10px;color:var(--text2);width:16px;">px</span>
       <button class="btn btn-sm" data-reset-row="${ri}" style="padding:1px 5px;font-size:10px;" title="重置此行">↺</button>
     </div>`;
