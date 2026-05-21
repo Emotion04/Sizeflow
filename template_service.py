@@ -33,10 +33,16 @@ def parse_template_headers(html):
     return [th.get_text(strip=True) for th in ths]
 
 
-def fill_template(html, table_data):
+def fill_template(html, table_data, col_widths=None, row_heights=None):
     """将 OCR 数据填入模板 HTML，动态生成 thead 和 tbody"""
     headers = table_data.get("headers", [])
     rows = table_data.get("rows", [])
+    if col_widths is None:
+        col_widths = {}
+    if row_heights is None:
+        row_heights = {}
+
+    default_row_h = row_heights.get("_default", 36)
 
     if not headers:
         return html
@@ -47,15 +53,19 @@ def fill_template(html, table_data):
     if not table:
         return html
 
+    # 全局默认列宽
+    default_w = col_widths.get("_default", 80)
+
     # 重建 thead：只包含数据中实际有的列
     thead = table.find("thead")
     if thead:
         thead.clear()
         tr = soup.new_tag("tr")
-        for h in headers:
+        for i, h in enumerate(headers):
             th = soup.new_tag("th")
-            # 如果第一列是"尺码"，保留模板里第一列的原始格式（如尺码(CM)）
             th.string = str(h)
+            w = col_widths.get(str(i), default_w)
+            th["style"] = f"width:{w}px;min-width:{w}px;"
             tr.append(th)
         thead.append(tr)
 
@@ -66,12 +76,15 @@ def fill_template(html, table_data):
         table.append(tbody)
     tbody.clear()
 
-    for row in rows:
+    for ri, row in enumerate(rows):
         tr = soup.new_tag("tr")
+        rh = row_heights.get(str(ri), default_row_h)
         for ci in range(len(headers)):
             td = soup.new_tag("td")
             val = row[ci] if ci < len(row) and row[ci] is not None else ""
             td.string = str(val)
+            w = col_widths.get(str(ci), default_w)
+            td["style"] = f"width:{w}px;min-width:{w}px;height:{rh}px;line-height:{rh}px;"
             tr.append(td)
         tbody.append(tr)
 

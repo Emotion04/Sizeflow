@@ -271,7 +271,9 @@ def apply_template():
         with open(tpl_path, "r", encoding="utf-8") as f:
             html = f.read()
 
-        filled_html = fill_template(html, table_data)
+        col_widths = data.get("colWidths", {})
+        row_heights = data.get("rowHeights", {})
+        filled_html = fill_template(html, table_data, col_widths, row_heights)
         return jsonify({"success": True, "html": filled_html})
     except Exception as e:
         traceback.print_exc()
@@ -299,7 +301,9 @@ def render_template_png():
         with open(tpl_path, "r", encoding="utf-8") as f:
             html = f.read()
 
-        filled_html = fill_template(html, table_data)
+        col_widths = data.get("colWidths", {})
+        row_heights = data.get("rowHeights", {})
+        filled_html = fill_template(html, table_data, col_widths, row_heights)
         png_bytes = render_png(filled_html)
 
         from flask import Response
