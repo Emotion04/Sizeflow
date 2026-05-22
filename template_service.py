@@ -33,7 +33,7 @@ def parse_template_headers(html):
     return [th.get_text(strip=True) for th in ths]
 
 
-def fill_template(html, table_data, col_widths=None, row_heights=None):
+def fill_template(html, table_data, col_widths=None, row_heights=None, header_height=None):
     """将 OCR 数据填入模板 HTML，动态生成 thead 和 tbody"""
     headers = table_data.get("headers", [])
     rows = table_data.get("rows", [])
@@ -41,6 +41,8 @@ def fill_template(html, table_data, col_widths=None, row_heights=None):
         col_widths = {}
     if row_heights is None:
         row_heights = {}
+    if header_height is None:
+        header_height = 36
 
     default_row_h = row_heights.get("_default", 36)
 
@@ -65,7 +67,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None):
             th = soup.new_tag("th")
             th.string = str(h)
             w = col_widths.get(str(i), default_w)
-            th["style"] = f"width:{w}px;min-width:{w}px;"
+            th["style"] = f"width:{w}px;min-width:{w}px;height:{header_height}px;line-height:{header_height}px;padding:2px 6px;"
             tr.append(th)
         thead.append(tr)
 
@@ -84,7 +86,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None):
             val = row[ci] if ci < len(row) and row[ci] is not None else ""
             td.string = str(val)
             w = col_widths.get(str(ci), default_w)
-            td["style"] = f"width:{w}px;min-width:{w}px;height:{rh}px;line-height:{rh}px;"
+            td["style"] = f"width:{w}px;min-width:{w}px;height:{rh}px;line-height:{rh}px;padding:2px 6px;"
             tr.append(td)
         tbody.append(tr)
 

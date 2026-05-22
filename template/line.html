@@ -16,14 +16,16 @@
     max-width: 1200px;
     border-collapse: separate;
     border-spacing: 0;
-    position: relative; /* 必须保留 */
+    position: relative;
+    --line-x: 92px;
+    --line-y: 36px;
   }
 
-  /* 表头下方的横向渐变线（不动） */
+  /* 表头下方的横向渐变线（跟随行高） */
   .size-table::after {
     content: "";
     position: absolute;
-    top: 68px;
+    top: var(--line-y);
     left: 0;
     right: 0;
     height: 1px;
@@ -36,11 +38,11 @@
     );
   }
 
-  /* ✅ 整条贯通的竖向渐变线：只在表格顶端、底端渐变 */
+  /* 竖向渐变线（跟随第一列宽度） */
   .size-table::before {
     content: "";
     position: absolute;
-    left: 92px;      /* 第一列宽度，精准对齐 */
+    left: var(--line-x);
     top: 0;
     bottom: 0;
     width: 1px;
