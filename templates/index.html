@@ -516,6 +516,10 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
       <input type="range" id="exportRowHeightSlider" min="1" max="80" value="36" style="width:100px;cursor:pointer;">
       <input type="number" id="exportRowHeightInput" value="36" min="1" max="200" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
+      <span style="font-size:12px;color:var(--text2);margin-left:8px;">表头:</span>
+      <input type="range" id="exportHeaderHeightSlider" min="1" max="80" value="36" style="width:80px;cursor:pointer;">
+      <input type="number" id="exportHeaderHeightInput" value="36" min="1" max="200" style="width:45px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <span style="font-size:11px;color:var(--text2);">px</span>
       <button class="btn btn-outline btn-sm" id="fineTuneRowBtn" title="逐行微调高度">微调行高 ▾</button>
     </div>
     <!-- 逐列微调面板 -->
@@ -544,6 +548,7 @@ let exportColWidths = {};  // {colIndex: px} 逐列覆盖
 // 导出行高状态
 let exportRowHeight = 36;
 let exportRowHeights = {};  // {rowIndex: px} 逐行覆盖
+let exportHeaderHeight = 36;
 
 // ======== Init ========
 async function init() {
@@ -740,6 +745,19 @@ function bindEvents() {
     exportRowHeights = {};
     refreshFineTuneRowPanel();
     applyExportRowHeights();
+  });
+  // 表头行高
+  document.getElementById('exportHeaderHeightSlider').addEventListener('input', function() {
+    exportHeaderHeight = parseInt(this.value);
+    document.getElementById('exportHeaderHeightInput').value = exportHeaderHeight;
+    applyExportRowHeights();
+    applyExportColWidths();
+  });
+  document.getElementById('exportHeaderHeightInput').addEventListener('change', function() {
+    exportHeaderHeight = parseInt(this.value) || 36;
+    document.getElementById('exportHeaderHeightSlider').value = exportHeaderHeight;
+    applyExportRowHeights();
+    applyExportColWidths();
   });
   document.getElementById('fineTuneRowBtn').addEventListener('click', function() {
     const panel = document.getElementById('fineTuneRowPanel');
@@ -1146,7 +1164,7 @@ function buildExportStylePayload() {
   Object.keys(exportColWidths).forEach(k => { colW[k] = exportColWidths[k]; });
   const rowH = { _default: exportRowHeight };
   Object.keys(exportRowHeights).forEach(k => { rowH[k] = exportRowHeights[k]; });
-  return { colWidths: colW, rowHeights: rowH };
+  return { colWidths: colW, rowHeights: rowH, headerHeight: exportHeaderHeight };
 }
 
 function refreshPreview() {
@@ -1155,7 +1173,7 @@ function refreshPreview() {
   fetch('/api/apply-template', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: buildExportStylePayload().colWidths })
+    body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: buildExportStylePayload().colWidths, rowHeights: buildExportStylePayload().rowHeights, headerHeight: buildExportStylePayload().headerHeight })
   }).then(r => r.json()).then(d => {
     if (d.success) {
       filledHtml = d.html;
@@ -1223,16 +1241,22 @@ function applyExportColWidths() {
     const ths = doc.querySelectorAll('table th');
     ths.forEach((th, i) => {
       const w = exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth;
-      th.style.width = w + 'px';
-      th.style.minWidth = w + 'px';
+      th.style.width = w + 'px'; th.style.minWidth = w + 'px'; th.style.padding = '2px 4px';
     });
     const tds = doc.querySelectorAll('table td');
     tds.forEach((td, i) => {
       const ci = i % (ths.length || 1);
       const w = exportColWidths[ci] !== undefined ? exportColWidths[ci] : exportColWidth;
-      td.style.width = w + 'px';
-      td.style.minWidth = w + 'px';
+      td.style.width = w + 'px'; td.style.minWidth = w + 'px'; td.style.padding = '2px 4px';
     });
+    // 更新 line 模板的 CSS 变量（用导出状态计算，不依赖 iframe 渲染）
+    const firstW = exportColWidths[0] !== undefined ? exportColWidths[0] : exportColWidth;
+    const headerH = exportHeaderHeight;
+    const table = doc.querySelector('.size-table');
+    if (table) {
+      table.style.setProperty('--line-x', firstW + 'px');
+      table.style.setProperty('--line-y', headerH + 'px');
+    }
   } catch(e) { /* 跨域忽略 */ }
 }
 
@@ -1292,17 +1316,13 @@ function applyExportRowHeights() {
     rows.forEach((tr, ri) => {
       const h = exportRowHeights[ri] !== undefined ? exportRowHeights[ri] : exportRowHeight;
       tr.querySelectorAll('td').forEach(td => {
-        td.style.height = h + 'px';
-        td.style.lineHeight = h + 'px';
+        td.style.height = h + 'px'; td.style.lineHeight = h + 'px'; td.style.padding = '2px 4px';
       });
-      const th = tr.querySelector('th');
-      if (th) { th.style.height = h + 'px'; }
     });
     // thead row
     const theadThs = doc.querySelectorAll('table thead th');
     theadThs.forEach(th => {
-      th.style.height = exportRowHeight + 'px';
-      th.style.lineHeight = exportRowHeight + 'px';
+      th.style.height = exportHeaderHeight + 'px'; th.style.lineHeight = exportHeaderHeight + 'px'; th.style.padding = '2px 4px';
     });
   } catch(e) {}
 }
@@ -1491,7 +1511,7 @@ async function exportPng() {
     const r = await fetch('/api/render-template-png', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: buildExportStylePayload().colWidths })
+      body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: buildExportStylePayload().colWidths, rowHeights: buildExportStylePayload().rowHeights, headerHeight: buildExportStylePayload().headerHeight })
     });
     if (r.ok) {
       const blob = await r.blob();
