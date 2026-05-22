@@ -232,6 +232,7 @@ th.col-header { top:26px; }
 td { background:rgba(255,255,255,.45); }
 td[contenteditable] { outline:2px solid transparent; cursor:text; transition:outline .15s; }
 td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb; }
+td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1px solid var(--primary); }
 .row-actions { display:flex; gap:4px; justify-content:center; }
 .col-actions { display:flex; gap:4px; }
 
@@ -483,6 +484,8 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
     <div class="action-bar" style="margin-top:12px;">
       <button class="btn btn-success" id="exportCsvBtn">&#128190; 导出 CSV</button>
       <button class="btn btn-outline" id="copyTableBtn">&#128203; 复制表格</button>
+      <button class="btn btn-outline hidden" id="copySelectionImgBtn" title="将选中单元格渲染为图片复制到剪贴板">&#128444; 复制选区为图片</button>
+      <button class="btn btn-outline hidden" id="copySelectionTextBtn" title="将选中单元格文本复制到剪贴板">&#128220; 复制选区为文本</button>
       <button class="btn btn-outline" id="addRowBtn">+ 添加行</button>
       <button class="btn btn-outline" id="addColBtn">+ 添加列</button>
     </div>
@@ -501,7 +504,7 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
     <div class="style-grid" id="styleGrid"></div>
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
       <span style="font-size:12px;color:var(--text2);">预览：</span>
-      <iframe id="stylePreview" style="width:100%;height:260px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:rgba(255,255,255,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);"></iframe>
+      <iframe id="stylePreview" style="width:100%;height:450px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:rgba(255,255,255,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);"></iframe>
     </div>
     <!-- 导出列宽控制 -->
     <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -509,16 +512,25 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
       <input type="range" id="exportColWidthSlider" min="1" max="200" value="80" style="width:100px;cursor:pointer;">
       <input type="number" id="exportColWidthInput" value="80" min="1" max="400" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
+      <span style="font-size:12px;color:var(--text2);margin-left:8px;">字体：</span>
+      <select id="fontWeightSelect" style="padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;">
+        <option value="ultralight">极细 Ultralight</option>
+        <option value="thin">纤细 Thin</option>
+        <option value="light">细体 Light</option>
+        <option value="regular">常规 Regular</option>
+        <option value="medium" selected>中黑 Medium (推荐)</option>
+        <option value="semibold">中粗 Semibold</option>
+      </select>
       <button class="btn btn-outline btn-sm" id="fineTuneBtn" title="逐列微调宽度">微调列宽 ▾</button>
     </div>
     <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:12px;color:var(--text2);">导出行高：</span>
-      <input type="range" id="exportRowHeightSlider" min="1" max="80" value="36" style="width:100px;cursor:pointer;">
-      <input type="number" id="exportRowHeightInput" value="36" min="1" max="200" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="exportRowHeightSlider" min="1" max="200" value="72" style="width:100px;cursor:pointer;">
+      <input type="number" id="exportRowHeightInput" value="72" min="1" max="200" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <span style="font-size:12px;color:var(--text2);margin-left:8px;">表头:</span>
-      <input type="range" id="exportHeaderHeightSlider" min="1" max="80" value="36" style="width:80px;cursor:pointer;">
-      <input type="number" id="exportHeaderHeightInput" value="36" min="1" max="200" style="width:45px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="exportHeaderHeightSlider" min="1" max="200" value="72" style="width:80px;cursor:pointer;">
+      <input type="number" id="exportHeaderHeightInput" value="72" min="1" max="200" style="width:45px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <button class="btn btn-outline btn-sm" id="fineTuneRowBtn" title="逐行微调高度">微调行高 ▾</button>
     </div>
@@ -528,6 +540,20 @@ td[contenteditable]:focus { outline:2px solid var(--primary); background:#fffbeb
     <div id="fineTuneRowPanel" class="hidden" style="margin-top:4px;padding:8px 12px;background:rgba(255,255,255,.15);border-radius:8px;border:1px solid rgba(255,255,255,.2);"></div>
     <div class="action-bar" style="margin-top:12px;">
       <button class="btn btn-success" id="exportPngBtn">&#128190; 导出当前样式为PNG</button>
+      <button class="btn btn-outline btn-sm" id="exportConfigToggle">导出配置 ▸</button>
+    </div>
+    <div id="exportConfigPanel" class="hidden" style="margin-top:8px;padding:10px 14px;background:rgba(255,255,255,.12);border-radius:8px;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text2);">背景宽</span>
+      <input type="number" id="cfgBgWidth" value="1200" min="400" max="3000" style="width:60px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <span style="font-size:11px;color:var(--text2);">px</span>
+      <span style="font-size:12px;color:var(--text2);">表格宽</span>
+      <input type="number" id="cfgTableWidth" value="1090" min="200" max="3000" style="width:60px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <span style="font-size:11px;color:var(--text2);">px</span>
+      <span style="font-size:12px;color:var(--text2);">留白</span>
+      <input type="number" id="cfgPadding" value="55" min="0" max="200" style="width:50px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <span style="font-size:11px;color:var(--text2);">px</span>
+      <button class="btn btn-outline btn-sm" id="cfgApplyBtn">应用</button>
+      <span style="font-size:10px;color:var(--text2);">（修改后点"应用"刷新预览）</span>
     </div>
   </div>
 
@@ -546,21 +572,31 @@ let currentModel = 'qwen3.6-plus';
 let exportColWidth = 80;
 let exportColWidths = {};  // {colIndex: px} 逐列覆盖
 // 导出行高状态
-let exportRowHeight = 36;
+let exportRowHeight = 72;
 let exportRowHeights = {};  // {rowIndex: px} 逐行覆盖
-let exportHeaderHeight = 36;
+let exportHeaderHeight = 72;
+// 字体字重
+let currentFontWeight = 'medium';
+// 导出配置
+let exportConfig = { bgWidth: 1200, tableWidth: 1090, padding: 55 };
+// 选区状态
+let selectionStart = null;   // {row, col}
+let selectionEnd = null;     // {row, col}
+let isSelecting = false;
+let selectedColumns = new Set();  // 复选框选中的列索引
 
 // ======== Init ========
 async function init() {
   await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate()]);
-  // 恢复上次壁纸，没有则默认Bing每日壁纸
+  // 恢复上次壁纸，没有则随机选一张渐变纯色壁纸
   const wp = loadWallpaper();
   if (wp) {
-    applyWallpaper(wp.url);
+    applyWallpaper(wp);
   } else {
-    fetch('/api/bing-wallpaper-url').then(r => r.json()).then(d => {
-      if (d.url) applyWallpaper(d.url);
-    }).catch(() => {});
+    const gradient = getRandomGradient();
+    const defaultWp = { id: gradient.id, url: gradient.css, name: gradient.name, type: 'gradient' };
+    saveWallpaper(defaultWp);
+    applyWallpaper(defaultWp);
   }
   bindEvents();
 }
@@ -715,6 +751,34 @@ function bindEvents() {
   // Style export
   document.getElementById('exportPngBtn').addEventListener('click', exportPng);
 
+  // 导出配置面板
+  document.getElementById('exportConfigToggle').addEventListener('click', function() {
+    const panel = document.getElementById('exportConfigPanel');
+    panel.classList.toggle('hidden');
+    this.textContent = panel.classList.contains('hidden') ? '导出配置 ▸' : '导出配置 ▾';
+  });
+  document.getElementById('cfgApplyBtn').addEventListener('click', function() {
+    exportConfig.bgWidth = parseInt(document.getElementById('cfgBgWidth').value) || 1200;
+    exportConfig.tableWidth = parseInt(document.getElementById('cfgTableWidth').value) || 1090;
+    exportConfig.padding = parseInt(document.getElementById('cfgPadding').value) || 55;
+    // 同步回输入框
+    document.getElementById('cfgBgWidth').value = exportConfig.bgWidth;
+    document.getElementById('cfgTableWidth').value = exportConfig.tableWidth;
+    document.getElementById('cfgPadding').value = exportConfig.padding;
+    refreshPreview();
+    toast('导出配置已应用', 'info');
+  });
+
+  // 字体字重选择
+  document.getElementById('fontWeightSelect').addEventListener('change', function() {
+    currentFontWeight = this.value;
+    refreshPreview();
+  });
+
+  // 选区复制按钮
+  document.getElementById('copySelectionImgBtn').addEventListener('click', copySelectionAsImage);
+  document.getElementById('copySelectionTextBtn').addEventListener('click', copySelectionAsText);
+
   // 导出列宽控制
   document.getElementById('exportColWidthSlider').addEventListener('input', function() {
     exportColWidth = parseInt(this.value);
@@ -746,7 +810,7 @@ function bindEvents() {
     applyExportRowHeights();
   });
   document.getElementById('exportRowHeightInput').addEventListener('change', function() {
-    exportRowHeight = parseInt(this.value) || 36;
+    exportRowHeight = parseInt(this.value) || 72;
     document.getElementById('exportRowHeightSlider').value = exportRowHeight;
     exportRowHeights = {};
     refreshFineTuneRowPanel();
@@ -760,7 +824,7 @@ function bindEvents() {
     applyExportColWidths();
   });
   document.getElementById('exportHeaderHeightInput').addEventListener('change', function() {
-    exportHeaderHeight = parseInt(this.value) || 36;
+    exportHeaderHeight = parseInt(this.value) || 72;
     document.getElementById('exportHeaderHeightSlider').value = exportHeaderHeight;
     applyExportRowHeights();
     applyExportColWidths();
@@ -988,7 +1052,16 @@ function renderTable(data) {
     html += '</tr>';
   });
 
-  html += '</tbody></table>';
+  html += '</tbody>';
+  // 列选择复选框行
+  html += '<tfoot><tr>';
+  headers.forEach((h, i) => {
+    const checked = selectedColumns.has(i) ? 'checked' : '';
+    html += `<td style="text-align:center;padding:3px;background:rgba(245,247,250,.5);"><input type="checkbox" class="col-checkbox" data-col="${i}" ${checked} title="选择整列"></td>`;
+  });
+  html += '<td style="text-align:center;padding:3px;background:rgba(245,247,250,.5);font-size:10px;color:var(--text2);">全选</td>';
+  html += '</tr></tfoot>';
+  html += '</table>';
   wrap.innerHTML = html;
 
   // ---- Drag-to-reorder columns ----
@@ -1113,6 +1186,25 @@ function renderTable(data) {
       syncTableFromUI();
     });
   });
+
+  // Bind cell selection events
+  bindSelectionEvents();
+
+  // Bind column checkbox events
+  wrap.querySelectorAll('.col-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const ci = parseInt(this.dataset.col);
+      if (this.checked) {
+        selectedColumns.add(ci);
+      } else {
+        selectedColumns.delete(ci);
+      }
+      highlightColumns();
+    });
+  });
+
+  // Restore checkbox-based column highlighting
+  if (selectedColumns.size > 0) highlightColumns();
 }
 
 function applyColWidth(w) {
@@ -1170,16 +1262,17 @@ function buildExportStylePayload() {
   Object.keys(exportColWidths).forEach(k => { colW[k] = exportColWidths[k]; });
   const rowH = { _default: exportRowHeight };
   Object.keys(exportRowHeights).forEach(k => { rowH[k] = exportRowHeights[k]; });
-  return { colWidths: colW, rowHeights: rowH, headerHeight: exportHeaderHeight };
+  return { colWidths: colW, rowHeights: rowH, headerHeight: exportHeaderHeight, fontWeight: currentFontWeight, exportConfig };
 }
 
 function refreshPreview() {
   if (!selectedTemplate || !resultData) return;
   syncTableFromUI();
+  const payload = buildExportStylePayload();
   fetch('/api/apply-template', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: buildExportStylePayload().colWidths, rowHeights: buildExportStylePayload().rowHeights, headerHeight: buildExportStylePayload().headerHeight })
+    body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: payload.colWidths, rowHeights: payload.rowHeights, headerHeight: payload.headerHeight, fontWeight: payload.fontWeight, exportConfig: payload.exportConfig })
   }).then(r => r.json()).then(d => {
     if (d.success) {
       filledHtml = d.html;
@@ -1276,7 +1369,7 @@ function refreshFineTuneRowPanel() {
     const label = row[0] ? esc(String(row[0])) : ('行' + (ri + 1));
     html += `<div style="display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px;">
       <span style="width:60px;text-align:right;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${label}">${label}</span>
-      <input type="range" min="1" max="120" value="${h}" data-row="${ri}" class="fine-row-slider" style="flex:1;cursor:pointer;">
+      <input type="range" min="1" max="200" value="${h}" data-row="${ri}" class="fine-row-slider" style="flex:1;cursor:pointer;">
       <input type="number" value="${h}" min="1" max="200" data-row="${ri}" class="fine-row-input" style="width:45px;padding:1px 3px;border:1px solid var(--border);border-radius:4px;font-size:11px;text-align:center;">
       <span style="font-size:10px;color:var(--text2);width:16px;">px</span>
       <button class="btn btn-sm" data-reset-row="${ri}" style="padding:1px 5px;font-size:10px;" title="重置此行">↺</button>
@@ -1383,6 +1476,258 @@ async function copyTable() {
     document.execCommand('copy');
     document.body.removeChild(ta);
     toast('已复制到剪贴板', 'success');
+  }
+}
+
+// ======== Cell selection & copy ========
+function getCellRowCol(cell) {
+  const row = parseInt(cell.dataset.row);
+  const col = parseInt(cell.dataset.col);
+  if (isNaN(row) || isNaN(col)) {
+    // 对于 th 元素，col 从 dataset 中取
+    const th = cell.closest('th');
+    if (th && th.dataset.col !== undefined) {
+      return { row: -1, col: parseInt(th.dataset.col) };
+    }
+    return null;
+  }
+  return { row, col };
+}
+
+function clearSelection() {
+  document.querySelectorAll('#resultTable .cell-selected').forEach(el => el.classList.remove('cell-selected'));
+  selectionStart = null;
+  selectionEnd = null;
+  selectedColumns.clear();
+  document.querySelectorAll('.col-checkbox').forEach(cb => cb.checked = false);
+  document.getElementById('copySelectionImgBtn').classList.add('hidden');
+  document.getElementById('copySelectionTextBtn').classList.add('hidden');
+}
+
+function clearDragSelection() {
+  // 只清除拖选，不清除复选框
+  document.querySelectorAll('#resultTable .cell-selected').forEach(el => el.classList.remove('cell-selected'));
+  selectionStart = null;
+  selectionEnd = null;
+  // 恢复复选框高亮
+  if (selectedColumns.size > 0) highlightColumns();
+  else {
+    document.getElementById('copySelectionImgBtn').classList.add('hidden');
+    document.getElementById('copySelectionTextBtn').classList.add('hidden');
+  }
+}
+
+function highlightColumns() {
+  const table = document.getElementById('resultTable');
+  if (!table) return;
+  // 清除所有高亮
+  table.querySelectorAll('.cell-selected').forEach(el => el.classList.remove('cell-selected'));
+  // 高亮选中列的所有数据单元格
+  selectedColumns.forEach(ci => {
+    table.querySelectorAll(`td[data-col="${ci}"]`).forEach(td => td.classList.add('cell-selected'));
+    table.querySelectorAll(`th.col-header[data-col="${ci}"]`).forEach(th => th.classList.add('cell-selected'));
+  });
+  // 显示/隐藏复制按钮
+  const hasSelection = selectedColumns.size > 0 || (selectionStart && selectionEnd);
+  document.getElementById('copySelectionImgBtn').classList.toggle('hidden', !hasSelection);
+  document.getElementById('copySelectionTextBtn').classList.toggle('hidden', !hasSelection);
+}
+
+function highlightSelection() {
+  if (!selectionStart || !selectionEnd) return;
+  const minRow = Math.min(selectionStart.row, selectionEnd.row);
+  const maxRow = Math.max(selectionStart.row, selectionEnd.row);
+  const minCol = Math.min(selectionStart.col, selectionEnd.col);
+  const maxCol = Math.max(selectionStart.col, selectionEnd.col);
+  const table = document.getElementById('resultTable');
+  if (!table) return;
+  // Clear old selection
+  table.querySelectorAll('.cell-selected').forEach(el => el.classList.remove('cell-selected'));
+  // Highlight cells in the rectangle
+  for (let ri = minRow; ri <= maxRow; ri++) {
+    for (let ci = minCol; ci <= maxCol; ci++) {
+      table.querySelectorAll(`td[data-row="${ri}"][data-col="${ci}"]`).forEach(td => td.classList.add('cell-selected'));
+    }
+  }
+  // Also highlight header cells (row=-1)
+  for (let ci = minCol; ci <= maxCol; ci++) {
+    table.querySelectorAll(`th.col-header[data-col="${ci}"]`).forEach(th => th.classList.add('cell-selected'));
+  }
+  // Show/hide copy buttons
+  const hasSelection = (maxRow >= minRow || maxCol >= minCol);
+  document.getElementById('copySelectionImgBtn').classList.toggle('hidden', !hasSelection);
+  document.getElementById('copySelectionTextBtn').classList.toggle('hidden', !hasSelection);
+}
+
+function bindSelectionEvents() {
+  const table = document.getElementById('resultTable');
+  if (!table) return;
+
+  table.addEventListener('mousedown', e => {
+    // 只在点击数据单元格时启动选区（不干扰表头拖拽排序、不干扰复选框）
+    const cell = e.target.closest('td[data-row][data-col]');
+    if (!cell) return;
+    // 如果点击的是复选框或其 label，不启动拖选
+    if (e.target.closest('.col-checkbox') || e.target.closest('tfoot')) return;
+    clearDragSelection();
+    isSelecting = true;
+    selectionStart = getCellRowCol(cell);
+    selectionEnd = selectionStart;
+    highlightSelection();
+  });
+
+  // 使用 document 级别的 mousemove + elementFromPoint，确保鼠标移到表头区也不会断
+  document.addEventListener('mousemove', e => {
+    if (!isSelecting) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (!el) return;
+    // 尝试匹配数据单元格
+    const td = el.closest('td[data-row][data-col]');
+    if (td) {
+      selectionEnd = getCellRowCol(td);
+      highlightSelection();
+      return;
+    }
+    // 如果鼠标在表头区域，扩展选区到对应列（行范围保持）
+    const th = el.closest('th.col-header[data-col]');
+    if (th && selectionEnd) {
+      const col = parseInt(th.dataset.col);
+      selectionEnd = { row: selectionEnd.row, col: col };
+      highlightSelection();
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isSelecting) {
+      isSelecting = false;
+      // Normalize selection so start is top-left
+      if (selectionStart && selectionEnd) {
+        const minRow = Math.min(selectionStart.row, selectionEnd.row);
+        const maxRow = Math.max(selectionStart.row, selectionEnd.row);
+        const minCol = Math.min(selectionStart.col, selectionEnd.col);
+        const maxCol = Math.max(selectionStart.col, selectionEnd.col);
+        selectionStart = { row: minRow, col: minCol };
+        selectionEnd = { row: maxRow, col: maxCol };
+      }
+    }
+  });
+
+  // Click outside table to clear selection
+  document.addEventListener('mousedown', e => {
+    if (!e.target.closest('#resultTable') && !e.target.closest('#copySelectionImgBtn') && !e.target.closest('#copySelectionTextBtn')) {
+      clearSelection();
+    }
+  });
+}
+
+function _getSelectionColsRows() {
+  const origTable = document.getElementById('resultTable');
+  if (!origTable || !resultData) return null;
+  const totalRows = resultData.rows.length;
+  // 优先使用复选框选中的列
+  if (selectedColumns.size > 0) {
+    const cols = [...selectedColumns].sort((a, b) => a - b);
+    return { cols, minRow: 0, maxRow: totalRows - 1, origTable };
+  }
+  // 否则使用拖选矩形
+  if (selectionStart && selectionEnd) {
+    const minCol = Math.min(selectionStart.col, selectionEnd.col);
+    const maxCol = Math.max(selectionStart.col, selectionEnd.col);
+    const minRow = Math.max(0, Math.min(selectionStart.row, selectionEnd.row));
+    const maxRow = Math.min(totalRows - 1, Math.max(selectionStart.row, selectionEnd.row));
+    const cols = [];
+    for (let ci = minCol; ci <= maxCol; ci++) cols.push(ci);
+    return { cols, minRow, maxRow, origTable };
+  }
+  return null;
+}
+
+async function copySelectionAsImage() {
+  const sel = _getSelectionColsRows();
+  if (!sel) return toast('请拖选单元格或勾选列复选框', 'error');
+  const { cols, minRow, maxRow, origTable } = sel;
+
+  // 构建干净的克隆表格（白底、简单边框，无蓝色高亮）
+  const clone = document.createElement('table');
+  clone.style.borderCollapse = 'collapse';
+  clone.style.fontSize = '14px';
+  clone.style.backgroundColor = '#ffffff';
+  clone.style.margin = '16px';
+
+  const thead = document.createElement('thead');
+  const htr = document.createElement('tr');
+  cols.forEach(ci => {
+    const origTh = origTable.querySelector(`th.col-header[data-col="${ci}"]`);
+    const th = document.createElement('th');
+    th.textContent = origTh ? (origTh.querySelector('.col-label')?.textContent || origTh.dataset.header || '') : '';
+    th.style.cssText = 'border:1px solid #999;padding:6px 10px;text-align:center;background:#f0f0f0;font-weight:600;color:#000;';
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);
+  clone.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  for (let ri = minRow; ri <= maxRow; ri++) {
+    const tr = document.createElement('tr');
+    cols.forEach(ci => {
+      const origTd = origTable.querySelector(`td[data-row="${ri}"][data-col="${ci}"]`);
+      const td = document.createElement('td');
+      td.textContent = origTd ? origTd.textContent.trim() : '';
+      td.style.cssText = 'border:1px solid #999;padding:6px 10px;text-align:center;background:#ffffff;color:#000;';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+  clone.appendChild(tbody);
+
+  // 用可见的固定定位浮层包裹克隆表格，确保 html2canvas 正确渲染
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#ffffff;padding:10px;';
+  overlay.appendChild(clone);
+  document.body.appendChild(overlay);
+
+  try {
+    const canvas = await html2canvas(clone, { backgroundColor: '#ffffff', scale: 2 });
+    canvas.toBlob(async blob => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+        toast('选区已复制为图片，可粘贴到 PSD', 'success');
+      } catch (err) {
+        toast('复制图片失败: ' + err.message, 'error');
+      }
+    }, 'image/png');
+  } catch (err) {
+    toast('渲染选区失败: ' + err.message, 'error');
+  } finally {
+    document.body.removeChild(overlay);
+  }
+}
+
+async function copySelectionAsText() {
+  const sel = _getSelectionColsRows();
+  if (!sel) return toast('请拖选单元格或勾选列复选框', 'error');
+  const { cols, minRow, maxRow, origTable } = sel;
+
+  const lines = [];
+  for (let ri = minRow; ri <= maxRow; ri++) {
+    cols.forEach(ci => {
+      const td = origTable.querySelector(`td[data-row="${ri}"][data-col="${ci}"]`);
+      const val = td ? td.textContent.trim() : '';
+      lines.push(val);
+    });
+  }
+  const text = lines.join('\n');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('选区文本已复制（每行一个值）', 'success');
+  } catch (err) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('选区文本已复制', 'success');
   }
 }
 
@@ -1514,10 +1859,11 @@ async function exportPng() {
   syncTableFromUI();
   // 优先尝试服务端渲染（本地 Playwright）
   try {
+    const payload = buildExportStylePayload();
     const r = await fetch('/api/render-template-png', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: buildExportStylePayload().colWidths, rowHeights: buildExportStylePayload().rowHeights, headerHeight: buildExportStylePayload().headerHeight })
+      body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: payload.colWidths, rowHeights: payload.rowHeights, headerHeight: payload.headerHeight, fontWeight: payload.fontWeight, exportConfig: payload.exportConfig })
     });
     if (r.ok) {
       const blob = await r.blob();
@@ -1556,12 +1902,29 @@ async function exportPng() {
 // ======== Wallpaper ========
 const WALLPAPER_KEY = 'sizeflow_wallpaper';
 
+// 内置渐变色壁纸 — 纯色系微妙过渡，每次刷新随机切换
+const GRADIENT_WALLPAPERS = [
+  { id: 'gradient-sky', name: '天空蓝', css: 'linear-gradient(135deg, #e4eef8 0%, #dae4f0 40%, #e0eaf4 100%)' },
+  { id: 'gradient-rose', name: '玫瑰粉', css: 'linear-gradient(135deg, #f4ebec 0%, #efe3e5 40%, #f1e8ea 100%)' },
+  { id: 'gradient-mint', name: '薄荷绿', css: 'linear-gradient(135deg, #e8f1ec 0%, #dfebe4 40%, #e5eeea 100%)' },
+  { id: 'gradient-lavender', name: '薰衣草', css: 'linear-gradient(135deg, #ede8f4 0%, #e6e0f0 40%, #eae5f3 100%)' },
+  { id: 'gradient-warm', name: '暖杏色', css: 'linear-gradient(135deg, #f4efe8 0%, #efe8df 40%, #f2ece4 100%)' },
+  { id: 'gradient-ice', name: '冰霜白', css: 'linear-gradient(135deg, #f1f3f6 0%, #eceff3 40%, #f0f2f5 100%)' },
+  { id: 'gradient-dusk', name: '暮光紫', css: 'linear-gradient(135deg, #ece8f2 0%, #e5e0ed 40%, #e9e4f0 100%)' },
+  { id: 'gradient-sand', name: '沙滩金', css: 'linear-gradient(135deg, #f3efe8 0%, #ede7dd 40%, #f0ebe3 100%)' },
+];
+
+function getRandomGradient() {
+  const i = Math.floor(Math.random() * GRADIENT_WALLPAPERS.length);
+  return GRADIENT_WALLPAPERS[i];
+}
+
 function loadWallpaper() {
   const saved = localStorage.getItem(WALLPAPER_KEY);
   if (saved) {
     try {
       const wp = JSON.parse(saved);
-      applyWallpaper(wp.url);
+      applyWallpaper(wp);
       return wp;
     } catch(e) {}
   }
@@ -1572,13 +1935,25 @@ function saveWallpaper(wp) {
   localStorage.setItem(WALLPAPER_KEY, JSON.stringify(wp));
 }
 
-function applyWallpaper(url) {
-  document.body.style.backgroundImage = url
-    ? `url(${url})`
-    : 'linear-gradient(135deg, #e8eef5 0%, #dce3ed 30%, #e2e8f2 60%, #d5dfea 100%)';
-  document.body.style.backgroundSize = 'cover';
-  document.body.style.backgroundPosition = 'center';
-  document.body.style.backgroundAttachment = 'fixed';
+function applyWallpaper(wp) {
+  if (!wp) {
+    document.body.style.backgroundImage = 'linear-gradient(135deg, #e8eef5 0%, #dce3ed 30%, #e2e8f2 60%, #d5dfea 100%)';
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundAttachment = 'fixed';
+    return;
+  }
+  if (wp.type === 'gradient') {
+    document.body.style.backgroundImage = wp.url;
+    document.body.style.backgroundSize = 'auto';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundAttachment = 'fixed';
+  } else {
+    document.body.style.backgroundImage = `url(${wp.url})`;
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundAttachment = 'fixed';
+  }
 }
 
 async function loadWallpaperList() {
@@ -1588,21 +1963,32 @@ async function loadWallpaperList() {
     if (!d.success) return;
     const grid = document.getElementById('wallpaperGrid');
     const current = loadWallpaper();
-    grid.innerHTML = d.wallpapers.map(wp => `
-      <div class="wp-card ${current && current.id === wp.id ? 'selected' : ''}" onclick="selectWallpaper('${wp.id}', '${wp.url}', '${wp.name}')">
+
+    // 渐变色预览卡片
+    let gradientCards = GRADIENT_WALLPAPERS.map(wp => `
+      <div class="wp-card ${current && current.id === wp.id ? 'selected' : ''}" onclick="selectWallpaper('${wp.id}', '${wp.css.replace(/'/g, "\\'")}', '${wp.name}', 'gradient')">
+        <div style="width:100%;height:100%;background:${wp.css};"></div>
+        <div class="wp-label">${wp.name}</div>
+      </div>
+    `).join('');
+
+    // 图片壁纸卡片
+    let imageCards = d.wallpapers.map(wp => `
+      <div class="wp-card ${current && current.id === wp.id ? 'selected' : ''}" onclick="selectWallpaper('${wp.id}', '${wp.url}', '${wp.name}', 'image')">
         <img src="${wp.url}" alt="${wp.name}" loading="lazy">
         <div class="wp-label">${wp.name}</div>
       </div>
     `).join('');
+
+    grid.innerHTML = gradientCards + imageCards;
   } catch(e) {}
 }
 
-function selectWallpaper(id, url, name) {
-  const wp = { id, url, name };
+function selectWallpaper(id, url, name, type) {
+  const wp = { id, url, name, type: type || 'image' };
   saveWallpaper(wp);
-  applyWallpaper(url);
+  applyWallpaper(wp);
   document.querySelectorAll('.wp-card').forEach(c => c.classList.remove('selected'));
-  // Close panel
   document.getElementById('wallpaperPanel').classList.add('hidden');
 }
 
@@ -1613,8 +1999,9 @@ document.getElementById('wallpaperUpload').addEventListener('change', e => {
   const reader = new FileReader();
   reader.onload = () => {
     const url = reader.result;
-    saveWallpaper({ id: 'custom', url, name: '自定义壁纸' });
-    applyWallpaper(url);
+    const wp = { id: 'custom', url, name: '自定义壁纸', type: 'image' };
+    saveWallpaper(wp);
+    applyWallpaper(wp);
     document.getElementById('wallpaperPanel').classList.add('hidden');
     toast('壁纸已应用', 'success');
   };

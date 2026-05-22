@@ -9,7 +9,7 @@ import threading
 import time
 import webbrowser
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 
 from config import (
     APP_DIR, APP_VERSION, AVAILABLE_MODELS, DEFAULT_MAPPINGS,
@@ -250,6 +250,13 @@ def template_preview(template_id):
         return jsonify({"success": False, "error": str(e)}), 404
 
 
+@app.route("/font/<path:filename>")
+def serve_font(filename):
+    """服务字体文件"""
+    font_dir = os.path.join(APP_DIR, "font")
+    return send_from_directory(font_dir, filename)
+
+
 @app.route("/api/apply-template", methods=["POST"])
 def apply_template():
     """将 OCR 数据填入模板，返回 HTML"""
@@ -273,8 +280,10 @@ def apply_template():
 
         col_widths = data.get("colWidths", {})
         row_heights = data.get("rowHeights", {})
-        header_height = data.get("headerHeight", 36)
-        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height)
+        header_height = data.get("headerHeight", 72)
+        font_weight = data.get("fontWeight", "medium")
+        export_config = data.get("exportConfig", {})
+        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height, font_weight, export_config)
         return jsonify({"success": True, "html": filled_html})
     except Exception as e:
         traceback.print_exc()
@@ -304,9 +313,11 @@ def render_template_png():
 
         col_widths = data.get("colWidths", {})
         row_heights = data.get("rowHeights", {})
-        header_height = data.get("headerHeight", 36)
-        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height)
-        png_bytes = render_png(filled_html)
+        header_height = data.get("headerHeight", 72)
+        font_weight = data.get("fontWeight", "medium")
+        export_config = data.get("exportConfig", {})
+        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height, font_weight, export_config)
+        png_bytes = render_png(filled_html, font_weight, export_config)
 
         from flask import Response
         return Response(png_bytes, mimetype="image/png",

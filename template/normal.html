@@ -4,15 +4,28 @@
     <meta charset="UTF-8">
     <title>裤子尺码表</title>
     <style>
+        @font-face {
+            font-family: 'PingFangSC';
+            src: url('/font/PingFangSC-Medium.woff2') format('woff2');
+        }
+        html, body {
+            width: 1200px;
+            margin: 0;
+            padding: 55px 0;
+            background: #ffffff;
+        }
         table {
             border-collapse: collapse;
-            width: auto;
-            max-width: 800px;
+            width: 1090px;
+            table-layout: fixed;
+            margin: 0 auto;
             text-align: center;
-            font-family: "Microsoft YaHei", sans-serif;
+            font-family: 'PingFangSC', 'PingFang SC', sans-serif;
+            font-size: 28px;
+            line-height: 72px;
         }
         th, td {
-            padding: 12px 8px;
+            padding: 0 8px;
             border: none;
         }
         th {
