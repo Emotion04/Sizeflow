@@ -392,6 +392,29 @@ def bing_wallpaper():
         return jsonify({"error": "Bing 壁纸获取失败"}), 502
 
 
+@app.route("/api/changelog", methods=["GET"])
+def api_changelog():
+    """返回最近 git commit 记录"""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "log", "-20", "--pretty=format:%h|%s|%ar"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            timeout=5, cwd=APP_DIR
+        )
+        output = result.stdout.decode("utf-8", errors="replace") if result.stdout else ""
+        if result.returncode != 0 or not output:
+            return jsonify({"success": False, "error": "git log failed"})
+        commits = []
+        for line in output.strip().split("\n"):
+            if not line: continue
+            parts = line.split("|", 2)
+            if len(parts) == 3:
+                commits.append({"hash": parts[0], "msg": parts[1], "date": parts[2]})
+        return jsonify({"success": True, "commits": commits})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 # ---- Startup ----
 
 def open_browser():

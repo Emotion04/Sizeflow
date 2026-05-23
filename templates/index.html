@@ -54,7 +54,30 @@ header {
 }
 header h1 { font-size:18px; font-weight:700; letter-spacing:-.3px; }
 header .ver { font-size:11px; opacity:.5; font-weight:500; }
-.container { max-width:1300px; margin:0 auto; padding:24px 20px; }
+.container { max-width:88%; margin:0 auto; padding:24px 10px; }
+/* main + sidebar layout */
+.main-row { display:flex; gap:16px; align-items:flex-start; }
+.main-left { flex:1; min-width:0; }
+.sidebar-card { flex:0 0 380px; }
+/* upload + mapping merged card */
+.upload-mapping-row { display:flex; gap:16px; min-width:0; }
+.upload-mapping-row > .upload-col { flex:1; min-width:220px; }
+.upload-mapping-row > .mapping-col { flex:1; min-width:240px; }
+.mapping-input-short { width:160px !important; height:40px; font-size:15px; flex:0 0 auto; }
+.mapping-row input { height:40px; font-size:15px; }
+.add-mapping input { height:40px; font-size:15px; }
+.mapping-row { margin-bottom:12px; }
+/* sidebar links */
+.sidebar-links { display:flex; flex-direction:column; gap:6px; }
+.sidebar-links a { color:var(--primary); text-decoration:none; font-size:13px; padding:4px 8px; border-radius:6px; transition:background .15s; }
+.sidebar-links a:hover { background:rgba(79,110,246,.08); }
+@media (max-width:1000px) {
+  .main-row { flex-direction:column; }
+  .main-left { flex:auto; }
+  .sidebar-card { min-width:auto; }
+  .upload-mapping-row { flex-direction:column; }
+  .upload-mapping-row > .upload-col, .upload-mapping-row > .mapping-col { min-width:auto; }
+}
 .card {
   background: rgba(255,255,255,.1);
   backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
@@ -81,7 +104,7 @@ header .ver { font-size:11px; opacity:.5; font-weight:500; }
   background: rgba(255, 255, 255, 0.16);
   border: none;
   border-radius: var(--radius);
-  padding: 40px;
+  padding: 68px 40px;
   text-align: center;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -201,7 +224,7 @@ header .ver { font-size:11px; opacity:.5; font-weight:500; }
 .preview-wrap .clear-img { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:14px; line-height:28px; }
 
 /* mapping panel */
-.mapping-list { max-height:420px; overflow-y:auto; overflow-x:hidden; min-width:0; }
+.mapping-list { overflow-x:hidden; min-width:0; }
 .mapping-row { display:flex; gap:6px; align-items:center; margin-bottom:6px; min-width:0; }
 .mapping-row span.arrow { color:var(--text2); flex:0 0 auto; }
 .mapping-row input { flex:1; min-width:0; width:0; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px; outline:none; }
@@ -337,7 +360,12 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
   .card { padding:14px; margin-bottom:10px; }
   .card-title { font-size:13px; }
   .two-col { grid-template-columns:1fr; }
-  .upload-zone { padding:24px 12px; }
+  .main-row { flex-direction:column; }
+  .main-left { flex:auto; }
+  .sidebar-card { min-width:auto; }
+  .upload-mapping-row { flex-direction:column; }
+  .upload-mapping-row > .upload-col, .upload-mapping-row > .mapping-col { min-width:auto; }
+  .upload-zone { padding:24px 16px; }
   .upload-zone .icon { font-size:32px; }
   table { font-size:11px; }
   th, td { padding:6px 8px; }
@@ -383,65 +411,84 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     <button class="btn-update-close" id="btnCloseUpdate">&times;</button>
   </div>
 
-  <!-- Upload Section -->
-  <div class="card" id="uploadCard">
-    <div class="two-col">
-      <div>
-        <div class="card-title"><span class="icon">&#128206;</span>上传工厂尺码表图片</div>
-        <div class="upload-zone" id="dropZone">
-          <div class="icon">&#128444;</div>
-          <div><b>拖拽图片到此处</b> 或 <b>点击选择</b></div>
-          <div class="hint">支持 JPG / PNG / WebP，也可 Ctrl+V 粘贴截图</div>
+  <!-- Main Row: Upload+Mapping (left 75%) + Sidebar (right 25%) -->
+  <div class="main-row">
+
+    <div class="main-left">
+      <div class="card" id="uploadCard">
+        <div class="upload-mapping-row">
+          <!-- Upload Zone -->
+          <div class="upload-col">
+            <div class="card-title"><span class="icon">&#128206;</span>上传工厂尺码表图片</div>
+            <div class="upload-zone" id="dropZone">
+              <div class="icon">&#128444;</div>
+              <div><b>拖拽图片到此处</b> 或 <b>点击选择</b></div>
+              <div class="hint">支持 JPG / PNG / WebP，也可 Ctrl+V 粘贴截图</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none">
+            <div style="margin-top:8px;font-size:12px;color:var(--text2);">
+              或者输入本地文件路径（适合大图）：
+            </div>
+            <div class="filepath-row">
+              <input type="text" id="filePathInput" placeholder="例如：D:\工厂图片\尺码表.png">
+              <button class="btn btn-outline btn-sm" id="loadPathBtn">加载路径</button>
+            </div>
+            <!-- Preview (moved below upload zone) -->
+            <div style="margin-top:10px;">
+              <div class="card-title"><span class="icon">&#128065;</span>图片预览</div>
+              <div class="empty-state" id="noPreview" style="padding:20px 0;">
+                <div class="icon">&#128247;</div>
+                <div>上传图片后显示预览</div>
+              </div>
+              <div class="preview-wrap hidden" id="previewWrap">
+                <img id="previewImg" alt="预览">
+                <button class="clear-img" id="clearImgBtn" title="清除图片">&times;</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mapping Config (moved to right of upload) -->
+          <div class="mapping-col">
+            <div class="card-title">
+              <span class="icon">&#128295;</span>字段映射配置
+              <span style="font-size:11px;color:var(--text2);font-weight:400;">（左=工厂名，右=用户名）</span>
+            </div>
+            <div class="mapping-list" id="mappingList"></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--text2);">添加新映射</div>
+            <div class="add-mapping" style="flex-wrap:wrap;">
+              <input type="text" id="newKey" placeholder="工厂表头" class="mapping-input-short">
+              <span class="arrow">&rarr;</span>
+              <input type="text" id="newVal" placeholder="用户表头" class="mapping-input-short">
+              <button class="btn btn-primary btn-sm" id="addMappingBtn">添加</button>
+            </div>
+            <div style="margin-top:8px;">
+              <button class="btn btn-outline btn-sm" id="resetMappingsBtn">恢复默认</button>
+              <button class="btn btn-outline btn-sm" id="saveMappingsBtn">保存映射</button>
+            </div>
+          </div>
         </div>
-        <input type="file" id="fileInput" accept="image/*" style="display:none">
-        <div style="margin-top:8px;font-size:12px;color:var(--text2);">
-          或者输入本地文件路径（适合大图）：
-        </div>
-        <div class="filepath-row">
-          <input type="text" id="filePathInput" placeholder="例如：D:\工厂图片\尺码表.png">
-          <button class="btn btn-outline btn-sm" id="loadPathBtn">加载路径</button>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div style="display:flex;flex-direction:column;gap:16px;flex:0 0 380px;min-width:0;">
+      <div class="card">
+        <div class="card-title"><span class="icon">&#127760;</span>常用工具</div>
+        <div class="sidebar-links">
+          <a href="https://www.doubao.com" target="_blank">&#129300; 豆包</a>
+          <a href="https://tongyi.aliyun.com/qianwen" target="_blank">&#128302; 千问</a>
+          <a href="https://www.bing.com" target="_blank">&#128269; 必应搜索</a>
+          <a href="https://m.dushu.com/meiwen/random/" target="_blank">&#128031; 摸鱼小说</a>
         </div>
       </div>
 
-      <!-- Preview -->
-      <div>
-        <div class="card-title"><span class="icon">&#128065;</span>图片预览</div>
-        <div class="empty-state" id="noPreview">
-          <div class="icon">&#128247;</div>
-          <div>上传图片后显示预览</div>
-        </div>
-        <div class="preview-wrap hidden" id="previewWrap">
-          <img id="previewImg" alt="预览">
-          <button class="clear-img" id="clearImgBtn" title="清除图片">&times;</button>
-        </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">&#128221;</span>更新日志</div>
+        <div id="changelogList" style="font-size:11px;color:var(--text2);line-height:1.6;"></div>
+        <button class="btn btn-outline btn-sm hidden" id="changelogMoreBtn" style="margin-top:4px;width:100%;">展开更多 ▾</button>
       </div>
     </div>
-  </div>
 
-  <!-- Mapping Config -->
-  <div class="card" id="mappingCard">
-    <div class="card-title">
-      <span class="icon">&#128295;</span>字段映射配置
-      <span style="font-size:12px;color:var(--text2);font-weight:400;">
-        （左边=工厂表头名称，右边=用户表头名称）
-      </span>
-    </div>
-    <div class="two-col">
-      <div class="mapping-list" id="mappingList"></div>
-      <div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:6px;">添加新映射</div>
-        <div class="add-mapping">
-          <input type="text" id="newKey" placeholder="工厂表头名称">
-          <span class="arrow">&rarr;</span>
-          <input type="text" id="newVal" placeholder="用户表头名称">
-          <button class="btn btn-primary btn-sm" id="addMappingBtn">添加</button>
-        </div>
-        <div style="margin-top:12px;">
-          <button class="btn btn-outline btn-sm" id="resetMappingsBtn">恢复默认映射</button>
-          <button class="btn btn-outline btn-sm" id="saveMappingsBtn">保存映射</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Action -->
@@ -587,7 +634,7 @@ let selectedColumns = new Set();  // 复选框选中的列索引
 
 // ======== Init ========
 async function init() {
-  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate()]);
+  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate(), loadChangelog()]);
   // 恢复上次壁纸，没有则随机选一张渐变纯色壁纸
   const wp = loadWallpaper();
   if (wp) {
@@ -648,6 +695,33 @@ async function loadModels() {
     });
   } catch (e) {
     toast('加载模型列表失败: ' + e.message, 'error');
+  }
+}
+
+let _allCommits = [];
+let _changelogExpanded = false;
+
+async function loadChangelog() {
+  try {
+    const r = await fetch('/api/changelog');
+    const d = await r.json();
+    if (!d.success) return;
+    _allCommits = d.commits;
+    renderChangelog();
+  } catch(e) {}
+}
+
+function renderChangelog() {
+  const list = document.getElementById('changelogList');
+  const btn = document.getElementById('changelogMoreBtn');
+  if (!list) return;
+  const show = _changelogExpanded ? _allCommits : _allCommits.slice(0, 3);
+  list.innerHTML = show.map(c =>
+    `<div style="margin-bottom:3px;"><b style="color:var(--text);">${esc(c.hash)}</b> <span style="opacity:.6;">${esc(c.date)}</span><br>${esc(c.msg)}</div>`
+  ).join('');
+  if (_allCommits.length > 3) {
+    btn.classList.remove('hidden');
+    btn.textContent = _changelogExpanded ? '收起 ▴' : `展开更多 ▾ (${_allCommits.length - 3}条)`;
   }
 }
 
@@ -778,6 +852,12 @@ function bindEvents() {
   // 选区复制按钮
   document.getElementById('copySelectionImgBtn').addEventListener('click', copySelectionAsImage);
   document.getElementById('copySelectionTextBtn').addEventListener('click', copySelectionAsText);
+
+  // 更新日志展开
+  document.getElementById('changelogMoreBtn').addEventListener('click', () => {
+    _changelogExpanded = !_changelogExpanded;
+    renderChangelog();
+  });
 
   // 导出列宽控制 — 拖动即时生效（直接改 iframe 的 <colgroup>）
   document.getElementById('exportColWidthSlider').addEventListener('input', function() {
