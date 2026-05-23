@@ -476,8 +476,8 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <span style="font-size:12px;color:var(--text2);">统一列宽：</span>
-      <input type="range" id="colWidthSlider" min="1" max="200" value="80" style="width:120px;cursor:pointer;">
-      <input type="number" id="colWidthInput" value="80" min="1" max="400" style="width:55px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="colWidthSlider" min="1" max="200" value="155" style="width:120px;cursor:pointer;">
+      <input type="number" id="colWidthInput" value="155" min="1" max="400" style="width:55px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
     </div>
     <div class="table-wrap" id="tableWrap"></div>
@@ -504,13 +504,13 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     <div class="style-grid" id="styleGrid"></div>
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
       <span style="font-size:12px;color:var(--text2);">预览：</span>
-      <iframe id="stylePreview" style="width:100%;height:450px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:rgba(255,255,255,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);"></iframe>
+      <iframe id="stylePreview" style="width:100%;min-width:1220px;height:450px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;overflow:auto;"></iframe>
     </div>
     <!-- 导出列宽控制 -->
     <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:12px;color:var(--text2);">导出列宽：</span>
-      <input type="range" id="exportColWidthSlider" min="1" max="200" value="80" style="width:100px;cursor:pointer;">
-      <input type="number" id="exportColWidthInput" value="80" min="1" max="400" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="range" id="exportColWidthSlider" min="1" max="200" value="155" style="width:100px;cursor:pointer;">
+      <input type="number" id="exportColWidthInput" value="155" min="1" max="400" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <span style="font-size:12px;color:var(--text2);margin-left:8px;">字体：</span>
       <select id="fontWeightSelect" style="padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;">
@@ -569,7 +569,7 @@ let mappings = {};
 let currentModel = 'qwen3.6-plus';
 
 // 导出列宽状态
-let exportColWidth = 80;
+let exportColWidth = 155;
 let exportColWidths = {};  // {colIndex: px} 逐列覆盖
 // 导出行高状态
 let exportRowHeight = 72;
@@ -779,7 +779,7 @@ function bindEvents() {
   document.getElementById('copySelectionImgBtn').addEventListener('click', copySelectionAsImage);
   document.getElementById('copySelectionTextBtn').addEventListener('click', copySelectionAsText);
 
-  // 导出列宽控制
+  // 导出列宽控制 — 拖动即时生效（直接改 iframe 的 <colgroup>）
   document.getElementById('exportColWidthSlider').addEventListener('input', function() {
     exportColWidth = parseInt(this.value);
     document.getElementById('exportColWidthInput').value = exportColWidth;
@@ -788,7 +788,7 @@ function bindEvents() {
     applyExportColWidths();
   });
   document.getElementById('exportColWidthInput').addEventListener('change', function() {
-    exportColWidth = parseInt(this.value) || 80;
+    exportColWidth = parseInt(this.value) || 155;
     document.getElementById('exportColWidthSlider').value = exportColWidth;
     exportColWidths = {};
     refreshFineTunePanel();
@@ -801,7 +801,7 @@ function bindEvents() {
     this.textContent = panel.classList.contains('hidden') ? '微调列宽 ▾' : '微调列宽 ▴';
   });
 
-  // 导出行高控制
+  // 导出行高控制 — 拖动即时生效（直接改 iframe 的 th/td inline style）
   document.getElementById('exportRowHeightSlider').addEventListener('input', function() {
     exportRowHeight = parseInt(this.value);
     document.getElementById('exportRowHeightInput').value = exportRowHeight;
@@ -821,13 +821,11 @@ function bindEvents() {
     exportHeaderHeight = parseInt(this.value);
     document.getElementById('exportHeaderHeightInput').value = exportHeaderHeight;
     applyExportRowHeights();
-    applyExportColWidths();
   });
   document.getElementById('exportHeaderHeightInput').addEventListener('change', function() {
     exportHeaderHeight = parseInt(this.value) || 72;
     document.getElementById('exportHeaderHeightSlider').value = exportHeaderHeight;
     applyExportRowHeights();
-    applyExportColWidths();
   });
   document.getElementById('fineTuneRowBtn').addEventListener('click', function() {
     const panel = document.getElementById('fineTuneRowPanel');
@@ -1299,7 +1297,7 @@ function refreshFineTunePanel() {
     </div>`;
   });
   panel.innerHTML = html;
-  // 滑块事件
+  // 滑块事件 — 拖动即时生效
   panel.querySelectorAll('.fine-slider').forEach(sl => {
     sl.addEventListener('input', function() {
       const ci = parseInt(this.dataset.col);
@@ -1337,26 +1335,18 @@ function applyExportColWidths() {
   if (!iframe) return;
   try {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
-    const ths = doc.querySelectorAll('table th');
-    ths.forEach((th, i) => {
+    const cols = doc.querySelectorAll('colgroup col');
+    cols.forEach((col, i) => {
       const w = exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth;
-      th.style.width = w + 'px'; th.style.minWidth = w + 'px'; th.style.padding = '2px 4px';
+      col.style.width = w + 'px';
     });
-    const tds = doc.querySelectorAll('table td');
-    tds.forEach((td, i) => {
-      const ci = i % (ths.length || 1);
-      const w = exportColWidths[ci] !== undefined ? exportColWidths[ci] : exportColWidth;
-      td.style.width = w + 'px'; td.style.minWidth = w + 'px'; td.style.padding = '2px 4px';
-    });
-    // 更新 line 模板的 CSS 变量（用导出状态计算，不依赖 iframe 渲染）
     const firstW = exportColWidths[0] !== undefined ? exportColWidths[0] : exportColWidth;
-    const headerH = exportHeaderHeight;
     const table = doc.querySelector('.size-table');
     if (table) {
       table.style.setProperty('--line-x', firstW + 'px');
-      table.style.setProperty('--line-y', headerH + 'px');
+      table.style.setProperty('--line-y', exportHeaderHeight + 'px');
     }
-  } catch(e) { /* 跨域忽略 */ }
+  } catch(e) {}
 }
 
 // ======== 导出行高控制 ========
@@ -1418,7 +1408,6 @@ function applyExportRowHeights() {
         td.style.height = h + 'px'; td.style.lineHeight = h + 'px'; td.style.padding = '2px 4px';
       });
     });
-    // thead row
     const theadThs = doc.querySelectorAll('table thead th');
     theadThs.forEach(th => {
       th.style.height = exportHeaderHeight + 'px'; th.style.lineHeight = exportHeaderHeight + 'px'; th.style.padding = '2px 4px';
@@ -1647,59 +1636,59 @@ async function copySelectionAsImage() {
   if (!sel) return toast('请拖选单元格或勾选列复选框', 'error');
   const { cols, minRow, maxRow, origTable } = sel;
 
-  // 构建干净的克隆表格（白底、简单边框，无蓝色高亮）
-  const clone = document.createElement('table');
-  clone.style.borderCollapse = 'collapse';
-  clone.style.fontSize = '14px';
-  clone.style.backgroundColor = '#ffffff';
-  clone.style.margin = '16px';
+  toast('正在渲染选区...', 'info');
 
-  const thead = document.createElement('thead');
-  const htr = document.createElement('tr');
+  // 构建纯净 HTML 字符串 — 全内联样式，零类名
+  const cellS = 'border:1px solid #ccc;padding:6px 10px;text-align:center;';
+  const thS = cellS + 'background:#f0f0f0;font-weight:600;color:#000;';
+  const tdS = cellS + 'background:#ffffff;color:#000;';
+  let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>table{border-collapse:collapse}</style></head><body style="margin:0;background:#fff;"><table>';
+  // 表头
+  html += '<thead><tr>';
   cols.forEach(ci => {
     const origTh = origTable.querySelector(`th.col-header[data-col="${ci}"]`);
-    const th = document.createElement('th');
-    th.textContent = origTh ? (origTh.querySelector('.col-label')?.textContent || origTh.dataset.header || '') : '';
-    th.style.cssText = 'border:1px solid #999;padding:6px 10px;text-align:center;background:#f0f0f0;font-weight:600;color:#000;';
-    htr.appendChild(th);
+    const label = origTh ? (origTh.querySelector('.col-label')?.textContent || origTh.dataset.header || '') : '';
+    html += `<th style="${thS}">${esc(label)}</th>`;
   });
-  thead.appendChild(htr);
-  clone.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
+  html += '</tr></thead>';
+  // 数据
+  html += '<tbody>';
   for (let ri = minRow; ri <= maxRow; ri++) {
-    const tr = document.createElement('tr');
+    html += '<tr>';
     cols.forEach(ci => {
       const origTd = origTable.querySelector(`td[data-row="${ri}"][data-col="${ci}"]`);
-      const td = document.createElement('td');
-      td.textContent = origTd ? origTd.textContent.trim() : '';
-      td.style.cssText = 'border:1px solid #999;padding:6px 10px;text-align:center;background:#ffffff;color:#000;';
-      tr.appendChild(td);
+      const val = origTd ? esc(origTd.textContent.trim()) : '';
+      html += `<td style="${tdS}">${val}</td>`;
     });
-    tbody.appendChild(tr);
+    html += '</tr>';
   }
-  clone.appendChild(tbody);
+  html += '</tbody></table></body></html>';
 
-  // 用可见的固定定位浮层包裹克隆表格，确保 html2canvas 正确渲染
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#ffffff;padding:10px;';
-  overlay.appendChild(clone);
-  document.body.appendChild(overlay);
+  // 用临时 iframe 隔离渲染 — 独立的干净文档，零样式泄漏
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:0;left:0;width:1200px;height:800px;z-index:99999;background:#fff;';
+  iframe.srcdoc = html;
+  document.body.appendChild(iframe);
 
   try {
-    const canvas = await html2canvas(clone, { backgroundColor: '#ffffff', scale: 2 });
-    canvas.toBlob(async blob => {
-      try {
-        await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
-        toast('选区已复制为图片，可粘贴到 PSD', 'success');
-      } catch (err) {
-        toast('复制图片失败: ' + err.message, 'error');
-      }
-    }, 'image/png');
+    await new Promise((resolve, reject) => {
+      iframe.onload = resolve;
+      setTimeout(() => reject(new Error('iframe load timeout')), 5000);
+    });
+    // 等一下让字体/布局稳定
+    await new Promise(r => setTimeout(r, 200));
+    const iframeTable = iframe.contentDocument.querySelector('table');
+    if (!iframeTable) throw new Error('iframe table not found');
+    const canvas = await html2canvas(iframeTable, { backgroundColor: '#ffffff', scale: 2 });
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+    });
+    await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+    toast('选区已复制为图片，可粘贴到 PSD', 'success');
   } catch (err) {
     toast('渲染选区失败: ' + err.message, 'error');
   } finally {
-    document.body.removeChild(overlay);
+    document.body.removeChild(iframe);
   }
 }
 
@@ -1709,6 +1698,12 @@ async function copySelectionAsText() {
   const { cols, minRow, maxRow, origTable } = sel;
 
   const lines = [];
+  // 先输出表头字段
+  cols.forEach(ci => {
+    const th = origTable.querySelector(`th.col-header[data-col="${ci}"]`);
+    lines.push(th ? (th.querySelector('.col-label')?.textContent || th.dataset.header || '') : '');
+  });
+  // 再输出数据行，每个单元格值一行
   for (let ri = minRow; ri <= maxRow; ri++) {
     cols.forEach(ci => {
       const td = origTable.querySelector(`td[data-row="${ri}"][data-col="${ci}"]`);

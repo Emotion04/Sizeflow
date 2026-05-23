@@ -84,15 +84,32 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
         css = re.sub(r"font-weight:\s*\d+", f"font-weight: {css_weight}", css)
         style_tag.string.replace_with(css)
 
-    # 注入导出配置：覆盖 body 和 table 的尺寸样式
-    _inject_export_config(soup, export_config)
-
     table = soup.find("table")
     if not table:
         return html
 
-    # 全局默认列宽
-    default_w = col_widths.get("_default", 80)
+    # 全局默认列宽 + 计算表格总宽
+    default_w = col_widths.get("_default", 155)
+    col_ws = []
+    for i in range(len(headers)):
+        col_ws.append(col_widths.get(str(i), default_w))
+    total_table_w = sum(col_ws)
+
+    # 注入导出配置 — 传入实际表格宽度，动态调整图片尺寸
+    _inject_export_config(soup, export_config, total_table_w)
+
+    # 用 <colgroup> 控制列宽 — table-layout:fixed 下最可靠的方式
+    colgroup = soup.new_tag("colgroup")
+    for w in col_ws:
+        col = soup.new_tag("col")
+        col["style"] = f"width:{w}px;"
+        colgroup.append(col)
+    # 替换已有 colgroup 或插入到 table 最前面
+    existing_colgroup = table.find("colgroup")
+    if existing_colgroup:
+        existing_colgroup.replace_with(colgroup)
+    else:
+        table.insert(0, colgroup)
 
     # 重建 thead：只包含数据中实际有的列
     thead = table.find("thead")
@@ -103,7 +120,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             th = soup.new_tag("th")
             th.string = str(h)
             w = col_widths.get(str(i), default_w)
-            th["style"] = f"width:{w}px;min-width:{w}px;height:{header_height}px;line-height:{header_height}px;padding:2px 6px;"
+            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:2px 6px;"
             tr.append(th)
         thead.append(tr)
 
@@ -122,36 +139,36 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             val = row[ci] if ci < len(row) and row[ci] is not None else ""
             td.string = str(val)
             w = col_widths.get(str(ci), default_w)
-            td["style"] = f"width:{w}px;min-width:{w}px;height:{rh}px;line-height:{rh}px;padding:2px 6px;"
+            td["style"] = f"height:{rh}px;line-height:{rh}px;padding:2px 6px;"
             tr.append(td)
         tbody.append(tr)
 
     return str(soup)
 
 
-def _inject_export_config(soup, export_config):
-    """注入导出配置：覆盖 body 宽/留白 和 table 宽"""
-    bg_width = export_config.get("bgWidth", 1200)
-    table_width = export_config.get("tableWidth", 1090)
+def _inject_export_config(soup, export_config, total_table_w=None):
+    """注入导出配置：flexbox 居中 + 四边留白，列多时自动扩展图片宽度"""
+    bg_min = export_config.get("bgWidth", 1200)
     padding = export_config.get("padding", 55)
+    # 图片宽度 = max(用户设定, 表格宽 + 两边留白)
+    actual_bg = max(bg_min, (total_table_w or 0) + 2 * padding)
+    table_w = actual_bg - 2 * padding
 
-    # 覆盖 body 样式
-    body = soup.find("body")
-    if body:
-        existing = body.get("style", "") if isinstance(body.get("style"), str) else ""
-        body["style"] = f"width:{bg_width}px;margin:0;padding:{padding}px 0;background:#ffffff;box-sizing:border-box;{existing}"
-
-    # 覆盖 html 样式（确保全页截图宽度）
+    # html
     html_tag = soup.find("html")
     if html_tag:
-        existing = html_tag.get("style", "") if isinstance(html_tag.get("style"), str) else ""
-        html_tag["style"] = f"width:{bg_width}px;margin:0;padding:0;background:#ffffff;{existing}"
+        html_tag["style"] = f"margin:0;padding:0;background:#ffffff;"
 
-    # 覆盖 table 样式
+    # body — flexbox 居中表格，padding 四边留白
+    body = soup.find("body")
+    if body:
+        body["style"] = f"width:{actual_bg}px;margin:0;padding:{padding}px;background:#ffffff;box-sizing:border-box;display:flex;justify-content:center;"
+
+    # table — 不设 width，由 <colgroup> 列宽自然决定总宽，列宽调节才能生效
     table = soup.find("table")
     if table:
         existing = table.get("style", "") if isinstance(table.get("style"), str) else ""
-        table["style"] = f"width:{table_width}px;table-layout:fixed;margin:0 auto;{existing}"
+        table["style"] = f"table-layout:fixed;flex-shrink:0;{existing}"
 
 
 def _get_font_face_css(font_weight):
@@ -163,14 +180,16 @@ def _get_font_face_css(font_weight):
 
 
 async def render_html_to_png(html, font_weight="medium", export_config=None):
-    """将 HTML 渲染为 PNG"""
+    """将 HTML 渲染为 PNG，视口宽度匹配 body 实际宽度"""
     if export_config is None:
         export_config = {}
-    bg_width = export_config.get("bgWidth", 1200)
+    # 从 HTML 中提取 body 的实际宽度
+    m = re.search(r'body[^>]*width:(\d+)px', html)
+    actual_w = int(m.group(1)) if m else export_config.get("bgWidth", 1200)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page(viewport={"width": bg_width, "height": 900})
+        page = await browser.new_page(viewport={"width": actual_w, "height": 600})
         await page.set_content(html, wait_until="load")
         font_css = _get_font_face_css(font_weight)
         await page.add_style_tag(content=font_css)
