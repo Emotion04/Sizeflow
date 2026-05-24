@@ -1,34 +1,39 @@
 {
   "commits": [
     {
+      "hash": "ce19f9a",
+      "msg": "Canary 3.14: 鍏抽敭淇?澶嶁?斺?攈tml2canvas鎴?鍥惧墠body鍒嘾isplay:block",
+      "date": "9 minutes ago"
+    },
+    {
       "hash": "d92764a",
       "msg": "Canary 3.13: 鎾ゅ洖snapdom鈥斺?斿洖閫?html2canvas+瀹屾暣filledHtml",
-      "date": "60 seconds ago"
+      "date": "10 minutes ago"
     },
     {
       "hash": "553a41e",
       "msg": "Canary 3.12: html2canvas鏇挎崲涓簊napdom鈥斺?旇В鍐砎ercel/EXE瀵煎嚭鍏ㄧ郴bug",
-      "date": "6 minutes ago"
+      "date": "15 minutes ago"
     },
     {
       "hash": "87b4889",
       "msg": "Canary 3.11: 褰诲簳閲嶅啓瀹㈡埛绔?瀵煎嚭鈥斺?斾笌鏈嶅姟绔?鍚屽叕寮?+鏈?绠?HTML闆秄lexbox",
-      "date": "12 minutes ago"
+      "date": "21 minutes ago"
     },
     {
       "hash": "8c3550b",
       "msg": "Canary 3.10: 淇?澶峍ercel瀵煎嚭灏哄?稿け鎺р?斺?斾粠filledHtml瑙ｆ瀽鏈嶅姟绔痓ody瀹藉害",
-      "date": "21 minutes ago"
+      "date": "30 minutes ago"
     },
     {
       "hash": "fe356f2",
       "msg": "Canary 3.9: 淇?澶峍ercel瀵煎嚭绾?鐧藉浘鐗?(opacity:0瀵艰嚧html2canvas娓叉煋閫忔槑)",
-      "date": "35 minutes ago"
+      "date": "45 minutes ago"
     },
     {
       "hash": "30a0168",
       "msg": "Canary 3.8: 鏂板?炶儗鏅?楂樺弬鏁? + 姝诲弬鏁版竻鐞? + 瀵煎嚭璀﹀憡鎻愮ず",
-      "date": "75 minutes ago"
+      "date": "84 minutes ago"
     },
     {
       "hash": "256fad8",
@@ -43,7 +48,7 @@
     {
       "hash": "9d7f4aa",
       "msg": "Canary 3.6: EXE淇?澶? + 鍝嶅簲寮忓竷灞? + 鏇存柊鏃ュ織缂撳瓨",
-      "date": "2 hours ago"
+      "date": "3 hours ago"
     },
     {
       "hash": "e64e887",
