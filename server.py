@@ -394,8 +394,10 @@ def bing_wallpaper():
 
 @app.route("/api/changelog", methods=["GET"])
 def api_changelog():
-    """返回最近 git commit 记录"""
+    """返回最近 git commit 记录，失败时回退到缓存文件"""
     import subprocess
+    commits = None
+    # 尝试 git log
     try:
         result = subprocess.run(
             ["git", "log", "-20", "--pretty=format:%h|%s|%ar"],
@@ -403,17 +405,24 @@ def api_changelog():
             timeout=5, cwd=APP_DIR
         )
         output = result.stdout.decode("utf-8", errors="replace") if result.stdout else ""
-        if result.returncode != 0 or not output:
-            return jsonify({"success": False, "error": "git log failed"})
-        commits = []
-        for line in output.strip().split("\n"):
-            if not line: continue
-            parts = line.split("|", 2)
-            if len(parts) == 3:
-                commits.append({"hash": parts[0], "msg": parts[1], "date": parts[2]})
-        return jsonify({"success": True, "commits": commits})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        if result.returncode == 0 and output:
+            commits = []
+            for line in output.strip().split("\n"):
+                if not line: continue
+                parts = line.split("|", 2)
+                if len(parts) == 3:
+                    commits.append({"hash": parts[0], "msg": parts[1], "date": parts[2]})
+    except Exception:
+        pass
+    # git 失败时用缓存
+    if not commits:
+        cache_path = os.path.join(APP_DIR, "changelog_cache.json")
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                commits = json.load(f).get("commits", [])
+        except Exception:
+            commits = []
+    return jsonify({"success": True, "commits": commits or []})
 
 # ---- Startup ----
 

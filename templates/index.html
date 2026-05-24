@@ -73,12 +73,14 @@ header .ver { font-size:11px; opacity:.5; font-weight:500; }
 .sidebar-links { display:flex; flex-direction:column; gap:6px; }
 .sidebar-links a { color:var(--primary); text-decoration:none; font-size:13px; padding:4px 8px; border-radius:6px; transition:background .15s; }
 .sidebar-links a:hover { background:rgba(79,110,246,.08); }
-@media (max-width:1000px) {
+@media (max-width:1200px) {
+  .container { max-width:98%; }
   .main-row { flex-direction:column; }
   .main-left { flex:auto; }
-  .sidebar-card { min-width:auto; }
+  .sidebar-card { flex:auto; max-width:none; }
   .upload-mapping-row { flex-direction:column; }
   .upload-mapping-row > .upload-col, .upload-mapping-row > .mapping-col { min-width:auto; }
+  #analyzeBtn { height:80px; width:200px; font-size:16px; }
 }
 .card {
   background: rgba(255,255,255,.1);

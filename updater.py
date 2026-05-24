@@ -81,6 +81,12 @@ def check_update():
             print(f"[Updater] 发现新版本: {latest_tag} (当前: {APP_VERSION})")
         else:
             print(f"[Updater] 已是最新版本: {APP_VERSION}")
+    except urllib.error.HTTPError as e:
+        if e.code == 403:
+            print(f"[Updater] GitHub API 限流，跳过更新检查")
+        else:
+            print(f"[Updater] 检查更新失败 (HTTP {e.code})")
+        result["error"] = str(e)
     except Exception as e:
         print(f"[Updater] 检查更新失败: {e}")
         result["error"] = str(e)
