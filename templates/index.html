@@ -1992,54 +1992,26 @@ async function exportPng() {
     }
   } catch (e) { /* 降级客户端渲染 */ }
   // 客户端渲染（Vercel/EXE兜底）
-  // 不依赖 filledHtml 的 body 渲染——html2canvas 对 flexbox/box-sizing 尺寸计算有 bug
-  // 改为客户端精确计算尺寸，手动构建干净表格+留白容器（与 copySelectionAsImage 同策略）
+  // body 已改为普通块元素(margin:0 auto)，html2canvas 可直接渲染
   try {
-    syncTableFromUI();
-    if (!resultData) { toast('导出失败: 无表格数据', 'error'); return; }
-
-    const pad = exportConfig.padding || 55;
-    const bgMin = exportConfig.bgWidth || 1200;
-    const bgH = exportConfig.bgHeight || 0;
-    const headers = resultData.headers;
-
-    // 先通过刷新预览获取服务端 HTML（需要其中的 colgroup 等样式）
     await refreshPreview();
     await new Promise(r => setTimeout(r, 400));
     if (!filledHtml) { toast('导出失败: 预览未加载', 'error'); return; }
 
-    // 从 filledHtml 提取 table（含服务端生成的 colgroup + 模板特定 CSS 类）
-    const tmpFrame = document.createElement('iframe');
-    tmpFrame.style.cssText = 'position:fixed;top:0;left:0;z-index:99998;';
-    tmpFrame.srcdoc = filledHtml;
-    document.body.appendChild(tmpFrame);
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;';
+    frame.srcdoc = filledHtml;
+    document.body.appendChild(frame);
     await new Promise((resolve, reject) => {
-      tmpFrame.onload = resolve;
-      setTimeout(() => reject(new Error('timeout')), 5000);
+      frame.onload = resolve;
+      setTimeout(() => reject(new Error('timeout')), 6000);
     });
-    const origTable = tmpFrame.contentDocument.querySelector('table');
-    if (!origTable) { document.body.removeChild(tmpFrame); toast('导出失败: 表格未加载', 'error'); return; }
+    try { await frame.contentDocument.fonts.ready; } catch(e) {}
+    await new Promise(r => setTimeout(r, 300));
 
-    // 精确计算图片宽度 = max(bgWidth, 列宽总和 + 2×留白) ——与服务端同一公式
-    const totalColW = headers.reduce((sum, _, i) => {
-      return sum + (exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth);
-    }, 0);
-    const actualW = Math.max(bgMin, totalColW + 2 * pad);
-
-    // 纯手工构建精确尺寸的容器——零 CSS 类，全 inline 样式，隔离 html2canvas 的所有 bug
-    const wrapper = document.createElement('div');
-    const minH = bgH > 0 ? `min-height:${bgH - 2 * pad}px;` : '';
-    wrapper.style.cssText = `position:fixed;top:0;left:0;z-index:99999;width:${actualW}px;padding:${pad}px;background:#ffffff;box-sizing:border-box;${minH}`;
-    const tableClone = origTable.cloneNode(true);
-    // 确保表格在 wrapper 内居中
-    tableClone.style.margin = '0 auto';
-    tableClone.style.width = (actualW - 2 * pad) + 'px';
-    wrapper.appendChild(tableClone);
-    document.body.appendChild(wrapper);
-    document.body.removeChild(tmpFrame);
-
-    const canvas = await html2canvas(wrapper, { backgroundColor: '#ffffff', scale: 2 });
-    document.body.removeChild(wrapper);
+    const body = frame.contentDocument.body;
+    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
+    document.body.removeChild(frame);
 
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
