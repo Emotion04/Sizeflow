@@ -33,18 +33,20 @@ body {
 /* 鼠标追光层 */
 #cursor-glow {
   position:fixed; pointer-events:none; z-index:0;
-  width:200px; height:200px;
+  width:220px; height:220px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.18) 25%, transparent 60%);
+  background:radial-gradient(circle, rgba(255,255,255,.35) 0%, rgba(255,255,255,.12) 30%, transparent 65%);
   transform:translate(-50%, -50%);
+  mix-blend-mode: soft-light;
   transition:left .6s cubic-bezier(.15,.85,.35,1), top .6s cubic-bezier(.15,.85,.35,1);
 }
 #cursor-glow-ambient {
   position:fixed; pointer-events:none; z-index:0;
-  width:280px; height:280px;
+  width:340px; height:340px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.3) 0%, rgba(255,255,255,.08) 45%, transparent 75%);
+  background:radial-gradient(circle, rgba(255,255,255,.18) 0%, rgba(255,255,255,.05) 40%, transparent 70%);
   transform:translate(-50%, -50%);
+  mix-blend-mode: overlay;
   transition:left 1.2s cubic-bezier(.2,.8,.4,1), top 1.2s cubic-bezier(.2,.8,.4,1);
 }
 header {
@@ -228,16 +230,17 @@ header .ver { font-size:11px; opacity:.5; font-weight:500; }
 .mapping-list { overflow-x:hidden; min-width:0; }
 .mapping-row { display:flex; gap:6px; align-items:center; margin-bottom:6px; min-width:0; }
 .mapping-row span.arrow { color:var(--text2); flex:0 0 auto; }
-.mapping-row input { flex:1; min-width:0; width:0; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px; outline:none; }
-.mapping-row input:focus { border-color:var(--primary); }
-.mapping-row .key-input { background:#fafbfc; }
+.mapping-row input { flex:1; min-width:0; width:0; padding:6px 8px; border:1px solid rgba(255,255,255,.25); border-radius:6px; font-size:12px; outline:none; background:rgba(255,255,255,.12); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); color:var(--text); }
+.mapping-row input:focus { border-color:rgba(79,110,246,.4); background:rgba(255,255,255,.2); }
+.mapping-row .key-input { background:rgba(255,255,255,.08); }
 .mapping-new { animation:highlightRow .8s ease; }
 @keyframes highlightRow {
   0% { background:rgba(79,110,246,.12); transform:scale(1.01); }
   100% { background:transparent; transform:scale(1); }
 }
 .add-mapping { margin-top:8px; display:flex; gap:8px; align-items:center; min-width:0; }
-.add-mapping input { flex:1; min-width:0; width:0; padding:6px 8px; border:1px dashed var(--border); border-radius:4px; font-size:12px; outline:none; }
+.add-mapping input { flex:1; min-width:0; width:0; padding:6px 8px; border:1px dashed rgba(255,255,255,.3); border-radius:6px; font-size:12px; outline:none; background:rgba(255,255,255,.1); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); color:var(--text); }
+.add-mapping input:focus { border-color:rgba(79,110,246,.5); background:rgba(255,255,255,.18); }
 
 /* result table */
 .table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; display:flex; justify-content:center; }
