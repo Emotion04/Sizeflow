@@ -2008,7 +2008,7 @@ async function exportPng() {
     await new Promise(r => setTimeout(r, 300));
 
     const body = frame.contentDocument.body;
-    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
+    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 1 });
     document.body.removeChild(frame);
 
     canvas.toBlob(blob => {
