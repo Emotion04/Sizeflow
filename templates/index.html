@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>尺码表转换工具</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://unpkg.com/@zumer/snapdom@0.7.3/dist/snapdom.umd.min.js"></script>
 <style>
 :root {
   --bg: #e8ecf1;
@@ -1798,7 +1799,9 @@ async function copySelectionAsImage() {
     await new Promise(r => setTimeout(r, 200));
     const iframeTable = iframe.contentDocument.querySelector('table');
     if (!iframeTable) throw new Error('iframe table not found');
-    const canvas = await html2canvas(iframeTable, { backgroundColor: '#ffffff', scale: 2 });
+    const canvas = typeof snapdom !== 'undefined'
+      ? await snapdom.toCanvas(iframeTable, { scale: 2, backgroundColor: '#ffffff' })
+      : await html2canvas(iframeTable, { backgroundColor: '#ffffff', scale: 2 });
     const blob = await new Promise((resolve, reject) => {
       canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
     });
@@ -1991,54 +1994,31 @@ async function exportPng() {
       return;
     }
   } catch (e) { /* 降级客户端渲染 */ }
-  // 客户端渲染（Vercel/EXE兜底）
-  // 与服务端完全相同的公式计算图片宽度：actualW = max(bgWidth, 列宽总和 + 2×留白)
+  // 客户端渲染（Vercel/EXE兜底）— 使用 snapdom 替代 html2canvas
+  // snapdom 支持伪元素、border-collapse、字体，直接用 filledHtml 无需剥离 CSS
   try {
     await refreshPreview();
     await new Promise(r => setTimeout(r, 400));
-    syncTableFromUI();
-    if (!resultData) { toast('导出失败: 无表格数据', 'error'); return; }
+    if (!filledHtml) { toast('导出失败: 请先选择模板生成预览', 'error'); return; }
 
-    const pad = exportConfig.padding || 55;
-    const bgMin = exportConfig.bgWidth || 1200;
-    const bgH = exportConfig.bgHeight || 0;
-    const cols = resultData.headers.length;
-    const totalColW = resultData.headers.reduce((sum, _, i) => {
-      return sum + (exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth);
-    }, 0);
-    const actualW = Math.max(bgMin, totalColW + 2 * pad);
-
-    // 从 filledHtml 提取表格 HTML（含服务端生成的 colgroup 列宽）
-    const tmpIframe = document.createElement('iframe');
-    tmpIframe.style.cssText = `position:fixed;top:0;left:0;width:${actualW}px;height:100px;z-index:99998;`;
-    tmpIframe.srcdoc = filledHtml;
-    document.body.appendChild(tmpIframe);
-    await new Promise((resolve, reject) => {
-      tmpIframe.onload = resolve;
-      setTimeout(() => reject(new Error('iframe timeout')), 8000);
-    });
-    const tmpDoc = tmpIframe.contentDocument || tmpIframe.contentWindow.document;
-    const origTable = tmpDoc.querySelector('table');
-    document.body.removeChild(tmpIframe);
-    if (!origTable) { toast('导出失败: 表格未加载', 'error'); return; }
-
-    // 构建最简 HTML：仅 body + padding 留白 + table，零 flexbox，零复杂 CSS
-    const tableHTML = origTable.outerHTML;
-    const minH = bgH > 0 ? `min-height:${bgH - 2 * pad}px;` : '';
-    const cleanHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:#fff}body{width:${actualW}px;padding:${pad}px;box-sizing:border-box;${minH}}</style></head><body>${tableHTML}</body></html>`;
-
+    // 用完整 filledHtml（含所有模板 CSS + 服务端 body 样式），不剥离
     const renderFrame = document.createElement('iframe');
-    renderFrame.style.cssText = `position:fixed;top:0;left:0;width:${actualW}px;height:100px;z-index:99999;`;
-    renderFrame.srcdoc = cleanHTML;
+    renderFrame.style.cssText = 'position:fixed;top:0;left:0;width:1200px;height:100px;z-index:99999;';
+    renderFrame.srcdoc = filledHtml;
     document.body.appendChild(renderFrame);
     await new Promise((resolve, reject) => {
       renderFrame.onload = resolve;
-      setTimeout(() => reject(new Error('renderFrame timeout')), 5000);
+      setTimeout(() => reject(new Error('renderFrame timeout')), 6000);
     });
-    await new Promise(r => setTimeout(r, 200));
+    // 等待字体渲染完成
+    try { await renderFrame.contentDocument.fonts.ready; } catch(e) {}
+    await new Promise(r => setTimeout(r, 300));
 
     const body = renderFrame.contentDocument.body;
-    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
+    // snapdom 优先，回退 html2canvas
+    const canvas = typeof snapdom !== 'undefined'
+      ? await snapdom.toCanvas(body, { scale: 2, backgroundColor: '#ffffff' })
+      : await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
     document.body.removeChild(renderFrame);
 
     canvas.toBlob(blob => {
