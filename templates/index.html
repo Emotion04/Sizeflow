@@ -2010,6 +2010,9 @@ async function exportPng() {
     await new Promise(r => setTimeout(r, 300));
 
     const body = frame.contentDocument.body;
+    // html2canvas 无法正确渲染 display:flex 的 body
+    // 临时切为 block，保留所有尺寸样式，表格用 margin:0 auto 居中
+    body.style.display = 'block';
     const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
     document.body.removeChild(frame);
 
