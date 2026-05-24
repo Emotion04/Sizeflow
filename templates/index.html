@@ -469,14 +469,16 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
               <button class="btn btn-outline btn-sm" id="resetMappingsBtn">恢复默认</button>
               <button class="btn btn-outline btn-sm" id="saveMappingsBtn">保存映射</button>
             </div>
-            <!-- Action button + model select (moved from separate card) -->
-            <div class="hidden" id="actionArea" style="margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:8px;">
-              <button class="btn btn-primary" id="analyzeBtn" style="height:160px;width:260px;font-size:22px;border-radius:16px;">
-                &#128269; 开始识别
+            <!-- Action button + model select -->
+            <div class="hidden" id="actionArea" style="margin-top:24px;margin-bottom:24px;display:flex;flex-direction:column;align-items:center;gap:32px;">
+              <button class="btn" id="analyzeBtn" style="height:120px;width:160px;font-size:18px;border-radius:14px;background:rgba(79,110,246,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);color:#fff;cursor:pointer;transition:all .2s;"
+                onmouseover="this.style.background='rgba(79,110,246,.4)';this.style.transform='scale(1.04)';"
+                onmouseout="this.style.background='rgba(79,110,246,.25)';this.style.transform='scale(1)';">
+                &#128269;<br>开始识别
               </button>
-              <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;">
+              <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;">
                 模型：
-                <select id="modelSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;"></select>
+                <select id="modelSelect" style="padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--text);cursor:pointer;outline:none;"></select>
               </label>
             </div>
           </div>
@@ -552,7 +554,7 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     <div class="style-grid" id="styleGrid"></div>
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
       <span style="font-size:12px;color:var(--text2);">预览：</span>
-      <iframe id="stylePreview" style="width:auto;max-width:100%;height:450px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;overflow:hidden;"></iframe>
+      <iframe id="stylePreview" style="width:66%;height:450px;display:block;margin:0 auto;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;"></iframe>
     </div>
     <!-- 导出列宽控制 -->
     <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1356,23 +1358,10 @@ function refreshPreview() {
     if (d.success) {
       filledHtml = d.html;
       document.getElementById('stylePreview').srcdoc = d.html;
-      // iframe 宽度自适应表格
-      setTimeout(() => {
-        const iframe = document.getElementById('stylePreview');
-        try {
-          const doc = iframe.contentDocument || iframe.contentWindow.document;
-          const table = doc.querySelector('table');
-          const body = doc.body;
-          if (table && body) {
-            const w = Math.min(body.scrollWidth, window.innerWidth * 0.7);
-            iframe.style.width = Math.max(w, 400) + 'px';
-          }
-        } catch(e) {}
-      }, 200);
     }
   }).catch(e => console.error('refreshPreview:', e));
   // 预览加载后应用列宽
-  setTimeout(applyExportColWidths, 400);
+  setTimeout(applyExportColWidths, 300);
 }
 
 // ======== 导出列宽控制 ========
@@ -1971,14 +1960,24 @@ async function exportPng() {
       return;
     }
   } catch (e) { /* 降级客户端渲染 */ }
-  // 客户端渲染（Vercel兜底）
+  // 客户端渲染（Vercel兜底）— 用 filledHtml 建临时 iframe 确保零尺寸问题
   try {
-    applyExportColWidths();
-    const iframe = document.getElementById('stylePreview');
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-    const table = iframeDoc.querySelector('table');
-    if (!table) { toast('导出失败: 预览未加载', 'error'); return; }
+    if (!filledHtml) { toast('导出失败: 请先选择模板生成预览', 'error'); return; }
+    // 创建临时 iframe，确保渲染正确
+    const tmpIframe = document.createElement('iframe');
+    tmpIframe.style.cssText = 'position:fixed;top:0;left:0;width:1200px;height:800px;z-index:-1;opacity:0;';
+    tmpIframe.srcdoc = filledHtml;
+    document.body.appendChild(tmpIframe);
+    await new Promise((resolve, reject) => {
+      tmpIframe.onload = resolve;
+      setTimeout(() => reject(new Error('iframe timeout')), 8000);
+    });
+    await new Promise(r => setTimeout(r, 300));
+    const tmpDoc = tmpIframe.contentDocument || tmpIframe.contentWindow.document;
+    const table = tmpDoc.querySelector('table');
+    if (!table) { document.body.removeChild(tmpIframe); toast('导出失败: 表格未加载', 'error'); return; }
     const canvas = await html2canvas(table, { backgroundColor: '#ffffff', scale: 2 });
+    document.body.removeChild(tmpIframe);
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
