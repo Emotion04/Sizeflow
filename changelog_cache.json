@@ -1,39 +1,49 @@
 {
   "commits": [
     {
+      "hash": "30a0168",
+      "msg": "Canary 3.8: 鏂板?炶儗鏅?楂樺弬鏁? + 姝诲弬鏁版竻鐞? + 瀵煎嚭璀﹀憡鎻愮ず",
+      "date": "22 minutes ago"
+    },
+    {
+      "hash": "256fad8",
+      "msg": "鏇存柊鏃ュ織缂撳瓨鍚屾?ュ叏閮?22鏉?git commit",
+      "date": "51 minutes ago"
+    },
+    {
       "hash": "912a7ff",
       "msg": "Canary 3.7: 閲嶅啓瀹㈡埛绔?瀵煎嚭璺?寰勪慨澶峍ercel/EXE鐣欑櫧涓㈠け",
-      "date": "6 minutes ago"
+      "date": "59 minutes ago"
     },
     {
       "hash": "9d7f4aa",
       "msg": "Canary 3.6: EXE淇?澶? + 鍝嶅簲寮忓竷灞? + 鏇存柊鏃ュ織缂撳瓨",
-      "date": "36 minutes ago"
+      "date": "89 minutes ago"
     },
     {
       "hash": "e64e887",
       "msg": "Canary 3.5: 淇?澶峍ercel瀵煎嚭鐣欑櫧涓㈠け + 棰勮?堝埛鏂版敼涓篜romise",
-      "date": "59 minutes ago"
+      "date": "2 hours ago"
     },
     {
       "hash": "a12c128",
       "msg": "Canary 3.2: 鏄犲皠杈撳叆妗嗙幓鐠冭川鎰? + 榧犳爣鍏夌悆鏌斿厜娣峰悎",
-      "date": "2 hours ago"
+      "date": "3 hours ago"
     },
     {
       "hash": "1003ba4",
       "msg": "Canary 3.1: 鑾?鍏拌开鑹茬郴澹佺焊 + 涓夋ā鏉跨粺涓?杈硅窛 + UI浼樺寲",
-      "date": "5 hours ago"
+      "date": "6 hours ago"
     },
     {
       "hash": "0cd3974",
       "msg": "Canary 3.0: UI閲嶆瀯 + 渚ц竟鏍? + 鏇存柊鏃ュ織 + 鏄犲皠閰嶇疆浼樺寲",
-      "date": "22 hours ago"
+      "date": "23 hours ago"
     },
     {
       "hash": "76623de",
       "msg": "v2.0.1: 淇?澶嶅?煎嚭PNG甯冨眬 + 鍒楀?芥帶鍒? + 鍔ㄦ?佸浘鐗囧?藉害",
-      "date": "23 hours ago"
+      "date": "24 hours ago"
     },
     {
       "hash": "33de62c",
@@ -98,16 +108,6 @@
     {
       "hash": "efac7a6",
       "msg": "v2.1.7-canary: 鏇存柊妫?娴? + 鏁板瓧鏍煎紡鍖? + 娑叉?佺幓鐠冧笂浼犲尯 + OCR鎻愮ず浼樺寲",
-      "date": "8 days ago"
-    },
-    {
-      "hash": "efba201",
-      "msg": "绮剧畝妯″瀷鍒楄〃锛氱Щ闄や笉鏀?鎸佸?氭ā鎬佺殑Qwen3.5绯诲垪锛岄粯璁?qwen3.6-flash",
-      "date": "8 days ago"
-    },
-    {
-      "hash": "d50f245",
-      "msg": "v2.0: 鍥剧墖鍘嬬缉 + PNG绮剧‘鎴?鍙? + 澹佺焊绯荤粺 + 娑叉?佺幓鐠僓I",
       "date": "8 days ago"
     }
   ]
