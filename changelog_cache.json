@@ -1,1 +1,114 @@
-{"commits": [{"hash": "e64e887", "msg": "Canary 3.5: 修复Vercel导出留白丢失 + 预览刷新改为Promise", "date": "recently"}, {"hash": "01a8c98", "msg": "Canary 3.4: 玻璃按钮 + Vercel导出修复 + 预览居中", "date": "recently"}, {"hash": "457acea", "msg": "Canary 3.3: 识别按钮移入主卡片 + iframe自适应 + line模板修复", "date": "recently"}, {"hash": "a12c128", "msg": "Canary 3.2: 映射输入框玻璃质感 + 鼠标光球柔光混合", "date": "recently"}, {"hash": "1003ba4", "msg": "Canary 3.1: 莫兰迪色系壁纸 + 三模板统一边距 + UI优化", "date": "recently"}, {"hash": "0cd3974", "msg": "Canary 3.0: UI重构 + 侧边栏 + 更新日志 + 映射配置优化", "date": "recently"}, {"hash": "76623de", "msg": "v2.0.1: 修复导出PNG布局 + 列宽控制 + 动态图片宽度", "date": "1 day ago"}, {"hash": "33de62c", "msg": "v2.0.0: 导出配置面板 + 字体字重选择 + 选区复制 + 列复选框 + 渐变色壁纸", "date": "2 days ago"}]}
+{
+  "commits": [
+    {
+      "hash": "912a7ff",
+      "msg": "Canary 3.7: 閲嶅啓瀹㈡埛绔?瀵煎嚭璺?寰勪慨澶峍ercel/EXE鐣欑櫧涓㈠け",
+      "date": "6 minutes ago"
+    },
+    {
+      "hash": "9d7f4aa",
+      "msg": "Canary 3.6: EXE淇?澶? + 鍝嶅簲寮忓竷灞? + 鏇存柊鏃ュ織缂撳瓨",
+      "date": "36 minutes ago"
+    },
+    {
+      "hash": "e64e887",
+      "msg": "Canary 3.5: 淇?澶峍ercel瀵煎嚭鐣欑櫧涓㈠け + 棰勮?堝埛鏂版敼涓篜romise",
+      "date": "59 minutes ago"
+    },
+    {
+      "hash": "a12c128",
+      "msg": "Canary 3.2: 鏄犲皠杈撳叆妗嗙幓鐠冭川鎰? + 榧犳爣鍏夌悆鏌斿厜娣峰悎",
+      "date": "2 hours ago"
+    },
+    {
+      "hash": "1003ba4",
+      "msg": "Canary 3.1: 鑾?鍏拌开鑹茬郴澹佺焊 + 涓夋ā鏉跨粺涓?杈硅窛 + UI浼樺寲",
+      "date": "5 hours ago"
+    },
+    {
+      "hash": "0cd3974",
+      "msg": "Canary 3.0: UI閲嶆瀯 + 渚ц竟鏍? + 鏇存柊鏃ュ織 + 鏄犲皠閰嶇疆浼樺寲",
+      "date": "22 hours ago"
+    },
+    {
+      "hash": "76623de",
+      "msg": "v2.0.1: 淇?澶嶅?煎嚭PNG甯冨眬 + 鍒楀?芥帶鍒? + 鍔ㄦ?佸浘鐗囧?藉害",
+      "date": "23 hours ago"
+    },
+    {
+      "hash": "33de62c",
+      "msg": "v2.0.0: 瀵煎嚭閰嶇疆闈㈡澘 + 瀛椾綋瀛楅噸閫夋嫨 + 閫夊尯澶嶅埗(鍥剧墖/鏂囨湰) + 鍒楀?嶉?夋?? + 娓愬彉鑹插?佺焊",
+      "date": "2 days ago"
+    },
+    {
+      "hash": "be4e738",
+      "msg": "Merge branch 'style-feature'",
+      "date": "2 days ago"
+    },
+    {
+      "hash": "c732bc5",
+      "msg": "Merge branch 'style-feature'",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "1f6c995",
+      "msg": "鍒楀??/琛岄珮min闃堝?煎叏閮ㄦ斁寮?鑷?1px",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "342aa06",
+      "msg": "榛樿?ゅ?佺焊鏀逛负Bing姣忔棩澹佺焊锛堣交閲廢RL锛孷ercel涓嶈秴鏃讹級",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "3873e04",
+      "msg": "v1.6.0-Preview: PNG瀵煎嚭鍙岃建鍒? 鈥? 鏈嶅姟绔疨laywright + 瀹㈡埛绔痟tml2canvas闄嶇骇",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "11e363c",
+      "msg": "淇?澶峷ercel.json: 绉婚櫎builds閰嶇疆锛屼繚鐣檅uildCommand瀹夎?匬laywright",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "0cbaa52",
+      "msg": "淇?澶嶅僵铔嬭?℃椂鍣ㄦ寚鏁版孩鍑?(1638鈫?16)",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "2d33e0e",
+      "msg": "v1.6.0-Preview: 瀵煎嚭鍔犻?? + 褰╄泲璁℃椂鍣? + 閿欒??鎻愮ず浼樺寲",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "d9f801d",
+      "msg": "v1.6.0-Preview: 鏁版嵁瀵归綈淇?澶? + 鐜荤拑UI + 妯＄硦鍖归厤澧炲己",
+      "date": "3 days ago"
+    },
+    {
+      "hash": "74e9ce3",
+      "msg": "娣诲姞榛樿??API Key鍏滃簳",
+      "date": "4 days ago"
+    },
+    {
+      "hash": "37d0aff",
+      "msg": "v2.2.0: 涓ゆ?ュ紡OCR + 鍔ㄦ?佽〃澶? + 鍒楀垹闄?X鎸夐挳 + 棰勮?堝悓姝?",
+      "date": "4 days ago"
+    },
+    {
+      "hash": "efac7a6",
+      "msg": "v2.1.7-canary: 鏇存柊妫?娴? + 鏁板瓧鏍煎紡鍖? + 娑叉?佺幓鐠冧笂浼犲尯 + OCR鎻愮ず浼樺寲",
+      "date": "8 days ago"
+    },
+    {
+      "hash": "efba201",
+      "msg": "绮剧畝妯″瀷鍒楄〃锛氱Щ闄や笉鏀?鎸佸?氭ā鎬佺殑Qwen3.5绯诲垪锛岄粯璁?qwen3.6-flash",
+      "date": "8 days ago"
+    },
+    {
+      "hash": "d50f245",
+      "msg": "v2.0: 鍥剧墖鍘嬬缉 + PNG绮剧‘鎴?鍙? + 澹佺焊绯荤粺 + 娑叉?佺幓鐠僓I",
+      "date": "8 days ago"
+    }
+  ]
+}
