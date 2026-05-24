@@ -1961,14 +1961,19 @@ async function exportPng() {
       return;
     }
   } catch (e) { /* 降级客户端渲染 */ }
-  // 客户端渲染（Vercel兜底）— 先刷新预览确保 filledHtml 最新，截 body 含留白
+  // 客户端渲染（Vercel/EXE兜底）
+  // 不与服务端共用地渲染路径，而是用 filledHtml 里的数据手动构建干净容器
+  // 避免 html2canvas 对 body/flexbox/box-sizing 的兼容问题
   try {
-    // 等待预览刷新完成
     await refreshPreview();
     await new Promise(r => setTimeout(r, 500));
     if (!filledHtml) { toast('导出失败: 请先选择模板生成预览', 'error'); return; }
+
+    // 从 filledHtml 提取 table，在临时 iframe 中渲染
     const tmpIframe = document.createElement('iframe');
-    tmpIframe.style.cssText = 'position:fixed;top:0;left:0;width:1200px;height:800px;z-index:-1;opacity:0;';
+    const bgW = exportConfig.bgWidth || 1200;
+    const pad = exportConfig.padding || 55;
+    tmpIframe.style.cssText = `position:fixed;top:0;left:0;width:${bgW}px;height:100px;z-index:-1;opacity:0;`;
     tmpIframe.srcdoc = filledHtml;
     document.body.appendChild(tmpIframe);
     await new Promise((resolve, reject) => {
@@ -1977,11 +1982,22 @@ async function exportPng() {
     });
     await new Promise(r => setTimeout(r, 300));
     const tmpDoc = tmpIframe.contentDocument || tmpIframe.contentWindow.document;
-    // 截 body 而不是 table — body 含 padding 留白
-    const body = tmpDoc.body;
-    if (!body) { document.body.removeChild(tmpIframe); toast('导出失败: 内容未加载', 'error'); return; }
-    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
+    const origTable = tmpDoc.querySelector('table');
+    if (!origTable) { document.body.removeChild(tmpIframe); toast('导出失败: 表格未加载', 'error'); return; }
+
+    // 构建干净的包装容器（全 inline 样式，零 CSS 类 — 与 copySelectionAsImage 同策略）
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `position:fixed;top:0;left:0;padding:${pad}px;background:#ffffff;box-sizing:border-box;width:${bgW}px;opacity:0;pointer-events:none;`;
+    const tableClone = origTable.cloneNode(true);
+    // 清除可能干扰的样式
+    tableClone.style.margin = '0 auto';
+    tableClone.style.flexShrink = '0';
+    wrapper.appendChild(tableClone);
+    document.body.appendChild(wrapper);
+
+    const canvas = await html2canvas(wrapper, { backgroundColor: '#ffffff', scale: 2 });
     document.body.removeChild(tmpIframe);
+    document.body.removeChild(wrapper);
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
