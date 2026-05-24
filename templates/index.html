@@ -1347,10 +1347,10 @@ function buildExportStylePayload() {
 }
 
 function refreshPreview() {
-  if (!selectedTemplate || !resultData) return;
+  if (!selectedTemplate || !resultData) return Promise.resolve();
   syncTableFromUI();
   const payload = buildExportStylePayload();
-  fetch('/api/apply-template', {
+  return fetch('/api/apply-template', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: payload.colWidths, rowHeights: payload.rowHeights, headerHeight: payload.headerHeight, fontWeight: payload.fontWeight, exportConfig: payload.exportConfig })
@@ -1359,9 +1359,8 @@ function refreshPreview() {
       filledHtml = d.html;
       document.getElementById('stylePreview').srcdoc = d.html;
     }
-  }).catch(e => console.error('refreshPreview:', e));
-  // 预览加载后应用列宽
-  setTimeout(applyExportColWidths, 300);
+  }).catch(e => console.error('refreshPreview:', e))
+  .then(() => { setTimeout(applyExportColWidths, 300); });
 }
 
 // ======== 导出列宽控制 ========
@@ -1960,10 +1959,12 @@ async function exportPng() {
       return;
     }
   } catch (e) { /* 降级客户端渲染 */ }
-  // 客户端渲染（Vercel兜底）— 用 filledHtml 建临时 iframe 确保零尺寸问题
+  // 客户端渲染（Vercel兜底）— 先刷新预览确保 filledHtml 最新，截 body 含留白
   try {
+    // 等待预览刷新完成
+    await refreshPreview();
+    await new Promise(r => setTimeout(r, 500));
     if (!filledHtml) { toast('导出失败: 请先选择模板生成预览', 'error'); return; }
-    // 创建临时 iframe，确保渲染正确
     const tmpIframe = document.createElement('iframe');
     tmpIframe.style.cssText = 'position:fixed;top:0;left:0;width:1200px;height:800px;z-index:-1;opacity:0;';
     tmpIframe.srcdoc = filledHtml;
@@ -1974,9 +1975,10 @@ async function exportPng() {
     });
     await new Promise(r => setTimeout(r, 300));
     const tmpDoc = tmpIframe.contentDocument || tmpIframe.contentWindow.document;
-    const table = tmpDoc.querySelector('table');
-    if (!table) { document.body.removeChild(tmpIframe); toast('导出失败: 表格未加载', 'error'); return; }
-    const canvas = await html2canvas(table, { backgroundColor: '#ffffff', scale: 2 });
+    // 截 body 而不是 table — body 含 padding 留白
+    const body = tmpDoc.body;
+    if (!body) { document.body.removeChild(tmpIframe); toast('导出失败: 内容未加载', 'error'); return; }
+    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
     document.body.removeChild(tmpIframe);
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
