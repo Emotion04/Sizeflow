@@ -596,16 +596,16 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     </div>
     <div id="exportConfigPanel" class="hidden" style="margin-top:8px;padding:10px 14px;background:rgba(255,255,255,.12);border-radius:8px;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <span style="font-size:12px;color:var(--text2);">背景宽</span>
-      <input type="number" id="cfgBgWidth" value="1200" min="400" max="3000" style="width:60px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <input type="number" id="cfgBgWidth" value="1200" min="100" max="4000" style="width:55px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
-      <span style="font-size:12px;color:var(--text2);">表格宽</span>
-      <input type="number" id="cfgTableWidth" value="1090" min="200" max="3000" style="width:60px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
+      <span style="font-size:12px;color:var(--text2);">背景高</span>
+      <input type="number" id="cfgBgHeight" value="0" min="0" max="6000" style="width:55px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <span style="font-size:12px;color:var(--text2);">留白</span>
       <input type="number" id="cfgPadding" value="55" min="0" max="200" style="width:50px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <button class="btn btn-outline btn-sm" id="cfgApplyBtn">应用</button>
-      <span style="font-size:10px;color:var(--text2);">（修改后点"应用"刷新预览）</span>
+      <span id="cfgWarning" style="font-size:10px;color:#e8a838;display:none;"></span>
     </div>
   </div>
 
@@ -630,7 +630,7 @@ let exportHeaderHeight = 72;
 // 字体字重
 let currentFontWeight = 'medium';
 // 导出配置
-let exportConfig = { bgWidth: 1200, tableWidth: 1090, padding: 55 };
+let exportConfig = { bgWidth: 1200, bgHeight: 0, padding: 55 };
 // 选区状态
 let selectionStart = null;   // {row, col}
 let selectionEnd = null;     // {row, col}
@@ -838,15 +838,45 @@ function bindEvents() {
   });
   document.getElementById('cfgApplyBtn').addEventListener('click', function() {
     exportConfig.bgWidth = parseInt(document.getElementById('cfgBgWidth').value) || 1200;
-    exportConfig.tableWidth = parseInt(document.getElementById('cfgTableWidth').value) || 1090;
+    exportConfig.bgHeight = parseInt(document.getElementById('cfgBgHeight').value) || 0;
     exportConfig.padding = parseInt(document.getElementById('cfgPadding').value) || 55;
-    // 同步回输入框
     document.getElementById('cfgBgWidth').value = exportConfig.bgWidth;
-    document.getElementById('cfgTableWidth').value = exportConfig.tableWidth;
+    document.getElementById('cfgBgHeight').value = exportConfig.bgHeight;
     document.getElementById('cfgPadding').value = exportConfig.padding;
+    // 校验：背景宽/高不能小于表格+留白
+    checkExportConfigWarning();
     refreshPreview();
     toast('导出配置已应用', 'info');
   });
+
+  function checkExportConfigWarning() {
+    const warnEl = document.getElementById('cfgWarning');
+    if (!resultData || !resultData.headers) { warnEl.style.display = 'none'; return; }
+    const pad = exportConfig.padding || 55;
+    const nCols = resultData.headers.length;
+    let totalColW = 0;
+    for (let i = 0; i < nCols; i++) {
+      totalColW += exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth;
+    }
+    const needW = totalColW + 2 * pad;
+    const nRows = resultData.rows.length;
+    let totalRowH = exportHeaderHeight;
+    for (let i = 0; i < nRows; i++) {
+      totalRowH += exportRowHeights[i] !== undefined ? exportRowHeights[i] : exportRowHeight;
+    }
+    const needH = totalRowH + 2 * pad;
+    const bgW = exportConfig.bgWidth || 1200;
+    const bgH = exportConfig.bgHeight || 0;
+    const msgs = [];
+    if (bgW < needW) msgs.push(`背景宽${bgW}px < 表格+留白需${needW}px，已自动使用${needW}px`);
+    if (bgH > 0 && bgH < needH) msgs.push(`背景高${bgH}px < 内容+留白需${needH}px，已自动使用${needH}px`);
+    if (msgs.length > 0) {
+      warnEl.textContent = '⚠ ' + msgs.join('；');
+      warnEl.style.display = 'inline';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
 
   // 字体字重选择
   document.getElementById('fontWeightSelect').addEventListener('change', function() {
@@ -1972,6 +2002,7 @@ async function exportPng() {
     // 从 filledHtml 提取 table，在临时 iframe 中渲染
     const tmpIframe = document.createElement('iframe');
     const bgW = exportConfig.bgWidth || 1200;
+    const bgH = exportConfig.bgHeight || 0;
     const pad = exportConfig.padding || 55;
     tmpIframe.style.cssText = `position:fixed;top:0;left:0;width:${bgW}px;height:100px;z-index:-1;opacity:0;`;
     tmpIframe.srcdoc = filledHtml;
@@ -1987,7 +2018,8 @@ async function exportPng() {
 
     // 构建干净的包装容器（全 inline 样式，零 CSS 类 — 与 copySelectionAsImage 同策略）
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = `position:fixed;top:0;left:0;padding:${pad}px;background:#ffffff;box-sizing:border-box;width:${bgW}px;opacity:0;pointer-events:none;`;
+    const minH = bgH > 0 ? `min-height:${bgH}px;` : '';
+    wrapper.style.cssText = `position:fixed;top:0;left:0;padding:${pad}px;background:#ffffff;box-sizing:border-box;width:${bgW}px;${minH}opacity:0;pointer-events:none;`;
     const tableClone = origTable.cloneNode(true);
     // 清除可能干扰的样式
     tableClone.style.margin = '0 auto';

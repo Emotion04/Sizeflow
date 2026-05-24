@@ -147,24 +147,25 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
 
 
 def _inject_export_config(soup, export_config, total_table_w=None):
-    """注入导出配置：flexbox 居中 + 四边留白，列多时自动扩展图片宽度"""
-    bg_min = export_config.get("bgWidth", 1200)
+    """注入导出配置：flexbox 居中 + 四边留白，列多时自动扩展图片宽高"""
+    bg_w_min = export_config.get("bgWidth", 1200)
+    bg_h_min = export_config.get("bgHeight", 0) or 0
     padding = export_config.get("padding", 55)
     # 图片宽度 = max(用户设定, 表格宽 + 两边留白)
-    actual_bg = max(bg_min, (total_table_w or 0) + 2 * padding)
-    table_w = actual_bg - 2 * padding
+    actual_w = max(bg_w_min, (total_table_w or 0) + 2 * padding)
 
     # html
     html_tag = soup.find("html")
     if html_tag:
         html_tag["style"] = f"margin:0;padding:0;"
 
-    # body — flexbox 居中表格，padding 四边留白（背景色由模板 CSS 控制）
+    # body — flexbox 居中表格，padding 四边留白，bgHeight>0 时设 min-height
     body = soup.find("body")
     if body:
-        body["style"] = f"width:{actual_bg}px;margin:0;padding:{padding}px;box-sizing:border-box;display:flex;justify-content:center;"
+        minh = f"min-height:{bg_h_min}px;" if bg_h_min > 0 else ""
+        body["style"] = f"width:{actual_w}px;margin:0;padding:{padding}px;box-sizing:border-box;display:flex;justify-content:center;{minh}"
 
-    # table — 不设 width，由 <colgroup> 列宽自然决定总宽，列宽调节才能生效
+    # table — 不设 width，由 <colgroup> 列宽自然决定总宽
     table = soup.find("table")
     if table:
         existing = table.get("style", "") if isinstance(table.get("style"), str) else ""
