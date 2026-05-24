@@ -469,6 +469,16 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
               <button class="btn btn-outline btn-sm" id="resetMappingsBtn">恢复默认</button>
               <button class="btn btn-outline btn-sm" id="saveMappingsBtn">保存映射</button>
             </div>
+            <!-- Action button + model select (moved from separate card) -->
+            <div class="hidden" id="actionArea" style="margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+              <button class="btn btn-primary" id="analyzeBtn" style="height:160px;width:260px;font-size:22px;border-radius:16px;">
+                &#128269; 开始识别
+              </button>
+              <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;">
+                模型：
+                <select id="modelSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;"></select>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -493,19 +503,6 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
       </div>
     </div>
 
-  </div>
-
-  <!-- Action -->
-  <div class="card hidden" id="actionCard">
-    <div class="action-bar">
-      <button class="btn btn-primary" id="analyzeBtn">
-        &#128269; 开始识别
-      </button>
-      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;">
-        模型：
-        <select id="modelSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;"></select>
-      </label>
-    </div>
   </div>
 
   <!-- Loading -->
@@ -555,7 +552,7 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     <div class="style-grid" id="styleGrid"></div>
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
       <span style="font-size:12px;color:var(--text2);">预览：</span>
-      <iframe id="stylePreview" style="width:100%;min-width:1220px;height:450px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;overflow:auto;"></iframe>
+      <iframe id="stylePreview" style="width:auto;max-width:100%;height:450px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;overflow:hidden;"></iframe>
     </div>
     <!-- 导出列宽控制 -->
     <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1025,7 +1022,7 @@ function loadFromPath() {
   ph.innerHTML = `&#128194; 使用文件路径模式<br><small>${esc(path)}</small>`;
   ph.style.display = '';
 
-  document.getElementById('actionCard').classList.remove('hidden');
+  document.getElementById('actionArea').classList.remove('hidden');
   toast('已加载文件路径', 'info');
 }
 
@@ -1039,7 +1036,7 @@ function showPreview(src) {
   const ph = document.getElementById('pathPlaceholder');
   if (ph) ph.style.display = 'none';
 
-  document.getElementById('actionCard').classList.remove('hidden');
+  document.getElementById('actionArea').classList.remove('hidden');
 }
 
 function clearImage() {
@@ -1047,7 +1044,7 @@ function clearImage() {
   currentImageB64 = null;
   document.getElementById('noPreview').classList.remove('hidden');
   document.getElementById('previewWrap').classList.add('hidden');
-  document.getElementById('actionCard').classList.add('hidden');
+  document.getElementById('actionArea').classList.add('hidden');
   document.getElementById('resultCard').classList.add('hidden');
   document.getElementById('filePathInput').value = '';
 }
@@ -1359,10 +1356,23 @@ function refreshPreview() {
     if (d.success) {
       filledHtml = d.html;
       document.getElementById('stylePreview').srcdoc = d.html;
+      // iframe 宽度自适应表格
+      setTimeout(() => {
+        const iframe = document.getElementById('stylePreview');
+        try {
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          const table = doc.querySelector('table');
+          const body = doc.body;
+          if (table && body) {
+            const w = Math.min(body.scrollWidth, window.innerWidth * 0.7);
+            iframe.style.width = Math.max(w, 400) + 'px';
+          }
+        } catch(e) {}
+      }, 200);
     }
   }).catch(e => console.error('refreshPreview:', e));
   // 预览加载后应用列宽
-  setTimeout(applyExportColWidths, 300);
+  setTimeout(applyExportColWidths, 400);
 }
 
 // ======== 导出列宽控制 ========
@@ -1424,11 +1434,16 @@ function applyExportColWidths() {
       const w = exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth;
       col.style.width = w + 'px';
     });
-    const firstW = exportColWidths[0] !== undefined ? exportColWidths[0] : exportColWidth;
+    // line 模板装饰线位置：从 DOM 实际渲染值读取
     const table = doc.querySelector('.size-table');
     if (table) {
-      table.style.setProperty('--line-x', firstW + 'px');
-      table.style.setProperty('--line-y', exportHeaderHeight + 'px');
+      const firstTh = table.querySelector('thead th');
+      const firstCol = table.querySelector('colgroup col');
+      const lineX = firstTh ? firstTh.offsetWidth : (firstCol ? parseInt(firstCol.style.width) || exportColWidth : exportColWidth);
+      const headerTh = table.querySelector('thead th');
+      const lineY = headerTh ? headerTh.offsetHeight : exportHeaderHeight;
+      table.style.setProperty('--line-x', lineX + 'px');
+      table.style.setProperty('--line-y', lineY + 'px');
     }
   } catch(e) {}
 }
