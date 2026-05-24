@@ -1992,47 +1992,55 @@ async function exportPng() {
     }
   } catch (e) { /* 降级客户端渲染 */ }
   // 客户端渲染（Vercel/EXE兜底）
-  // 从服务端生成的 filledHtml 中提取 body 的实际宽度（服务端已计算好 actual_bg）
-  // 客户端包装容器必须与服务端 body 宽度一致，否则表格溢出或留白错位
+  // 与服务端完全相同的公式计算图片宽度：actualW = max(bgWidth, 列宽总和 + 2×留白)
   try {
     await refreshPreview();
-    await new Promise(r => setTimeout(r, 500));
-    if (!filledHtml) { toast('导出失败: 请先选择模板生成预览', 'error'); return; }
+    await new Promise(r => setTimeout(r, 400));
+    syncTableFromUI();
+    if (!resultData) { toast('导出失败: 无表格数据', 'error'); return; }
 
-    // 从 filledHtml 解析服务端实际计算的 body 宽度和 padding
-    const bodyMatch = filledHtml.match(/body[^>]*width:(\d+)px/);
-    const padMatch = filledHtml.match(/body[^>]*padding:(\d+)px/);
-    const actualBgW = bodyMatch ? parseInt(bodyMatch[1]) : (exportConfig.bgWidth || 1200);
-    const pad = padMatch ? parseInt(padMatch[1]) : (exportConfig.padding || 55);
+    const pad = exportConfig.padding || 55;
+    const bgMin = exportConfig.bgWidth || 1200;
     const bgH = exportConfig.bgHeight || 0;
+    const cols = resultData.headers.length;
+    const totalColW = resultData.headers.reduce((sum, _, i) => {
+      return sum + (exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth);
+    }, 0);
+    const actualW = Math.max(bgMin, totalColW + 2 * pad);
 
-    // 临时 iframe 宽度必须 ≥ 服务端 body 宽度，否则 body 被裁剪
+    // 从 filledHtml 提取表格 HTML（含服务端生成的 colgroup 列宽）
     const tmpIframe = document.createElement('iframe');
-    tmpIframe.style.cssText = `position:fixed;top:0;left:0;width:${actualBgW}px;height:100px;z-index:99998;`;
+    tmpIframe.style.cssText = `position:fixed;top:0;left:0;width:${actualW}px;height:100px;z-index:99998;`;
     tmpIframe.srcdoc = filledHtml;
     document.body.appendChild(tmpIframe);
     await new Promise((resolve, reject) => {
       tmpIframe.onload = resolve;
       setTimeout(() => reject(new Error('iframe timeout')), 8000);
     });
-    await new Promise(r => setTimeout(r, 300));
     const tmpDoc = tmpIframe.contentDocument || tmpIframe.contentWindow.document;
     const origTable = tmpDoc.querySelector('table');
-    if (!origTable) { document.body.removeChild(tmpIframe); toast('导出失败: 表格未加载', 'error'); return; }
-
-    // 包装容器宽度 = 服务端 body 宽度，确保与本地 Playwright 渲染完全一致
-    const wrapper = document.createElement('div');
-    const minH = bgH > 0 ? `min-height:${bgH}px;` : '';
-    wrapper.style.cssText = `position:fixed;top:0;left:0;z-index:99999;padding:${pad}px;background:#ffffff;box-sizing:border-box;width:${actualBgW}px;${minH}`;
-    const tableClone = origTable.cloneNode(true);
-    tableClone.style.margin = '0 auto';
-    tableClone.style.flexShrink = '0';
-    wrapper.appendChild(tableClone);
-    document.body.appendChild(wrapper);
-
-    const canvas = await html2canvas(wrapper, { backgroundColor: '#ffffff', scale: 2 });
     document.body.removeChild(tmpIframe);
-    document.body.removeChild(wrapper);
+    if (!origTable) { toast('导出失败: 表格未加载', 'error'); return; }
+
+    // 构建最简 HTML：仅 body + padding 留白 + table，零 flexbox，零复杂 CSS
+    const tableHTML = origTable.outerHTML;
+    const minH = bgH > 0 ? `min-height:${bgH - 2 * pad}px;` : '';
+    const cleanHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:#fff}body{width:${actualW}px;padding:${pad}px;box-sizing:border-box;${minH}}</style></head><body>${tableHTML}</body></html>`;
+
+    const renderFrame = document.createElement('iframe');
+    renderFrame.style.cssText = `position:fixed;top:0;left:0;width:${actualW}px;height:100px;z-index:99999;`;
+    renderFrame.srcdoc = cleanHTML;
+    document.body.appendChild(renderFrame);
+    await new Promise((resolve, reject) => {
+      renderFrame.onload = resolve;
+      setTimeout(() => reject(new Error('renderFrame timeout')), 5000);
+    });
+    await new Promise(r => setTimeout(r, 200));
+
+    const body = renderFrame.contentDocument.body;
+    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
+    document.body.removeChild(renderFrame);
+
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

@@ -1,19 +1,24 @@
 {
   "commits": [
     {
+      "hash": "8c3550b",
+      "msg": "Canary 3.10: 淇?澶峍ercel瀵煎嚭灏哄?稿け鎺р?斺?斾粠filledHtml瑙ｆ瀽鏈嶅姟绔痓ody瀹藉害",
+      "date": "8 minutes ago"
+    },
+    {
       "hash": "fe356f2",
       "msg": "Canary 3.9: 淇?澶峍ercel瀵煎嚭绾?鐧藉浘鐗?(opacity:0瀵艰嚧html2canvas娓叉煋閫忔槑)",
-      "date": "15 minutes ago"
+      "date": "23 minutes ago"
     },
     {
       "hash": "30a0168",
       "msg": "Canary 3.8: 鏂板?炶儗鏅?楂樺弬鏁? + 姝诲弬鏁版竻鐞? + 瀵煎嚭璀﹀憡鎻愮ず",
-      "date": "54 minutes ago"
+      "date": "63 minutes ago"
     },
     {
       "hash": "256fad8",
       "msg": "鏇存柊鏃ュ織缂撳瓨鍚屾?ュ叏閮?22鏉?git commit",
-      "date": "83 minutes ago"
+      "date": "2 hours ago"
     },
     {
       "hash": "912a7ff",
@@ -28,7 +33,7 @@
     {
       "hash": "e64e887",
       "msg": "Canary 3.5: 淇?澶峍ercel瀵煎嚭鐣欑櫧涓㈠け + 棰勮?堝埛鏂版敼涓篜romise",
-      "date": "2 hours ago"
+      "date": "3 hours ago"
     },
     {
       "hash": "a12c128",
