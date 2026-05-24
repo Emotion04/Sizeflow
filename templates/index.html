@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>尺码表转换工具</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-<script src="https://unpkg.com/@zumer/snapdom@0.7.3/dist/snapdom.umd.min.js"></script>
 <style>
 :root {
   --bg: #e8ecf1;
@@ -1799,9 +1798,7 @@ async function copySelectionAsImage() {
     await new Promise(r => setTimeout(r, 200));
     const iframeTable = iframe.contentDocument.querySelector('table');
     if (!iframeTable) throw new Error('iframe table not found');
-    const canvas = typeof snapdom !== 'undefined'
-      ? await snapdom.toCanvas(iframeTable, { scale: 2, backgroundColor: '#ffffff' })
-      : await html2canvas(iframeTable, { backgroundColor: '#ffffff', scale: 2 });
+    const canvas = await html2canvas(iframeTable, { backgroundColor: '#ffffff', scale: 2 });
     const blob = await new Promise((resolve, reject) => {
       canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
     });
@@ -1994,32 +1991,27 @@ async function exportPng() {
       return;
     }
   } catch (e) { /* 降级客户端渲染 */ }
-  // 客户端渲染（Vercel/EXE兜底）— 使用 snapdom 替代 html2canvas
-  // snapdom 支持伪元素、border-collapse、字体，直接用 filledHtml 无需剥离 CSS
+  // 客户端渲染（Vercel/EXE兜底）
+  // 直接渲染完整 filledHtml，不剥离 CSS，不建 wrapper
   try {
     await refreshPreview();
     await new Promise(r => setTimeout(r, 400));
     if (!filledHtml) { toast('导出失败: 请先选择模板生成预览', 'error'); return; }
 
-    // 用完整 filledHtml（含所有模板 CSS + 服务端 body 样式），不剥离
-    const renderFrame = document.createElement('iframe');
-    renderFrame.style.cssText = 'position:fixed;top:0;left:0;width:1200px;height:100px;z-index:99999;';
-    renderFrame.srcdoc = filledHtml;
-    document.body.appendChild(renderFrame);
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;';
+    frame.srcdoc = filledHtml;
+    document.body.appendChild(frame);
     await new Promise((resolve, reject) => {
-      renderFrame.onload = resolve;
-      setTimeout(() => reject(new Error('renderFrame timeout')), 6000);
+      frame.onload = resolve;
+      setTimeout(() => reject(new Error('timeout')), 6000);
     });
-    // 等待字体渲染完成
-    try { await renderFrame.contentDocument.fonts.ready; } catch(e) {}
+    try { await frame.contentDocument.fonts.ready; } catch(e) {}
     await new Promise(r => setTimeout(r, 300));
 
-    const body = renderFrame.contentDocument.body;
-    // snapdom 优先，回退 html2canvas
-    const canvas = typeof snapdom !== 'undefined'
-      ? await snapdom.toCanvas(body, { scale: 2, backgroundColor: '#ffffff' })
-      : await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
-    document.body.removeChild(renderFrame);
+    const body = frame.contentDocument.body;
+    const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 2 });
+    document.body.removeChild(frame);
 
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);

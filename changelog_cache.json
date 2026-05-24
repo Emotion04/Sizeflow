@@ -1,24 +1,29 @@
 {
   "commits": [
     {
+      "hash": "553a41e",
+      "msg": "Canary 3.12: html2canvas鏇挎崲涓簊napdom鈥斺?旇В鍐砎ercel/EXE瀵煎嚭鍏ㄧ郴bug",
+      "date": "5 minutes ago"
+    },
+    {
       "hash": "87b4889",
       "msg": "Canary 3.11: 褰诲簳閲嶅啓瀹㈡埛绔?瀵煎嚭鈥斺?斾笌鏈嶅姟绔?鍚屽叕寮?+鏈?绠?HTML闆秄lexbox",
-      "date": "6 minutes ago"
+      "date": "11 minutes ago"
     },
     {
       "hash": "8c3550b",
       "msg": "Canary 3.10: 淇?澶峍ercel瀵煎嚭灏哄?稿け鎺р?斺?斾粠filledHtml瑙ｆ瀽鏈嶅姟绔痓ody瀹藉害",
-      "date": "14 minutes ago"
+      "date": "20 minutes ago"
     },
     {
       "hash": "fe356f2",
       "msg": "Canary 3.9: 淇?澶峍ercel瀵煎嚭绾?鐧藉浘鐗?(opacity:0瀵艰嚧html2canvas娓叉煋閫忔槑)",
-      "date": "29 minutes ago"
+      "date": "34 minutes ago"
     },
     {
       "hash": "30a0168",
       "msg": "Canary 3.8: 鏂板?炶儗鏅?楂樺弬鏁? + 姝诲弬鏁版竻鐞? + 瀵煎嚭璀﹀憡鎻愮ず",
-      "date": "69 minutes ago"
+      "date": "74 minutes ago"
     },
     {
       "hash": "256fad8",
@@ -43,7 +48,7 @@
     {
       "hash": "a12c128",
       "msg": "Canary 3.2: 鏄犲皠杈撳叆妗嗙幓鐠冭川鎰? + 榧犳爣鍏夌悆鏌斿厜娣峰悎",
-      "date": "3 hours ago"
+      "date": "4 hours ago"
     },
     {
       "hash": "1003ba4",
@@ -103,11 +108,6 @@
     {
       "hash": "2d33e0e",
       "msg": "v1.6.0-Preview: 瀵煎嚭鍔犻?? + 褰╄泲璁℃椂鍣? + 閿欒??鎻愮ず浼樺寲",
-      "date": "3 days ago"
-    },
-    {
-      "hash": "d9f801d",
-      "msg": "v1.6.0-Preview: 鏁版嵁瀵归綈淇?澶? + 鐜荤拑UI + 妯＄硦鍖归厤澧炲己",
       "date": "3 days ago"
     }
   ]
