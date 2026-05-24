@@ -157,12 +157,12 @@ def _inject_export_config(soup, export_config, total_table_w=None):
     # html
     html_tag = soup.find("html")
     if html_tag:
-        html_tag["style"] = f"margin:0;padding:0;background:#ffffff;"
+        html_tag["style"] = f"margin:0;padding:0;"
 
-    # body — flexbox 居中表格，padding 四边留白
+    # body — flexbox 居中表格，padding 四边留白（背景色由模板 CSS 控制）
     body = soup.find("body")
     if body:
-        body["style"] = f"width:{actual_bg}px;margin:0;padding:{padding}px;background:#ffffff;box-sizing:border-box;display:flex;justify-content:center;"
+        body["style"] = f"width:{actual_bg}px;margin:0;padding:{padding}px;box-sizing:border-box;display:flex;justify-content:center;"
 
     # table — 不设 width，由 <colgroup> 列宽自然决定总宽，列宽调节才能生效
     table = soup.find("table")

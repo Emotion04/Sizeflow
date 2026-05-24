@@ -84,6 +84,7 @@ header .ver { font-size:11px; opacity:.5; font-weight:500; }
   border-radius:var(--radius); box-shadow:0 8px 32px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04), inset 0 1px 0 rgba(255,255,255,.5);
   border:1px solid rgba(255,255,255,.2);
   padding:24px; margin-bottom:18px; transition:transform .15s, box-shadow .3s;
+  transform: translateZ(0); will-change: transform;
 }
 .card:hover { box-shadow:0 16px 44px rgba(79,110,246,.08), 0 2px 4px rgba(0,0,0,.03), inset 0 1px 0 rgba(255,255,255,.6); }
 .card-title { font-size:15px; font-weight:700; margin-bottom:14px; color:var(--text); display:flex; align-items:center; gap:8px; }
@@ -635,13 +636,13 @@ let selectedColumns = new Set();  // 复选框选中的列索引
 // ======== Init ========
 async function init() {
   await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate(), loadChangelog()]);
-  // 恢复上次壁纸，没有则随机选一张渐变纯色壁纸
+  // 恢复上次壁纸，没有则默认"晨雾"莫兰迪渐变
   const wp = loadWallpaper();
   if (wp) {
     applyWallpaper(wp);
   } else {
-    const gradient = getRandomGradient();
-    const defaultWp = { id: gradient.id, url: gradient.css, name: gradient.name, type: 'gradient' };
+    const mist = GRADIENT_WALLPAPERS[0]; // 晨雾
+    const defaultWp = { id: mist.id, url: mist.css, name: mist.name, type: 'gradient' };
     saveWallpaper(defaultWp);
     applyWallpaper(defaultWp);
   }
@@ -1979,14 +1980,14 @@ const WALLPAPER_KEY = 'sizeflow_wallpaper';
 
 // 内置渐变色壁纸 — 纯色系微妙过渡，每次刷新随机切换
 const GRADIENT_WALLPAPERS = [
-  { id: 'gradient-sky', name: '天空蓝', css: 'linear-gradient(135deg, #e4eef8 0%, #dae4f0 40%, #e0eaf4 100%)' },
-  { id: 'gradient-rose', name: '玫瑰粉', css: 'linear-gradient(135deg, #f4ebec 0%, #efe3e5 40%, #f1e8ea 100%)' },
-  { id: 'gradient-mint', name: '薄荷绿', css: 'linear-gradient(135deg, #e8f1ec 0%, #dfebe4 40%, #e5eeea 100%)' },
-  { id: 'gradient-lavender', name: '薰衣草', css: 'linear-gradient(135deg, #ede8f4 0%, #e6e0f0 40%, #eae5f3 100%)' },
-  { id: 'gradient-warm', name: '暖杏色', css: 'linear-gradient(135deg, #f4efe8 0%, #efe8df 40%, #f2ece4 100%)' },
-  { id: 'gradient-ice', name: '冰霜白', css: 'linear-gradient(135deg, #f1f3f6 0%, #eceff3 40%, #f0f2f5 100%)' },
-  { id: 'gradient-dusk', name: '暮光紫', css: 'linear-gradient(135deg, #ece8f2 0%, #e5e0ed 40%, #e9e4f0 100%)' },
-  { id: 'gradient-sand', name: '沙滩金', css: 'linear-gradient(135deg, #f3efe8 0%, #ede7dd 40%, #f0ebe3 100%)' },
+  { id: 'gradient-mist',      name: '晨雾', css: 'linear-gradient(155deg, #c9d9e0 0%, #b8c9d4 25%, #d4cfd8 55%, #c2bbc9 80%, #d5dbe3 100%)' },
+  { id: 'gradient-lichen',    name: '苔色', css: 'linear-gradient(140deg, #c5cdc0 0%, #bcc4b6 20%, #d4cfc2 45%, #c9c5b8 70%, #dbd7ce 100%)' },
+  { id: 'gradient-thistle',   name: '蓟花', css: 'linear-gradient(130deg, #cbc5d4 0%, #d1c9d9 30%, #c4becb 55%, #dcd5e0 80%, #c8c3cf 100%)' },
+  { id: 'gradient-shell',     name: '贝母', css: 'radial-gradient(ellipse at 40% 30%, #e4dcd5 0%, #dbd2ca 25%, #e0d9d2 50%, #d6cec7 75%, #e8e2dc 100%)' },
+  { id: 'gradient-dusk',      name: '薄暮', css: 'linear-gradient(160deg, #c0c7d4 0%, #c8c5d2 20%, #d4ccd6 45%, #cbc5d0 70%, #cfcdd9 100%)' },
+  { id: 'gradient-willow',    name: '烟柳', css: 'linear-gradient(145deg, #ccd5ca 0%, #c8d2c5 25%, #d5d9cf 50%, #cbd2c6 75%, #d8ded3 100%)' },
+  { id: 'gradient-heather',   name: '石楠', css: 'linear-gradient(125deg, #d0cbd6 0%, #c9c2d1 30%, #d6ced8 55%, #ccc5d3 80%, #d9d3dc 100%)' },
+  { id: 'gradient-sand drift', name: '流沙', css: 'linear-gradient(150deg, #dcd5cb 0%, #d7cfc4 25%, #e0d9cf 50%, #d9d1c7 75%, #e4ddd4 100%)' },
 ];
 
 function getRandomGradient() {
