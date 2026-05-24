@@ -853,18 +853,16 @@ function bindEvents() {
     const warnEl = document.getElementById('cfgWarning');
     if (!resultData || !resultData.headers) { warnEl.style.display = 'none'; return; }
     const pad = exportConfig.padding || 55;
+    // 用 buildExportStylePayload 与服务端完全一致的方式计算总列宽
+    const payload = buildExportStylePayload();
+    const colW = payload.colWidths;
     const nCols = resultData.headers.length;
     let totalColW = 0;
     for (let i = 0; i < nCols; i++) {
-      totalColW += exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth;
+      totalColW += (colW[i] !== undefined ? colW[i] : colW._default);
     }
     const needW = totalColW + 2 * pad;
-    const nRows = resultData.rows.length;
-    let totalRowH = exportHeaderHeight;
-    for (let i = 0; i < nRows; i++) {
-      totalRowH += exportRowHeights[i] !== undefined ? exportRowHeights[i] : exportRowHeight;
-    }
-    const needH = totalRowH + 2 * pad;
+    const needH = Math.max(exportHeaderHeight + resultData.rows.length * exportRowHeight + 2 * pad, 0);
     const bgW = exportConfig.bgWidth || 1200;
     const bgH = exportConfig.bgHeight || 0;
     const msgs = [];

@@ -1,49 +1,54 @@
 {
   "commits": [
     {
+      "hash": "a4a0af2",
+      "msg": "Canary 3.16: 服务端body去flexbox——html2canvas可直接渲染",
+      "date": "5 minutes ago"
+    },
+    {
       "hash": "34f4713",
       "msg": "修复更新日志乱码——用独立Python脚本替代shell管道",
-      "date": "3 minutes ago"
+      "date": "8 minutes ago"
     },
     {
       "hash": "372d9c5",
       "msg": "Canary 3.15: 客户端导出——纯手工构建精确尺寸wrapper替代body渲染",
-      "date": "7 minutes ago"
+      "date": "12 minutes ago"
     },
     {
       "hash": "ce19f9a",
       "msg": "Canary 3.14: 关键修复——html2canvas截图前body切display:block",
-      "date": "16 minutes ago"
+      "date": "21 minutes ago"
     },
     {
       "hash": "d92764a",
       "msg": "Canary 3.13: 撤回snapdom——回退html2canvas+完整filledHtml",
-      "date": "17 minutes ago"
+      "date": "22 minutes ago"
     },
     {
       "hash": "553a41e",
       "msg": "Canary 3.12: html2canvas替换为snapdom——解决Vercel/EXE导出全系bug",
-      "date": "22 minutes ago"
+      "date": "28 minutes ago"
     },
     {
       "hash": "87b4889",
       "msg": "Canary 3.11: 彻底重写客户端导出——与服务端同公式+最简HTML零flexbox",
-      "date": "28 minutes ago"
+      "date": "34 minutes ago"
     },
     {
       "hash": "8c3550b",
       "msg": "Canary 3.10: 修复Vercel导出尺寸失控——从filledHtml解析服务端body宽度",
-      "date": "37 minutes ago"
+      "date": "42 minutes ago"
     },
     {
       "hash": "fe356f2",
       "msg": "Canary 3.9: 修复Vercel导出纯白图片(opacity:0导致html2canvas渲染透明)",
-      "date": "51 minutes ago"
+      "date": "57 minutes ago"
     },
     {
       "hash": "95c4783",
       "msg": "Canary 3.9.0: 版本号升级 + 可点击跳转GitHub发布页",
-      "date": "68 minutes ago"
+      "date": "74 minutes ago"
     },
     {
       "hash": "30a0168",
@@ -143,11 +148,6 @@
     {
       "hash": "3873e04",
       "msg": "v1.6.0-Preview: PNG导出双轨制 — 服务端Playwright + 客户端html2canvas降级",
-      "date": "3 days ago"
-    },
-    {
-      "hash": "d5d5c12",
-      "msg": "回退vercel.json到原始配置",
       "date": "3 days ago"
     }
   ]
