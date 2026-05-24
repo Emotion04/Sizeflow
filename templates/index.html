@@ -2004,7 +2004,7 @@ async function exportPng() {
     const bgW = exportConfig.bgWidth || 1200;
     const bgH = exportConfig.bgHeight || 0;
     const pad = exportConfig.padding || 55;
-    tmpIframe.style.cssText = `position:fixed;top:0;left:0;width:${bgW}px;height:100px;z-index:-1;opacity:0;`;
+    tmpIframe.style.cssText = `position:fixed;top:0;left:0;width:${bgW}px;height:100px;z-index:99998;`;
     tmpIframe.srcdoc = filledHtml;
     document.body.appendChild(tmpIframe);
     await new Promise((resolve, reject) => {
@@ -2019,7 +2019,7 @@ async function exportPng() {
     // 构建干净的包装容器（全 inline 样式，零 CSS 类 — 与 copySelectionAsImage 同策略）
     const wrapper = document.createElement('div');
     const minH = bgH > 0 ? `min-height:${bgH}px;` : '';
-    wrapper.style.cssText = `position:fixed;top:0;left:0;padding:${pad}px;background:#ffffff;box-sizing:border-box;width:${bgW}px;${minH}opacity:0;pointer-events:none;`;
+    wrapper.style.cssText = `position:fixed;top:0;left:0;z-index:99999;padding:${pad}px;background:#ffffff;box-sizing:border-box;width:${bgW}px;${minH}`;
     const tableClone = origTable.cloneNode(true);
     // 清除可能干扰的样式
     tableClone.style.margin = '0 auto';
