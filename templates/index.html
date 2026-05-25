@@ -1798,7 +1798,7 @@ function bindSelectionEvents() {
 
 function _getSelectionColsRows() {
   const origTable = document.getElementById('resultTable');
-  if (!origTable || !resultData) return null;
+  if (!origTable || !resultData || !resultData.rows) return null;
   const totalRows = resultData.rows.length;
   // 优先使用复选框选中的列
   if (selectedColumns.size > 0) {
