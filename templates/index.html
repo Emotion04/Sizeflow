@@ -853,21 +853,31 @@ function bindEvents() {
     const warnEl = document.getElementById('cfgWarning');
     if (!resultData || !resultData.headers) { warnEl.style.display = 'none'; return; }
     const pad = exportConfig.padding || 55;
-    // 用 buildExportStylePayload 与服务端完全一致的方式计算总列宽
-    const payload = buildExportStylePayload();
-    const colW = payload.colWidths;
+    if (pad < 0) { warnEl.textContent = '⚠ 留白不能为负数'; warnEl.style.display = 'inline'; return; }
     const nCols = resultData.headers.length;
+    // 与服务端完全相同的公式：总列宽 = 所有列的宽度之和(默认155px)
     let totalColW = 0;
     for (let i = 0; i < nCols; i++) {
-      totalColW += (colW[i] !== undefined ? colW[i] : colW._default);
+      totalColW += (exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth);
     }
+    // needW = 列宽总和 + 2×留白（与服务端 actual_w = max(bgWidth, needW) 一致）
     const needW = totalColW + 2 * pad;
-    const needH = Math.max(exportHeaderHeight + resultData.rows.length * exportRowHeight + 2 * pad, 0);
+    // needH = header行高 + 数据行 × 行高 + 2×留白
+    const nRows = resultData.rows.length;
+    let totalRowH = exportHeaderHeight;
+    for (let i = 0; i < nRows; i++) {
+      totalRowH += (exportRowHeights[i] !== undefined ? exportRowHeights[i] : exportRowHeight);
+    }
+    const needH = totalRowH + 2 * pad;
     const bgW = exportConfig.bgWidth || 1200;
     const bgH = exportConfig.bgHeight || 0;
+    const actualW = Math.max(bgW, needW);
+    const actualH = bgH > 0 ? Math.max(bgH, needH) : needH;
     const msgs = [];
-    if (bgW < needW) msgs.push(`背景宽${bgW}px < 表格+留白需${needW}px，已自动使用${needW}px`);
-    if (bgH > 0 && bgH < needH) msgs.push(`背景高${bgH}px < 内容+留白需${needH}px，已自动使用${needH}px`);
+    if (bgW < 1) msgs.push('背景宽无效，已使用最小值');
+    else if (bgW < needW) msgs.push(`背景宽${bgW}px < 表格+留白需${needW}px，已自动使用${actualW}px`);
+    if (bgH > 0 && bgH < 1) msgs.push('背景高无效，已使用最小值');
+    else if (bgH > 0 && bgH < needH) msgs.push(`背景高${bgH}px < 内容+留白需${needH}px，已自动使用${actualH}px`);
     if (msgs.length > 0) {
       warnEl.textContent = '⚠ ' + msgs.join('；');
       warnEl.style.display = 'inline';
@@ -875,6 +885,11 @@ function bindEvents() {
       warnEl.style.display = 'none';
     }
   }
+
+  // 导出配置输入框变化时也触发警告
+  ['cfgBgWidth','cfgTableWidth','cfgPadding','cfgBgHeight'].forEach(id => {
+    document.getElementById(id).addEventListener('input', checkExportConfigWarning);
+  });
 
   // 字体字重选择
   document.getElementById('fontWeightSelect').addEventListener('change', function() {
@@ -1990,7 +2005,7 @@ async function exportPng() {
     }
   } catch (e) { /* 降级客户端渲染 */ }
   // 客户端渲染（Vercel/EXE兜底）
-  // body 已改为普通块元素(margin:0 auto)，html2canvas 可直接渲染
+  checkExportConfigWarning(); // 导出前校验配置
   try {
     await refreshPreview();
     await new Promise(r => setTimeout(r, 400));

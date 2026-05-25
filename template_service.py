@@ -169,7 +169,7 @@ def _inject_export_config(soup, export_config, total_table_w=None):
     table = soup.find("table")
     if table:
         existing = table.get("style", "") if isinstance(table.get("style"), str) else ""
-        table["style"] = f"table-layout:fixed;flex-shrink:0;{existing}"
+        table["style"] = f"table-layout:fixed;margin:0 auto;{existing}"
 
 
 def _get_font_face_css(font_weight):

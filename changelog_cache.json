@@ -1,154 +1,154 @@
 {
   "commits": [
     {
+      "hash": "965928d",
+      "msg": "Canary 3.18: html2canvas scale 2→1 匹配服务端Playwright输出分辨率",
+      "date": "16 hours ago"
+    },
+    {
       "hash": "c74dd21",
       "msg": "Canary 3.17: 修复导出警告计算——使用buildExportStylePayload保持一致",
-      "date": "4 minutes ago"
+      "date": "16 hours ago"
     },
     {
       "hash": "a4a0af2",
       "msg": "Canary 3.16: 服务端body去flexbox——html2canvas可直接渲染",
-      "date": "10 minutes ago"
+      "date": "16 hours ago"
     },
     {
       "hash": "34f4713",
       "msg": "修复更新日志乱码——用独立Python脚本替代shell管道",
-      "date": "12 minutes ago"
+      "date": "16 hours ago"
     },
     {
       "hash": "372d9c5",
       "msg": "Canary 3.15: 客户端导出——纯手工构建精确尺寸wrapper替代body渲染",
-      "date": "16 minutes ago"
+      "date": "16 hours ago"
     },
     {
       "hash": "ce19f9a",
       "msg": "Canary 3.14: 关键修复——html2canvas截图前body切display:block",
-      "date": "25 minutes ago"
+      "date": "16 hours ago"
     },
     {
       "hash": "d92764a",
       "msg": "Canary 3.13: 撤回snapdom——回退html2canvas+完整filledHtml",
-      "date": "26 minutes ago"
+      "date": "16 hours ago"
     },
     {
       "hash": "553a41e",
       "msg": "Canary 3.12: html2canvas替换为snapdom——解决Vercel/EXE导出全系bug",
-      "date": "32 minutes ago"
+      "date": "16 hours ago"
     },
     {
       "hash": "87b4889",
       "msg": "Canary 3.11: 彻底重写客户端导出——与服务端同公式+最简HTML零flexbox",
-      "date": "38 minutes ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "8c3550b",
       "msg": "Canary 3.10: 修复Vercel导出尺寸失控——从filledHtml解析服务端body宽度",
-      "date": "46 minutes ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "fe356f2",
       "msg": "Canary 3.9: 修复Vercel导出纯白图片(opacity:0导致html2canvas渲染透明)",
-      "date": "61 minutes ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "95c4783",
       "msg": "Canary 3.9.0: 版本号升级 + 可点击跳转GitHub发布页",
-      "date": "78 minutes ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "30a0168",
       "msg": "Canary 3.8: 新增背景高参数 + 死参数清理 + 导出警告提示",
-      "date": "2 hours ago"
+      "date": "18 hours ago"
     },
     {
       "hash": "256fad8",
       "msg": "更新日志缓存同步全部22条git commit",
-      "date": "2 hours ago"
+      "date": "18 hours ago"
     },
     {
       "hash": "912a7ff",
       "msg": "Canary 3.7: 重写客户端导出路径修复Vercel/EXE留白丢失",
-      "date": "2 hours ago"
+      "date": "18 hours ago"
     },
     {
       "hash": "9d7f4aa",
       "msg": "Canary 3.6: EXE修复 + 响应式布局 + 更新日志缓存",
-      "date": "3 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "e64e887",
       "msg": "Canary 3.5: 修复Vercel导出留白丢失 + 预览刷新改为Promise",
-      "date": "3 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "01a8c98",
       "msg": "Canary 3.4: 玻璃按钮 + Vercel导出修复 + 预览居中",
-      "date": "3 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "457acea",
       "msg": "Canary 3.3: 识别按钮移入主卡片 + iframe自适应 + line模板修复",
-      "date": "4 hours ago"
+      "date": "20 hours ago"
     },
     {
       "hash": "a12c128",
       "msg": "Canary 3.2: 映射输入框玻璃质感 + 鼠标光球柔光混合",
-      "date": "4 hours ago"
+      "date": "20 hours ago"
     },
     {
       "hash": "1003ba4",
       "msg": "Canary 3.1: 莫兰迪色系壁纸 + 三模板统一边距 + UI优化",
-      "date": "7 hours ago"
+      "date": "23 hours ago"
     },
     {
       "hash": "0cd3974",
       "msg": "Canary 3.0: UI重构 + 侧边栏 + 更新日志 + 映射配置优化",
-      "date": "24 hours ago"
+      "date": "2 days ago"
     },
     {
       "hash": "76623de",
       "msg": "v2.0.1: 修复导出PNG布局 + 列宽控制 + 动态图片宽度",
-      "date": "25 hours ago"
+      "date": "2 days ago"
     },
     {
       "hash": "33de62c",
       "msg": "v2.0.0: 导出配置面板 + 字体字重选择 + 选区复制(图片/文本) + 列复选框 + 渐变色壁纸",
-      "date": "2 days ago"
+      "date": "3 days ago"
     },
     {
       "hash": "be4e738",
       "msg": "Merge branch 'style-feature'",
-      "date": "2 days ago"
+      "date": "3 days ago"
     },
     {
       "hash": "ccde992",
       "msg": "v1.9.0 正式版: 列宽/行高可调节 + line线跟随 + 表头行高独立 + 模板修复",
-      "date": "2 days ago"
+      "date": "3 days ago"
     },
     {
       "hash": "c732bc5",
       "msg": "Merge branch 'style-feature'",
-      "date": "3 days ago"
+      "date": "4 days ago"
     },
     {
       "hash": "1f6c995",
       "msg": "列宽/行高min阈值全部放开至1px",
-      "date": "3 days ago"
+      "date": "4 days ago"
     },
     {
       "hash": "ebea62d",
       "msg": "合并style-feature: 解决彩蛋计时器指数冲突",
-      "date": "3 days ago"
+      "date": "4 days ago"
     },
     {
       "hash": "d1463b5",
       "msg": "v1.6.0-Preview: 导出列宽/行高可调节 + 微调面板 + 模板table宽度修复",
-      "date": "3 days ago"
-    },
-    {
-      "hash": "342aa06",
-      "msg": "默认壁纸改为Bing每日壁纸（轻量URL，Vercel不超时）",
-      "date": "3 days ago"
+      "date": "4 days ago"
     }
   ]
 }
