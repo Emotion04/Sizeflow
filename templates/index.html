@@ -2005,8 +2005,8 @@ async function exportPng() {
     }
   } catch (e) { /* 降级客户端渲染 */ }
   // 客户端渲染（Vercel/EXE兜底）
-  checkExportConfigWarning(); // 导出前校验配置
   try {
+    checkExportConfigWarning();
     await refreshPreview();
     await new Promise(r => setTimeout(r, 400));
     if (!filledHtml) { toast('导出失败: 预览未加载', 'error'); return; }

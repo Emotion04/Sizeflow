@@ -1,6 +1,11 @@
 {
   "commits": [
     {
+      "hash": "f5df6d0",
+      "msg": "Canary 3.19: 修复表格居中+警告计算+补全校验场景",
+      "date": "15 minutes ago"
+    },
+    {
       "hash": "965928d",
       "msg": "Canary 3.18: html2canvas scale 2→1 匹配服务端Playwright输出分辨率",
       "date": "16 hours ago"
@@ -28,17 +33,17 @@
     {
       "hash": "ce19f9a",
       "msg": "Canary 3.14: 关键修复——html2canvas截图前body切display:block",
-      "date": "16 hours ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "d92764a",
       "msg": "Canary 3.13: 撤回snapdom——回退html2canvas+完整filledHtml",
-      "date": "16 hours ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "553a41e",
       "msg": "Canary 3.12: html2canvas替换为snapdom——解决Vercel/EXE导出全系bug",
-      "date": "16 hours ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "87b4889",
@@ -58,7 +63,7 @@
     {
       "hash": "95c4783",
       "msg": "Canary 3.9.0: 版本号升级 + 可点击跳转GitHub发布页",
-      "date": "17 hours ago"
+      "date": "18 hours ago"
     },
     {
       "hash": "30a0168",
@@ -88,7 +93,7 @@
     {
       "hash": "01a8c98",
       "msg": "Canary 3.4: 玻璃按钮 + Vercel导出修复 + 预览居中",
-      "date": "19 hours ago"
+      "date": "20 hours ago"
     },
     {
       "hash": "457acea",
@@ -143,11 +148,6 @@
     {
       "hash": "ebea62d",
       "msg": "合并style-feature: 解决彩蛋计时器指数冲突",
-      "date": "4 days ago"
-    },
-    {
-      "hash": "d1463b5",
-      "msg": "v1.6.0-Preview: 导出列宽/行高可调节 + 微调面板 + 模板table宽度修复",
       "date": "4 days ago"
     }
   ]
