@@ -1564,12 +1564,12 @@ function applyExportRowHeights() {
     rows.forEach((tr, ri) => {
       const h = exportRowHeights[ri] !== undefined ? exportRowHeights[ri] : exportRowHeight;
       tr.querySelectorAll('td').forEach(td => {
-        td.style.height = h + 'px'; td.style.lineHeight = h + 'px'; td.style.padding = '2px 4px';
+        td.style.height = h + 'px'; td.style.lineHeight = h + 'px'; td.style.padding = '0 4px';
       });
     });
     const theadThs = doc.querySelectorAll('table thead th');
     theadThs.forEach(th => {
-      th.style.height = exportHeaderHeight + 'px'; th.style.lineHeight = exportHeaderHeight + 'px'; th.style.padding = '2px 4px';
+      th.style.height = exportHeaderHeight + 'px'; th.style.lineHeight = exportHeaderHeight + 'px'; th.style.padding = '0 4px';
     });
   } catch(e) {}
 }

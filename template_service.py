@@ -120,7 +120,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             th = soup.new_tag("th")
             th.string = str(h)
             w = col_widths.get(str(i), default_w)
-            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:2px 6px;"
+            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:0 6px;"
             tr.append(th)
         thead.append(tr)
 
@@ -139,7 +139,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             val = row[ci] if ci < len(row) and row[ci] is not None else ""
             td.string = str(val)
             w = col_widths.get(str(ci), default_w)
-            td["style"] = f"height:{rh}px;line-height:{rh}px;padding:2px 6px;"
+            td["style"] = f"height:{rh}px;line-height:{rh}px;padding:0 6px;"
             tr.append(td)
         tbody.append(tr)
 
