@@ -923,7 +923,7 @@ function bindEvents() {
   }
 
   // 导出配置输入框变化时也触发警告
-  ['cfgBgWidth','cfgTableWidth','cfgPadding','cfgBgHeight'].forEach(id => {
+  ['cfgBgWidth','cfgPadding','cfgBgHeight'].forEach(id => {
     document.getElementById(id).addEventListener('input', checkExportConfigWarning);
   });
 
