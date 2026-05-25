@@ -83,6 +83,21 @@ def analyze():
 
 
 # ---- Debug Mode ----
+# Debug 预设数据所需的完整字段映射（工厂名 → 输出名）
+DEBUG_MAPPINGS = {
+    "腰围（拉平量）": "腰围",
+    "上座围(腰下7cm V量)": "上座围",
+    "座围(浪上11 cm V量)": "座围",
+    "脾围": "大腿围",
+    "膝围（浪下29cm）": "膝围",
+    "脚围": "脚围",
+    "前浪连腰": "前浪",
+    "后浪连腰": "后浪",
+    "外长连腰B": "外长B",
+    "外长连腰C": "外长C",
+    "前中拉链89301": "前中拉链",
+}
+
 DEBUG_RAW_TEXT = """尺码 | 25.00 | 26.00 | 27.00 | 28.00 | 29.00 | 30.00 | 31.00
 腰围（拉平量） | 2.50 | 64.00 | 66.50 | 69.00 | 71.50 | 74.00 | 76.50 | 79.00
 上座围(腰下7cm V量) | 2.50 | 78.50 | 81.00 | 83.50 | 86.00 | 88.50 | 91.00 | 93.50
@@ -102,8 +117,11 @@ def debug_analyze():
     """使用预设数据模拟 OCR 识别，跳过 API 调用"""
     try:
         data = request.json or {}
-        mappings = data.get("mappings", current_mappings)
-        result = parse_transcription(DEBUG_RAW_TEXT, mappings)
+        user_mappings = data.get("mappings", {})
+        # 合并用户映射和 debug 数据所需的完整映射
+        full_mappings = dict(DEBUG_MAPPINGS)
+        full_mappings.update(user_mappings)
+        result = parse_transcription(DEBUG_RAW_TEXT, full_mappings)
         format_numbers(result)
         return jsonify({
             "success": True,
