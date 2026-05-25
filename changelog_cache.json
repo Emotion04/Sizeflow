@@ -1,14 +1,19 @@
 {
   "commits": [
     {
+      "hash": "31b8ef1",
+      "msg": "Canary 3.24: 消除32px偏差——表格cell竖直padding 2→0",
+      "date": "16 minutes ago"
+    },
+    {
       "hash": "6dd12c7",
       "msg": "Canary 3.23: 服务端body.screenshot + 表格尺寸状态指示器",
-      "date": "44 minutes ago"
+      "date": "60 minutes ago"
     },
     {
       "hash": "424f335",
       "msg": "Canary 3.22: html/body加overflow:hidden消除32px渲染偏差",
-      "date": "87 minutes ago"
+      "date": "2 hours ago"
     },
     {
       "hash": "0fb2a16",
@@ -28,27 +33,27 @@
     {
       "hash": "f5df6d0",
       "msg": "Canary 3.19: 修复表格居中+警告计算+补全校验场景",
-      "date": "2 hours ago"
+      "date": "3 hours ago"
     },
     {
       "hash": "965928d",
       "msg": "Canary 3.18: html2canvas scale 2→1 匹配服务端Playwright输出分辨率",
-      "date": "18 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "c74dd21",
       "msg": "Canary 3.17: 修复导出警告计算——使用buildExportStylePayload保持一致",
-      "date": "18 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "a4a0af2",
       "msg": "Canary 3.16: 服务端body去flexbox——html2canvas可直接渲染",
-      "date": "18 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "34f4713",
       "msg": "修复更新日志乱码——用独立Python脚本替代shell管道",
-      "date": "18 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "372d9c5",
@@ -83,7 +88,7 @@
     {
       "hash": "fe356f2",
       "msg": "Canary 3.9: 修复Vercel导出纯白图片(opacity:0导致html2canvas渲染透明)",
-      "date": "19 hours ago"
+      "date": "20 hours ago"
     },
     {
       "hash": "95c4783",
@@ -98,7 +103,7 @@
     {
       "hash": "256fad8",
       "msg": "更新日志缓存同步全部22条git commit",
-      "date": "20 hours ago"
+      "date": "21 hours ago"
     },
     {
       "hash": "912a7ff",
@@ -113,7 +118,7 @@
     {
       "hash": "e64e887",
       "msg": "Canary 3.5: 修复Vercel导出留白丢失 + 预览刷新改为Promise",
-      "date": "21 hours ago"
+      "date": "22 hours ago"
     },
     {
       "hash": "01a8c98",
@@ -133,7 +138,7 @@
     {
       "hash": "1003ba4",
       "msg": "Canary 3.1: 莫兰迪色系壁纸 + 三模板统一边距 + UI优化",
-      "date": "25 hours ago"
+      "date": "26 hours ago"
     },
     {
       "hash": "0cd3974",
@@ -144,11 +149,6 @@
       "hash": "76623de",
       "msg": "v2.0.1: 修复导出PNG布局 + 列宽控制 + 动态图片宽度",
       "date": "2 days ago"
-    },
-    {
-      "hash": "33de62c",
-      "msg": "v2.0.0: 导出配置面板 + 字体字重选择 + 选区复制(图片/文本) + 列复选框 + 渐变色壁纸",
-      "date": "3 days ago"
     }
   ]
 }

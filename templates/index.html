@@ -471,13 +471,21 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
               <button class="btn btn-outline btn-sm" id="resetMappingsBtn">恢复默认</button>
               <button class="btn btn-outline btn-sm" id="saveMappingsBtn">保存映射</button>
             </div>
-            <!-- Action button + model select -->
-            <div class="hidden" id="actionArea" style="margin-top:24px;margin-bottom:24px;display:flex;flex-direction:column;align-items:center;gap:32px;">
-              <button class="btn" id="analyzeBtn" style="height:120px;width:160px;font-size:18px;border-radius:14px;background:rgba(79,110,246,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);color:#fff;cursor:pointer;transition:all .2s;"
-                onmouseover="this.style.background='rgba(79,110,246,.4)';this.style.transform='scale(1.04)';"
-                onmouseout="this.style.background='rgba(79,110,246,.25)';this.style.transform='scale(1)';">
-                &#128269;<br>开始识别
-              </button>
+            <!-- Action buttons (debug始终可见，analyze需图片) -->
+            <div id="actionArea" style="margin-top:24px;margin-bottom:24px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+              <div style="display:flex;gap:12px;align-items:center;">
+                <button class="btn" id="analyzeBtn" style="height:120px;width:160px;font-size:18px;border-radius:14px;background:rgba(79,110,246,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);color:#fff;cursor:pointer;transition:all .2s;"
+                  onmouseover="this.style.background='rgba(79,110,246,.4)';this.style.transform='scale(1.04)';"
+                  onmouseout="this.style.background='rgba(79,110,246,.25)';this.style.transform='scale(1)';"
+                  disabled>
+                  &#128269;<br>开始识别
+                </button>
+                <span id="analyzeHint" style="font-size:10px;color:var(--text2);">请先上传图片</span>
+                <!-- DEBUG: 快速调试按钮，避开API调用 -->
+                <button class="btn btn-outline btn-sm" id="debugAnalyzeBtn" style="height:60px;width:60px;border-radius:10px;font-size:10px;opacity:.6;" title="使用预设数据快速预览（跳过API）">
+                  &#9889;<br>Debug
+                </button>
+              </div>
               <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;">
                 模型：
                 <select id="modelSelect" style="padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--text);cursor:pointer;outline:none;"></select>
@@ -803,6 +811,8 @@ function bindEvents() {
   });
 
   document.getElementById('analyzeBtn').addEventListener('click', analyze);
+  // DEBUG: 快速调试按钮
+  document.getElementById('debugAnalyzeBtn').addEventListener('click', debugAnalyze);
 
   document.getElementById('addMappingBtn').addEventListener('click', addMapping);
   document.getElementById('resetMappingsBtn').addEventListener('click', resetMappings);
@@ -1096,7 +1106,8 @@ function loadFromPath() {
   ph.innerHTML = `&#128194; 使用文件路径模式<br><small>${esc(path)}</small>`;
   ph.style.display = '';
 
-  document.getElementById('actionArea').classList.remove('hidden');
+  document.getElementById('analyzeBtn').disabled = false;
+  document.getElementById('analyzeHint').textContent = '';
   toast('已加载文件路径', 'info');
 }
 
@@ -1110,7 +1121,8 @@ function showPreview(src) {
   const ph = document.getElementById('pathPlaceholder');
   if (ph) ph.style.display = 'none';
 
-  document.getElementById('actionArea').classList.remove('hidden');
+  document.getElementById('analyzeBtn').disabled = false;
+  document.getElementById('analyzeHint').textContent = '';
 }
 
 function clearImage() {
@@ -1118,53 +1130,69 @@ function clearImage() {
   currentImageB64 = null;
   document.getElementById('noPreview').classList.remove('hidden');
   document.getElementById('previewWrap').classList.add('hidden');
-  document.getElementById('actionArea').classList.add('hidden');
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('analyzeHint').textContent = '请先上传图片';
   document.getElementById('resultCard').classList.add('hidden');
   document.getElementById('filePathInput').value = '';
 }
 
 // ======== Analysis ========
+function handleAnalyzeResult(d) {
+  stopEasterEggTimer();
+  document.getElementById('loadingCard').classList.add('hidden');
+  if (!d.success) {
+    toast('识别失败: ' + d.error, 'error');
+    console.log('Raw:', d.raw);
+    return;
+  }
+  resultData = d.data;
+  renderTable(resultData);
+  document.getElementById('modelInfo').textContent =
+    d.model ? ` | 模型: ${d.model}` : '';
+  document.getElementById('rawResponse').textContent = d.raw || '(无)';
+  document.getElementById('resultCard').classList.remove('hidden');
+  document.getElementById('styleCard').classList.remove('hidden');
+  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+  toast('识别成功！下方可选样式生成尺码表图片', 'success');
+}
+
 async function analyze() {
   if (!currentImage) return toast('请先上传图片', 'error');
-
-  // Refresh mappings from UI
   syncMappingsFromUI();
-
   document.getElementById('loadingCard').classList.remove('hidden');
   document.getElementById('resultCard').classList.add('hidden');
   startEasterEggTimer();
-
   try {
     const r = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: currentImage, mappings, model: currentModel })
     });
-
-    const d = await r.json();
-    stopEasterEggTimer();
-    document.getElementById('loadingCard').classList.add('hidden');
-
-    if (!d.success) {
-      toast('识别失败: ' + d.error, 'error');
-      console.log('Raw:', d.raw);
-      return;
-    }
-
-    resultData = d.data;
-    renderTable(resultData);
-    document.getElementById('modelInfo').textContent =
-      d.model ? ` | 模型: ${d.model}` : '';
-    document.getElementById('rawResponse').textContent = d.raw || '(无)';
-    document.getElementById('resultCard').classList.remove('hidden');
-    document.getElementById('styleCard').classList.remove('hidden');
-    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
-    toast('识别成功！下方可选样式生成尺码表图片', 'success');
-
+    handleAnalyzeResult(await r.json());
   } catch (e) {
     stopEasterEggTimer();
     document.getElementById('loadingCard').classList.add('hidden');
     toast('请求失败: ' + e.message, 'error');
+  }
+}
+
+// DEBUG: 使用预设数据快速预览，跳过 OCR API
+async function debugAnalyze() {
+  syncMappingsFromUI();
+  document.getElementById('loadingCard').classList.remove('hidden');
+  document.getElementById('resultCard').classList.add('hidden');
+  toast('🚀 Debug 模式：使用预设数据...', 'info');
+  try {
+    const r = await fetch('/api/debug-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mappings })
+    });
+    handleAnalyzeResult(await r.json());
+  } catch (e) {
+    stopEasterEggTimer();
+    document.getElementById('loadingCard').classList.add('hidden');
+    toast('Debug 请求失败: ' + e.message, 'error');
   }
 }
 

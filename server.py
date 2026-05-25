@@ -82,6 +82,41 @@ def analyze():
                 pass
 
 
+# ---- Debug Mode ----
+DEBUG_RAW_TEXT = """尺码 | 25.00 | 26.00 | 27.00 | 28.00 | 29.00 | 30.00 | 31.00
+腰围（拉平量） | 2.50 | 64.00 | 66.50 | 69.00 | 71.50 | 74.00 | 76.50 | 79.00
+上座围(腰下7cm V量) | 2.50 | 78.50 | 81.00 | 83.50 | 86.00 | 88.50 | 91.00 | 93.50
+座围(浪上11 cm V量) | 2.50 | 91.50 | 94.00 | 96.50 | 99.00 | 101.50 | 104.00 | 106.50
+脾围 | 1.27 | 61.50 | 62.77 | 64.04 | 65.31 | 66.58 | 67.85 | 69.12
+膝围（浪下29cm） | 1.00 | 57.50 | 58.50 | 59.50 | 60.50 | 61.50 | 62.50 | 63.50
+脚围 | 1.00 | 51.50 | 52.50 | 53.50 | 54.50 | 55.50 | 56.50 | 57.50
+前浪连腰 | 0.63 | 29.22 | 29.85 | 30.47 | 31.10 | 31.72 | 32.35 | 32.97
+后浪连腰 | 0.63 | 38.22 | 38.85 | 39.47 | 40.10 | 40.72 | 41.35 | 41.97
+外长连腰B | 1.00 | 102.00 | 103.00 | 104.00 | 105.00 | 106.00 | 106.50 | 107.00
+外长连腰C | 1.00 | 97.00 | 98.00 | 99.00 | 100.00 | 101.00 | 101.50 | 102.00
+前中拉链89301 | 5 | 5 | 5 | 5 1/2 | 5 1/2 | 5 1/2 | 5 1/2 | 5 1/2"""
+
+
+@app.route("/api/debug-analyze", methods=["POST"])
+def debug_analyze():
+    """使用预设数据模拟 OCR 识别，跳过 API 调用"""
+    try:
+        data = request.json or {}
+        mappings = data.get("mappings", current_mappings)
+        result = parse_transcription(DEBUG_RAW_TEXT, mappings)
+        format_numbers(result)
+        return jsonify({
+            "success": True,
+            "data": result,
+            "raw": DEBUG_RAW_TEXT,
+            "model": "debug-mode",
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ---- Debug Mode End ----
+
 @app.route("/api/key", methods=["GET", "POST"])
 def key_handler():
     global _api_key
