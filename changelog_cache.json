@@ -1,9 +1,19 @@
 {
   "commits": [
     {
+      "hash": "0f55459",
+      "msg": "Canary 3.21: 移除exportPng中对scoped函数的无效调用",
+      "date": "2 minutes ago"
+    },
+    {
+      "hash": "e50bec3",
+      "msg": "Canary 3.20: 紧急修复——checkExportConfigWarning移入try-catch内",
+      "date": "16 minutes ago"
+    },
+    {
       "hash": "f5df6d0",
       "msg": "Canary 3.19: 修复表格居中+警告计算+补全校验场景",
-      "date": "15 minutes ago"
+      "date": "31 minutes ago"
     },
     {
       "hash": "965928d",
@@ -13,22 +23,22 @@
     {
       "hash": "c74dd21",
       "msg": "Canary 3.17: 修复导出警告计算——使用buildExportStylePayload保持一致",
-      "date": "16 hours ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "a4a0af2",
       "msg": "Canary 3.16: 服务端body去flexbox——html2canvas可直接渲染",
-      "date": "16 hours ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "34f4713",
       "msg": "修复更新日志乱码——用独立Python脚本替代shell管道",
-      "date": "16 hours ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "372d9c5",
       "msg": "Canary 3.15: 客户端导出——纯手工构建精确尺寸wrapper替代body渲染",
-      "date": "16 hours ago"
+      "date": "17 hours ago"
     },
     {
       "hash": "ce19f9a",
@@ -73,12 +83,12 @@
     {
       "hash": "256fad8",
       "msg": "更新日志缓存同步全部22条git commit",
-      "date": "18 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "912a7ff",
       "msg": "Canary 3.7: 重写客户端导出路径修复Vercel/EXE留白丢失",
-      "date": "18 hours ago"
+      "date": "19 hours ago"
     },
     {
       "hash": "9d7f4aa",
@@ -88,7 +98,7 @@
     {
       "hash": "e64e887",
       "msg": "Canary 3.5: 修复Vercel导出留白丢失 + 预览刷新改为Promise",
-      "date": "19 hours ago"
+      "date": "20 hours ago"
     },
     {
       "hash": "01a8c98",
@@ -108,7 +118,7 @@
     {
       "hash": "1003ba4",
       "msg": "Canary 3.1: 莫兰迪色系壁纸 + 三模板统一边距 + UI优化",
-      "date": "23 hours ago"
+      "date": "24 hours ago"
     },
     {
       "hash": "0cd3974",
@@ -138,16 +148,6 @@
     {
       "hash": "c732bc5",
       "msg": "Merge branch 'style-feature'",
-      "date": "4 days ago"
-    },
-    {
-      "hash": "1f6c995",
-      "msg": "列宽/行高min阈值全部放开至1px",
-      "date": "4 days ago"
-    },
-    {
-      "hash": "ebea62d",
-      "msg": "合并style-feature: 解决彩蛋计时器指数冲突",
       "date": "4 days ago"
     }
   ]
