@@ -1798,14 +1798,14 @@ function bindSelectionEvents() {
 
 function _getSelectionColsRows() {
   const origTable = document.getElementById('resultTable');
-  if (!origTable || !resultData || !resultData.rows) return null;
+  if (!origTable) { console.warn('[copy] resultTable not found'); return null; }
+  if (!resultData || !resultData.rows) { console.warn('[copy] resultData empty', !!resultData, !!resultData?.rows); return null; }
   const totalRows = resultData.rows.length;
-  // 优先使用复选框选中的列
   if (selectedColumns.size > 0) {
     const cols = [...selectedColumns].sort((a, b) => a - b);
+    console.log('[copy] using checkboxes, cols:', cols, 'rows:', totalRows);
     return { cols, minRow: 0, maxRow: totalRows - 1, origTable };
   }
-  // 否则使用拖选矩形
   if (selectionStart && selectionEnd) {
     const minCol = Math.min(selectionStart.col, selectionEnd.col);
     const maxCol = Math.max(selectionStart.col, selectionEnd.col);
@@ -1813,14 +1813,17 @@ function _getSelectionColsRows() {
     const maxRow = Math.min(totalRows - 1, Math.max(selectionStart.row, selectionEnd.row));
     const cols = [];
     for (let ci = minCol; ci <= maxCol; ci++) cols.push(ci);
+    console.log('[copy] using drag selection, cols:', cols, 'rows:', minRow, '-', maxRow);
     return { cols, minRow, maxRow, origTable };
   }
+  console.warn('[copy] no selection (no checkboxes, no drag)');
   return null;
 }
 
 async function copySelectionAsImage() {
+  console.log('[copy-img] clicked');
   const sel = _getSelectionColsRows();
-  if (!sel) return toast('请拖选单元格或勾选列复选框', 'error');
+  if (!sel) { toast('请拖选单元格或勾选列复选框', 'error'); return; }
   const { cols, minRow, maxRow, origTable } = sel;
 
   toast('正在渲染选区...', 'info');
@@ -1880,8 +1883,9 @@ async function copySelectionAsImage() {
 }
 
 async function copySelectionAsText() {
+  console.log('[copy-txt] clicked');
   const sel = _getSelectionColsRows();
-  if (!sel) return toast('请拖选单元格或勾选列复选框', 'error');
+  if (!sel) { toast('请拖选单元格或勾选列复选框', 'error'); return; }
   const { cols, minRow, maxRow, origTable } = sel;
 
   const lines = [];
