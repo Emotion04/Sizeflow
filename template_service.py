@@ -157,13 +157,13 @@ def _inject_export_config(soup, export_config, total_table_w=None):
     # html
     html_tag = soup.find("html")
     if html_tag:
-        html_tag["style"] = f"margin:0;padding:0;"
+        html_tag["style"] = f"margin:0;padding:0;overflow:hidden;"
 
     # body — flexbox 居中表格，padding 四边留白，bgHeight>0 时设 min-height
     body = soup.find("body")
     if body:
         minh = f"min-height:{bg_h_min}px;" if bg_h_min > 0 else ""
-        body["style"] = f"width:{actual_w}px;margin:0 auto;padding:{padding}px;box-sizing:border-box;text-align:center;{minh}"
+        body["style"] = f"width:{actual_w}px;margin:0;padding:{padding}px;box-sizing:border-box;overflow:hidden;{minh}"
 
     # table — 不设 width，由 <colgroup> 列宽自然决定总宽
     table = soup.find("table")
