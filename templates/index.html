@@ -590,6 +590,8 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     <div id="fineTunePanel" class="hidden" style="margin-top:6px;padding:8px 12px;background:rgba(255,255,255,.15);border-radius:8px;border:1px solid rgba(255,255,255,.2);"></div>
     <!-- 逐行微调面板 -->
     <div id="fineTuneRowPanel" class="hidden" style="margin-top:4px;padding:8px 12px;background:rgba(255,255,255,.15);border-radius:8px;border:1px solid rgba(255,255,255,.2);"></div>
+    <!-- 表格尺寸状态指示器 -->
+    <div id="tableSizeIndicator" class="hidden" style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,.08);border-radius:8px;border:1px solid rgba(255,255,255,.12);font-size:11px;color:var(--text2);line-height:1.8;"></div>
     <div class="action-bar" style="margin-top:12px;">
       <button class="btn btn-success" id="exportPngBtn">&#128190; 导出当前样式为PNG</button>
       <button class="btn btn-outline btn-sm" id="exportConfigToggle">导出配置 ▸</button>
@@ -844,10 +846,35 @@ function bindEvents() {
     document.getElementById('cfgBgHeight').value = exportConfig.bgHeight;
     document.getElementById('cfgPadding').value = exportConfig.padding;
     // 校验：背景宽/高不能小于表格+留白
+    updateTableSizeIndicator();
     checkExportConfigWarning();
     refreshPreview();
     toast('导出配置已应用', 'info');
   });
+
+  function updateTableSizeIndicator() {
+    const el = document.getElementById('tableSizeIndicator');
+    if (!resultData || !resultData.headers) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const pad = exportConfig.padding || 55;
+    const nCols = resultData.headers.length;
+    let totalColW = 0;
+    for (let i = 0; i < nCols; i++) {
+      totalColW += (exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth);
+    }
+    const nRows = resultData.rows.length;
+    let totalRowH = exportHeaderHeight;
+    for (let i = 0; i < nRows; i++) {
+      totalRowH += (exportRowHeights[i] !== undefined ? exportRowHeights[i] : exportRowHeight);
+    }
+    const imgW = Math.max(exportConfig.bgWidth || 1200, totalColW + 2 * pad);
+    const imgH = Math.max(exportConfig.bgHeight || 0, totalRowH + 2 * pad) || (totalRowH + 2 * pad);
+    const marginLR = Math.max(0, (imgW - totalColW - 2 * pad)) / 2 + pad;
+    const marginTB = Math.max(0, (imgH - totalRowH - 2 * pad)) / 2 + pad;
+    el.innerHTML = `表格净尺寸 ${totalColW} × ${totalRowH} px | ` +
+      `图片 ${imgW} × ${imgH} px | ` +
+      `四边留白: 左${Math.round(marginLR)} 右${Math.round(marginLR)} 上${Math.round(marginTB)} 下${Math.round(marginTB)} px`;
+  }
 
   function checkExportConfigWarning() {
     const warnEl = document.getElementById('cfgWarning');
@@ -874,10 +901,9 @@ function bindEvents() {
     const actualW = Math.max(bgW, needW);
     const actualH = bgH > 0 ? Math.max(bgH, needH) : needH;
     const msgs = [];
-    if (bgW < 1) msgs.push('背景宽无效，已使用最小值');
-    else if (bgW < needW) msgs.push(`背景宽${bgW}px < 表格+留白需${needW}px，已自动使用${actualW}px`);
-    if (bgH > 0 && bgH < 1) msgs.push('背景高无效，已使用最小值');
-    else if (bgH > 0 && bgH < needH) msgs.push(`背景高${bgH}px < 内容+留白需${needH}px，已自动使用${actualH}px`);
+    if (bgW < 1) msgs.push('背景宽无效，已自动使用最小值');
+    else if (bgW < needW) msgs.push(`背景宽${bgW}太小，最小需${needW}，已自动扩至${actualW}px`);
+    if (bgH > 0 && bgH < needH) msgs.push(`背景高${bgH}太小，最小需${needH}，已自动扩至${actualH}px`);
     if (msgs.length > 0) {
       warnEl.textContent = '⚠ ' + msgs.join('；');
       warnEl.style.display = 'inline';
@@ -914,6 +940,7 @@ function bindEvents() {
     exportColWidths = {};
     refreshFineTunePanel();
     applyExportColWidths();
+    updateTableSizeIndicator();
   });
   document.getElementById('exportColWidthInput').addEventListener('change', function() {
     exportColWidth = parseInt(this.value) || 155;

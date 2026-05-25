@@ -195,7 +195,11 @@ async def render_html_to_png(html, font_weight="medium", export_config=None):
         font_css = _get_font_face_css(font_weight)
         await page.add_style_tag(content=font_css)
         await page.wait_for_timeout(500)
-        img = await page.screenshot(type="png", full_page=True)
+        body_el = await page.query_selector("body")
+        if body_el:
+            img = await body_el.screenshot(type="png")
+        else:
+            img = await page.screenshot(type="png", full_page=True)
         await browser.close()
         return img
 
