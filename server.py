@@ -305,9 +305,11 @@ def template_preview(template_id):
 
 @app.route("/font/<path:filename>")
 def serve_font(filename):
-    """服务字体文件"""
+    """服务字体文件（允许跨域，Playwright 渲染需要）"""
     font_dir = os.path.join(APP_DIR, "font")
-    return send_from_directory(font_dir, filename)
+    resp = send_from_directory(font_dir, filename)
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
 
 
 @app.route("/api/apply-template", methods=["POST"])

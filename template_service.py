@@ -82,7 +82,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
         # 移除已有的引用 /font/ 的 @font-face 块（避免残留错误的 font-weight）
         css = re.sub(r"@font-face\s*\{[^}]*?/font/[^}]*?\}", "", css)
         # 注入正确的 @font-face，font-weight 描述符匹配选中字重
-        css = f"@font-face {{ font-family: 'PingFangSC'; src: url('/font/{font_path}') format('woff2'); font-weight: {css_weight}; }}\n" + css
+        css = f"@font-face {{ font-family: 'PingFangSC'; src: local('PingFang SC'), url('/font/{font_path}') format('woff2'); font-weight: {css_weight}; }}\n" + css
         style_tag.string.replace_with(css)
 
     table = soup.find("table")
