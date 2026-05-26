@@ -177,7 +177,7 @@ def _get_font_face_css(font_weight):
     font_path, css_weight = FONT_WEIGHTS.get(font_weight, FONT_WEIGHTS["medium"])
     abs_path = os.path.join(APP_DIR, "font", font_path)
     font_url = f"file:///{abs_path.replace(os.sep, '/')}"
-    return f"@font-face {{ font-family: 'PingFangSC'; src: url('{font_url}') format('woff2'); font-weight: {css_weight}; }}"
+    return f"@font-face {{ font-family: 'PingFangSC'; src: url('{font_url}') format('woff2'); }}"
 
 
 async def render_html_to_png(html, font_weight="medium", export_config=None):
