@@ -82,7 +82,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
         # 移除已有的引用 /font/ 的 @font-face 块（避免残留错误的 font-weight）
         css = re.sub(r"@font-face\s*\{[^}]*?/font/[^}]*?\}", "", css)
         # 注入正确的 @font-face，font-weight 描述符匹配选中字重
-        css = f"@font-face {{ font-family: 'PingFangSC'; src: local('PingFang SC'), url('/font/{font_path}') format('woff2'); font-weight: {css_weight}; }}\n" + css
+        css = f"@font-face {{ font-family: 'PingFangSC'; src: url('/font/{font_path}') format('woff2'); font-weight: {css_weight}; }}\n" + css
         style_tag.string.replace_with(css)
 
     table = soup.find("table")
@@ -174,8 +174,30 @@ def _inject_export_config(soup, export_config, total_table_w=None):
 
 
 
+def _chromium_available():
+    """检查 Playwright Chromium 是否已安装（快速路径，避免 Vercel 上超时挂死）"""
+    import sys
+    try:
+        if sys.platform == "win32":
+            base = os.path.expandvars(r"%LOCALAPPDATA%\ms-playwright")
+        elif sys.platform == "darwin":
+            base = os.path.expanduser("~/Library/Caches/ms-playwright")
+        else:
+            base = os.path.expanduser("~/.cache/ms-playwright")
+        if os.path.isdir(base):
+            for root, dirs, _ in os.walk(base):
+                for d in dirs:
+                    if "chromium" in d.lower():
+                        return True
+    except Exception:
+        pass
+    return False
+
+
 async def render_html_to_png(html, font_weight="medium", export_config=None):
     """将 HTML 渲染为 PNG，视口宽度匹配 body 实际宽度"""
+    if not _chromium_available():
+        raise RuntimeError("Chromium not available (Vercel/EXE environment)")
     if export_config is None:
         export_config = {}
     # 从 HTML 中提取 body 的实际宽度
