@@ -2069,6 +2069,17 @@ async function exportPng() {
     await new Promise(r => setTimeout(r, 400));
     if (!filledHtml) { toast('导出失败: 预览未加载', 'error'); return; }
 
+    // 把 @font-face 注入主 document — html2canvas 在主 document 创建 canvas，
+    // 无法访问 iframe 内注册的字体，必须让字体在主 document 也注册一份
+    let ffStyle = null;
+    const ffMatch = filledHtml.match(/@font-face\s*\{[^}]*\}/);
+    if (ffMatch) {
+      ffStyle = document.createElement('style');
+      ffStyle.textContent = ffMatch[0];
+      document.head.appendChild(ffStyle);
+      try { await document.fonts.ready; } catch(e) {}
+    }
+
     const frame = document.createElement('iframe');
     frame.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;';
     frame.srcdoc = filledHtml;
@@ -2083,6 +2094,7 @@ async function exportPng() {
     const body = frame.contentDocument.body;
     const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 1 });
     document.body.removeChild(frame);
+    if (ffStyle) ffStyle.remove();
 
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
