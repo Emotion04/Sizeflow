@@ -173,10 +173,10 @@ def _inject_export_config(soup, export_config, total_table_w=None):
 
 
 def _get_font_face_css(font_weight):
-    """根据字重返回 Playwright 可用的 @font-face CSS（使用 file:// 路径）"""
-    font_path, css_weight = FONT_WEIGHTS.get(font_weight, FONT_WEIGHTS["medium"])
-    abs_path = os.path.join(APP_DIR, "font", font_path)
-    font_url = f"file:///{abs_path.replace(os.sep, '/')}"
+    """根据字重返回 Playwright 可用的 @font-face CSS"""
+    font_path, _ = FONT_WEIGHTS.get(font_weight, FONT_WEIGHTS["medium"])
+    # 用 localhost URL（Playwright 的 Chromium 对 file:// 有安全限制）
+    font_url = f"http://localhost:5800/font/{font_path}"
     return f"@font-face {{ font-family: 'PingFangSC'; src: url('{font_url}') format('woff2'); }}"
 
 
