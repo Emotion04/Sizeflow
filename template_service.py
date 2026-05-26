@@ -74,14 +74,15 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # 根据 font_weight 替换 @font-face 中的字体文件路径
+    # 根据 font_weight 注入 @font-face（含正确的 font-weight 描述符）
+    font_path, css_weight = FONT_WEIGHTS.get(font_weight, FONT_WEIGHTS["medium"])
     style_tag = soup.find("style")
-    if style_tag and style_tag.string:
-        css = str(style_tag.string)
-        font_path, css_weight = FONT_WEIGHTS.get(font_weight, FONT_WEIGHTS["medium"])
-        css = re.sub(r"url\('/font/[^']+'\)", f"url('/font/{font_path}')", css)
-        css = re.sub(r"format\('[^']+'\)", "format('woff2')", css)
-        css = re.sub(r"font-weight:\s*\d+", f"font-weight: {css_weight}", css)
+    if style_tag:
+        css = str(style_tag.string) if style_tag.string else ""
+        # 移除已有的引用 /font/ 的 @font-face 块（避免残留错误的 font-weight）
+        css = re.sub(r"@font-face\s*\{[^}]*?/font/[^}]*?\}", "", css)
+        # 注入正确的 @font-face，font-weight 描述符匹配选中字重
+        css = f"@font-face {{ font-family: 'PingFangSC'; src: url('/font/{font_path}') format('woff2'); font-weight: {css_weight}; }}\n" + css
         style_tag.string.replace_with(css)
 
     table = soup.find("table")
@@ -120,7 +121,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             th = soup.new_tag("th")
             th.string = str(h)
             w = col_widths.get(str(i), default_w)
-            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:500;"
+            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};"
             tr.append(th)
         thead.append(tr)
 
@@ -139,7 +140,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             val = row[ci] if ci < len(row) and row[ci] is not None else ""
             td.string = str(val)
             w = col_widths.get(str(ci), default_w)
-            td["style"] = f"height:{rh}px;line-height:{rh}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:400;"
+            td["style"] = f"height:{rh}px;line-height:{rh}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};"
             tr.append(td)
         tbody.append(tr)
 
