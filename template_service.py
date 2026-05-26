@@ -172,13 +172,6 @@ def _inject_export_config(soup, export_config, total_table_w=None):
         table["style"] = f"table-layout:fixed;margin:0 auto;{existing}"
 
 
-def _get_font_face_css(font_weight):
-    """根据字重返回 Playwright 可用的 @font-face CSS"""
-    font_path, _ = FONT_WEIGHTS.get(font_weight, FONT_WEIGHTS["medium"])
-    # 用 localhost URL（Playwright 的 Chromium 对 file:// 有安全限制）
-    font_url = f"http://localhost:5800/font/{font_path}"
-    return f"@font-face {{ font-family: 'PingFangSC'; src: url('{font_url}') format('woff2'); }}"
-
 
 async def render_html_to_png(html, font_weight="medium", export_config=None):
     """将 HTML 渲染为 PNG，视口宽度匹配 body 实际宽度"""
@@ -191,9 +184,9 @@ async def render_html_to_png(html, font_weight="medium", export_config=None):
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         page = await browser.new_page(viewport={"width": actual_w, "height": 600})
+        # 把 HTML 中的 /font/... 替换为 localhost 绝对路径，Playwright 才能加载
+        html = re.sub(r"url\('/font/", f"url('http://localhost:5800/font/", html)
         await page.set_content(html, wait_until="load")
-        font_css = _get_font_face_css(font_weight)
-        await page.add_style_tag(content=font_css)
         await page.wait_for_timeout(500)
         body_el = await page.query_selector("body")
         if body_el:
