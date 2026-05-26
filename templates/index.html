@@ -2071,13 +2071,25 @@ async function exportPng() {
 
     // 把 @font-face 注入主 document — html2canvas 在主 document 创建 canvas，
     // 无法访问 iframe 内注册的字体，必须让字体在主 document 也注册一份
-    let ffStyle = null;
+    let ffCleanup = null;
     const ffMatch = filledHtml.match(/@font-face\s*\{[^}]*\}/);
     if (ffMatch) {
-      ffStyle = document.createElement('style');
-      ffStyle.textContent = ffMatch[0];
-      document.head.appendChild(ffStyle);
-      try { await document.fonts.ready; } catch(e) {}
+      const urlMatch = ffMatch[0].match(/url\(['"]?([^'"]+)['"]?\)/);
+      const weightMatch = ffMatch[0].match(/font-weight:\s*(\d+)/);
+      if (urlMatch && weightMatch) {
+        try {
+          const font = new FontFace('PingFangSC', 'url(' + urlMatch[1] + ')', { weight: weightMatch[1] });
+          const loadedFont = await font.load();
+          document.fonts.add(loadedFont);
+          ffCleanup = loadedFont;
+        } catch(e) {
+          // Fallback: CSS 注入
+          ffCleanup = document.createElement('style');
+          ffCleanup.textContent = ffMatch[0];
+          document.head.appendChild(ffCleanup);
+          try { await document.fonts.ready; } catch(e) {}
+        }
+      }
     }
 
     const frame = document.createElement('iframe');
@@ -2094,7 +2106,10 @@ async function exportPng() {
     const body = frame.contentDocument.body;
     const canvas = await html2canvas(body, { backgroundColor: '#ffffff', scale: 1 });
     document.body.removeChild(frame);
-    if (ffStyle) ffStyle.remove();
+    if (ffCleanup) {
+      if (ffCleanup instanceof FontFace) document.fonts.delete(ffCleanup);
+      else ffCleanup.remove();
+    }
 
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
