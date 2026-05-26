@@ -186,8 +186,10 @@ async def render_html_to_png(html, font_weight="medium", export_config=None):
         page = await browser.new_page(viewport={"width": actual_w, "height": 600})
         # 把 HTML 中的 /font/... 替换为 localhost 绝对路径，Playwright 才能加载
         html = re.sub(r"url\('/font/", f"url('http://localhost:5800/font/", html)
-        await page.set_content(html, wait_until="load")
-        await page.wait_for_timeout(500)
+        await page.set_content(html, wait_until="networkidle")
+        try: await page.evaluate("document.fonts.ready")
+        except: pass
+        await page.wait_for_timeout(300)
         body_el = await page.query_selector("body")
         if body_el:
             img = await body_el.screenshot(type="png")
