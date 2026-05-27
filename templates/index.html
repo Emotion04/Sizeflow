@@ -1459,12 +1459,14 @@ function refreshPreview() {
   }).then(r => r.json()).then(d => {
     if (d.success) {
       filledHtml = d.html;
-      document.getElementById('stylePreview').srcdoc = d.html;
-      // 缩放预览以适应容器
-      setTimeout(scalePreviewToFit, 400);
+      const iframe = document.getElementById('stylePreview');
+      iframe.onload = () => {
+        setTimeout(scalePreviewToFit, 100);
+        setTimeout(applyExportColWidths, 200);
+      };
+      iframe.srcdoc = d.html;
     }
-  }).catch(e => console.error('refreshPreview:', e))
-  .then(() => { setTimeout(applyExportColWidths, 500); });
+  }).catch(e => console.error('refreshPreview:', e));
 }
 
 function scalePreviewToFit() {
@@ -1474,18 +1476,19 @@ function scalePreviewToFit() {
   try {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     const body = doc.body;
-    if (!body) return;
-    const bw = body.scrollWidth || body.offsetWidth;
-    const bh = body.scrollHeight || body.offsetHeight;
-    if (bw < 10 || bh < 10) return;
+    if (!body) { console.log('[preview] body not ready'); return; }
+    const bw = body.scrollWidth || body.offsetWidth || 1200;
+    const bh = body.scrollHeight || body.offsetHeight || 600;
     const cw = wrap.clientWidth - 20;
-    const zoom = Math.min(1, cw / bw);
-    // zoom 对 iframe 比 transform:scale 更可靠
-    iframe.style.zoom = zoom;
+    if (bw <= cw) { console.log('[preview] no scaling needed', bw, '<', cw); return; }
+    const s = (cw / bw).toFixed(2);
+    console.log('[preview] scale', s, 'body', bw, 'x', bh, 'container', cw);
     iframe.style.width = bw + 'px';
     iframe.style.height = bh + 'px';
-    wrap.style.height = Math.ceil(bh * zoom) + 16 + 'px';
-  } catch(e) {}
+    iframe.style.transform = `scale(${s})`;
+    iframe.style.transformOrigin = 'top left';
+    wrap.style.height = Math.ceil(bh * s) + 'px';
+  } catch(e) { console.error('[preview] error', e); }
 }
 
 // ======== 导出列宽控制 ========
