@@ -106,7 +106,8 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
     extra = max(0, (bg_w - total_table_w - 2 * pad) / 2)
     line_offset = pad + extra
     existing = table.get("style", "") if isinstance(table.get("style"), str) else ""
-    table["style"] = f"{existing};--line-x:{first_col_w}px;--line-y:{header_height}px;--line-offset:{line_offset:.0f}px;"
+    sep = "" if not existing or existing.endswith(";") else ";"
+    table["style"] = f"{existing}{sep}--line-x:{first_col_w}px;--line-y:{header_height}px;--line-offset:{line_offset:.0f}px;"
 
     # 用 <colgroup> 控制列宽 — table-layout:fixed 下最可靠的方式
     colgroup = soup.new_tag("colgroup")
