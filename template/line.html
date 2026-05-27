@@ -24,13 +24,13 @@
     --line-y: 36px;
   }
 
-  /* 表头下方的横向渐变线（跟随行高） */
+  /* 表头下方的横向渐变线（跟随行高，延伸到留白区域） */
   .size-table::after {
     content: "";
     position: absolute;
     top: var(--line-y);
-    left: 0;
-    right: 0;
+    left: calc(-1 * var(--line-offset, 0px));
+    right: calc(-1 * var(--line-offset, 0px));
     height: 1px;
     background: linear-gradient(
       to right,
@@ -41,13 +41,13 @@
     );
   }
 
-  /* 竖向渐变线（跟随第一列宽度） */
+  /* 竖向渐变线（跟随第一列宽度，延伸到留白区域） */
   .size-table::before {
     content: "";
     position: absolute;
     left: var(--line-x);
-    top: 0;
-    bottom: 0;
+    top: calc(-1 * var(--line-offset, 0px));
+    bottom: calc(-1 * var(--line-offset, 0px));
     width: 1px;
     background: linear-gradient(
       to bottom,
