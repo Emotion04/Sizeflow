@@ -1460,11 +1460,15 @@ function refreshPreview() {
     if (d.success) {
       filledHtml = d.html;
       const iframe = document.getElementById('stylePreview');
-      iframe.onload = () => {
+      const handler = () => {
+        iframe.removeEventListener('load', handler);
         setTimeout(scalePreviewToFit, 100);
         setTimeout(applyExportColWidths, 200);
       };
+      iframe.addEventListener('load', handler);
       iframe.srcdoc = d.html;
+      // fallback: 如果 load 没触发，1.5s后强行缩放
+      setTimeout(() => { try { scalePreviewToFit(); applyExportColWidths(); } catch(e) {} }, 1500);
     }
   }).catch(e => console.error('refreshPreview:', e));
 }
