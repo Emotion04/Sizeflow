@@ -564,7 +564,9 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     <div class="style-grid" id="styleGrid"></div>
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
       <span style="font-size:12px;color:var(--text2);">预览：</span>
-      <iframe id="stylePreview" style="width:66%;height:450px;display:block;margin:0 auto;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;overflow:auto;"></iframe>
+      <div id="stylePreviewWrap" style="width:100%;height:500px;overflow:auto;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;">
+        <iframe id="stylePreview" style="width:100%;height:100%;border:0;display:block;transform-origin:top left;" scrolling="no"></iframe>
+      </div>
     </div>
     <!-- 导出列宽控制 -->
     <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1458,9 +1460,31 @@ function refreshPreview() {
     if (d.success) {
       filledHtml = d.html;
       document.getElementById('stylePreview').srcdoc = d.html;
+      // 缩放预览以适应容器
+      setTimeout(scalePreviewToFit, 400);
     }
   }).catch(e => console.error('refreshPreview:', e))
-  .then(() => { setTimeout(applyExportColWidths, 300); });
+  .then(() => { setTimeout(applyExportColWidths, 500); });
+}
+
+function scalePreviewToFit() {
+  const wrap = document.getElementById('stylePreviewWrap');
+  const iframe = document.getElementById('stylePreview');
+  if (!wrap || !iframe) return;
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    const body = doc.body;
+    if (!body) return;
+    const bw = body.scrollWidth || body.offsetWidth;
+    const bh = body.scrollHeight || body.offsetHeight;
+    if (bw < 10 || bh < 10) return;
+    const cw = wrap.clientWidth - 16; // 预留滚动条宽度
+    const scale = Math.min(1, cw / bw);
+    iframe.style.width = bw + 'px';
+    iframe.style.height = bh + 'px';
+    iframe.style.transform = `scale(${scale})`;
+    wrap.style.height = Math.ceil(bh * scale) + 'px';
+  } catch(e) {}
 }
 
 // ======== 导出列宽控制 ========
