@@ -1580,20 +1580,25 @@ function applyExportColWidths() {
   try {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     const cols = doc.querySelectorAll('colgroup col');
+    let totalTableW = 0;
     cols.forEach((col, i) => {
       const w = exportColWidths[i] !== undefined ? exportColWidths[i] : exportColWidth;
       col.style.width = w + 'px';
+      totalTableW += w;
     });
     // line 模板装饰线位置：从 DOM 实际渲染值读取
     const table = doc.querySelector('.size-table');
     if (table) {
       const firstTh = table.querySelector('thead th');
-      const firstCol = table.querySelector('colgroup col');
-      const lineX = firstTh ? firstTh.offsetWidth : (firstCol ? parseInt(firstCol.style.width) || exportColWidth : exportColWidth);
+      const lineX = firstTh ? firstTh.offsetWidth : (exportColWidths[0] !== undefined ? exportColWidths[0] : exportColWidth);
       const headerTh = table.querySelector('thead th');
       const lineY = headerTh ? headerTh.offsetHeight : exportHeaderHeight;
+      const bgW = exportConfig.bgWidth || 1200;
+      const pad = exportConfig.padding || 55;
+      const extra = Math.max(0, (bgW - totalTableW - 2 * pad) / 2);
       table.style.setProperty('--line-x', lineX + 'px');
       table.style.setProperty('--line-y', lineY + 'px');
+      table.style.setProperty('--line-offset', Math.round(pad + extra) + 'px');
     }
   } catch(e) {}
 }
