@@ -99,6 +99,11 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
     # 注入导出配置 — 传入实际表格宽度，动态调整图片尺寸
     _inject_export_config(soup, export_config, total_table_w)
 
+    # line 模板装饰线位置 —— CSS 变量覆盖默认值，避免线穿越文字
+    first_col_w = col_widths.get("0", default_w)
+    existing = table.get("style", "") if isinstance(table.get("style"), str) else ""
+    table["style"] = f"{existing};--line-x:{first_col_w}px;--line-y:{header_height}px;"
+
     # 用 <colgroup> 控制列宽 — table-layout:fixed 下最可靠的方式
     colgroup = soup.new_tag("colgroup")
     for w in col_ws:

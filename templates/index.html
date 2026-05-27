@@ -565,7 +565,7 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
       <span style="font-size:12px;color:var(--text2);">预览：</span>
       <div id="stylePreviewWrap" style="width:100%;height:500px;overflow:auto;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);background:#fff;">
-        <iframe id="stylePreview" style="width:100%;height:100%;border:0;display:block;" scrolling="no"></iframe>
+        <iframe id="stylePreview" style="width:100%;height:100%;border:0;display:block;"></iframe>
       </div>
     </div>
     <!-- 导出列宽控制 -->
@@ -717,15 +717,37 @@ async function loadModels() {
 
 let _allCommits = [];
 let _changelogExpanded = false;
+const CHANGELOG_CACHE_KEY = 'sizeflow_changelog';
 
 async function loadChangelog() {
+  const list = document.getElementById('changelogList');
+  if (list) list.innerHTML = '<span style="opacity:.5;">加载中...</span>';
+
   try {
-    const r = await fetch('/api/changelog');
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch('/api/changelog', { signal: ctrl.signal });
+    clearTimeout(timeout);
     const d = await r.json();
-    if (!d.success) return;
-    _allCommits = d.commits;
-    renderChangelog();
+    if (d.success && d.commits.length) {
+      _allCommits = d.commits;
+      try { localStorage.setItem(CHANGELOG_CACHE_KEY, JSON.stringify(d.commits)); } catch(e) {}
+      renderChangelog();
+      return;
+    }
   } catch(e) {}
+
+  // 超时或失败，回退localStorage缓存
+  try {
+    const cached = localStorage.getItem(CHANGELOG_CACHE_KEY);
+    if (cached) {
+      _allCommits = JSON.parse(cached);
+      renderChangelog();
+      return;
+    }
+  } catch(e) {}
+
+  if (list) list.innerHTML = '<span style="opacity:.4;">暂无更新日志</span>';
 }
 
 function renderChangelog() {
@@ -1473,26 +1495,34 @@ function refreshPreview() {
   }).catch(e => console.error('refreshPreview:', e));
 }
 
-function scalePreviewToFit() {
+async function scalePreviewToFit() {
   const wrap = document.getElementById('stylePreviewWrap');
   const iframe = document.getElementById('stylePreview');
   if (!wrap || !iframe) return;
   try {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     const body = doc.body;
-    if (!body) { console.log('[preview] body not ready'); return; }
+    if (!body) return;
+    // 等字体和布局稳定后再测量
+    try { await doc.fonts.ready; } catch(e) {}
+    await new Promise(r => requestAnimationFrame(r));
     const bw = body.scrollWidth || body.offsetWidth || 1200;
     const bh = body.scrollHeight || body.offsetHeight || 600;
     const cw = wrap.clientWidth - 20;
-    if (bw <= cw) { console.log('[preview] no scaling needed', bw, '<', cw); return; }
-    const s = (cw / bw).toFixed(2);
-    console.log('[preview] scale', s, 'body', bw, 'x', bh, 'container', cw);
+    if (bw <= cw) {
+      iframe.style.width = '100%';
+      iframe.style.height = bh + 'px';
+      iframe.style.transform = '';
+      wrap.style.height = Math.min(bh + 10, 500) + 'px';
+      return;
+    }
+    const s = (cw / bw).toFixed(3);
     iframe.style.width = bw + 'px';
     iframe.style.height = bh + 'px';
     iframe.style.transform = `scale(${s})`;
     iframe.style.transformOrigin = 'top left';
     wrap.style.height = Math.ceil(bh * s) + 'px';
-  } catch(e) { console.error('[preview] error', e); }
+  } catch(e) {}
 }
 
 // ======== 导出列宽控制 ========
