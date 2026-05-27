@@ -481,6 +481,30 @@ def api_changelog():
 
 # ---- Startup ----
 
+def sync_changelog_cache():
+    """启动时自动同步 git log 到 changelog_cache.json"""
+    import subprocess
+    cache_path = os.path.join(APP_DIR, "changelog_cache.json")
+    try:
+        result = subprocess.run(
+            ["git", "log", "-60", "--pretty=format:%h|%s|%ar"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            timeout=5, cwd=APP_DIR
+        )
+        output = result.stdout.decode("utf-8", errors="replace") if result.stdout else ""
+        if result.returncode == 0 and output:
+            commits = []
+            for line in output.strip().split("\n"):
+                if not line: continue
+                parts = line.split("|", 2)
+                if len(parts) == 3:
+                    commits.append({"hash": parts[0], "msg": parts[1], "date": parts[2]})
+            if commits:
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    json.dump({"commits": commits}, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass  # git 不可用时保留现有缓存
+
 def open_browser():
     time.sleep(1.2)
     webbrowser.open("http://localhost:5800")
@@ -492,6 +516,7 @@ if __name__ == "__main__":
     print(f"  模型: {current_model}  |  temperature: {os.getenv('QWEN_TEMPERATURE', '0.0')}")
     print(f"  打开浏览器: http://localhost:5800")
     print("=" * 48)
+    sync_changelog_cache()
     check_update()
     threading.Thread(target=open_browser, daemon=True).start()
     app.run(host="0.0.0.0", port=5800, debug=False)
