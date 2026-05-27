@@ -2063,7 +2063,11 @@ async function selectTemplate(tplId) {
     const d = await r.json();
     if (d.success) {
       filledHtml = d.html;
-      document.getElementById('stylePreview').srcdoc = d.html;
+      const iframe = document.getElementById('stylePreview');
+      const handler = () => { iframe.removeEventListener('load', handler); setTimeout(scalePreviewToFit, 100); };
+      iframe.addEventListener('load', handler);
+      iframe.srcdoc = d.html;
+      setTimeout(() => { try { scalePreviewToFit(); } catch(e) {} }, 1500);
     } else {
       toast(d.error, 'error');
     }
