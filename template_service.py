@@ -54,7 +54,7 @@ def parse_template_headers(html):
 
 
 def fill_template(html, table_data, col_widths=None, row_heights=None,
-                  header_height=None, font_weight="medium", font_size=20, export_config=None):
+                  header_height=None, font_weight="medium", font_size=20, header_font_size=None, export_config=None):
     """将 OCR 数据填入模板 HTML，动态生成 thead 和 tbody"""
     headers = table_data.get("headers", [])
     rows = table_data.get("rows", [])
@@ -133,7 +133,8 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             th = soup.new_tag("th")
             th.string = str(h)
             w = col_widths.get(str(i), default_w)
-            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};font-size:{font_size}px;"
+            hfs = header_font_size if header_font_size is not None else font_size
+            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};font-size:{hfs}px;"
             tr.append(th)
         thead.append(tr)
 
