@@ -54,7 +54,7 @@ def parse_template_headers(html):
 
 
 def fill_template(html, table_data, col_widths=None, row_heights=None,
-                  header_height=None, font_weight="medium", export_config=None):
+                  header_height=None, font_weight="medium", font_size=28, export_config=None):
     """将 OCR 数据填入模板 HTML，动态生成 thead 和 tbody"""
     headers = table_data.get("headers", [])
     rows = table_data.get("rows", [])
@@ -83,6 +83,8 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
         css = re.sub(r"@font-face\s*\{[^}]*?/font/[^}]*?\}", "", css)
         # 注入正确的 @font-face，font-weight 描述符匹配选中字重
         css = f"@font-face {{ font-family: 'PingFangSC'; src: url('/font/{font_path}') format('woff2'); font-weight: {css_weight}; }}\n" + css
+        # 同时注入字号覆盖模板默认值
+        css += f"\ntable {{ font-size:{font_size}px !important; }}"
         style_tag.string.replace_with(css)
 
     table = soup.find("table")
@@ -131,7 +133,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             th = soup.new_tag("th")
             th.string = str(h)
             w = col_widths.get(str(i), default_w)
-            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};"
+            th["style"] = f"height:{header_height}px;line-height:{header_height}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};font-size:{font_size}px;"
             tr.append(th)
         thead.append(tr)
 
@@ -150,7 +152,7 @@ def fill_template(html, table_data, col_widths=None, row_heights=None,
             val = row[ci] if ci < len(row) and row[ci] is not None else ""
             td.string = str(val)
             w = col_widths.get(str(ci), default_w)
-            td["style"] = f"height:{rh}px;line-height:{rh}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};"
+            td["style"] = f"height:{rh}px;line-height:{rh}px;padding:0 6px;font-family:'PingFangSC','PingFang SC',sans-serif;font-weight:{css_weight};font-size:{font_size}px;"
             tr.append(td)
         tbody.append(tr)
 

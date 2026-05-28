@@ -337,8 +337,9 @@ def apply_template():
         row_heights = data.get("rowHeights", {})
         header_height = data.get("headerHeight", 72)
         font_weight = data.get("fontWeight", "medium")
+        font_size = data.get("fontSize", 28)
         export_config = data.get("exportConfig", {})
-        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height, font_weight, export_config)
+        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height, font_weight, font_size, export_config)
         return jsonify({"success": True, "html": filled_html})
     except Exception as e:
         traceback.print_exc()
@@ -370,8 +371,9 @@ def render_template_png():
         row_heights = data.get("rowHeights", {})
         header_height = data.get("headerHeight", 72)
         font_weight = data.get("fontWeight", "medium")
+        font_size = data.get("fontSize", 28)
         export_config = data.get("exportConfig", {})
-        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height, font_weight, export_config)
+        filled_html = fill_template(html, table_data, col_widths, row_heights, header_height, font_weight, font_size, export_config)
         png_bytes = render_png(filled_html, font_weight, export_config)
 
         from flask import Response
