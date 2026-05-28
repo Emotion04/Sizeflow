@@ -523,6 +523,24 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
         <div id="changelogList" style="font-size:11px;color:var(--text2);line-height:1.6;"></div>
         <button class="btn btn-outline btn-sm hidden" id="changelogMoreBtn" style="margin-top:4px;width:100%;">展开更多 ▾</button>
       </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">&#128190;</span>配置预设</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <select id="presetSelect"
+            style="padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--text);cursor:pointer;outline:none;width:100%;">
+            <option value="">-- 选择预设 --</option>
+          </select>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" id="savePresetBtn" title="保存当前配置为预设">&#128190; 保存</button>
+            <button class="btn btn-outline btn-sm" id="loadPresetBtn" title="加载选中预设">&#128194; 加载</button>
+            <button class="btn btn-outline btn-sm" id="deletePresetBtn" title="删除选中预设">&#128465; 删除</button>
+            <button class="btn btn-outline btn-sm" id="exportPresetsBtn" title="导出所有预设为JSON文件">&#128229; 导出</button>
+            <button class="btn btn-outline btn-sm" id="importPresetsBtn" title="从JSON文件导入预设">&#128228; 导入</button>
+          </div>
+        </div>
+        <input type="file" id="presetFileInput" accept=".json" style="display:none;">
+      </div>
     </div>
 
   </div>
@@ -666,6 +684,9 @@ let currentFontSize = 20;
 let currentHeaderFontSize = 24;
 // 导出配置
 let exportConfig = { bgWidth: 1200, bgHeight: 0, padding: 55 };
+// 配置预设
+const PRESETS_KEY = 'sizeflow_presets';
+let presets = [];
 // 选区状态
 let selectionStart = null;   // {row, col}
 let selectionEnd = null;     // {row, col}
@@ -674,7 +695,7 @@ let selectedColumns = new Set();  // 复选框选中的列索引
 
 // ======== Init ========
 async function init() {
-  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate(), loadChangelog()]);
+  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate(), loadChangelog(), loadPresets()]);
   // 恢复上次壁纸，没有则默认"晨雾"莫兰迪渐变
   const wp = loadWallpaper();
   if (wp) {
@@ -1104,6 +1125,17 @@ function bindEvents() {
     if (!panel.classList.contains('hidden') && !panel.contains(e.target) && e.target.id !== 'wallpaperBtn') {
       panel.classList.add('hidden');
     }
+  });
+
+  // 配置预设事件
+  document.getElementById('savePresetBtn').addEventListener('click', savePreset);
+  document.getElementById('loadPresetBtn').addEventListener('click', loadPreset);
+  document.getElementById('deletePresetBtn').addEventListener('click', deletePreset);
+  document.getElementById('exportPresetsBtn').addEventListener('click', exportPresets);
+  document.getElementById('importPresetsBtn').addEventListener('click', importPresets);
+  document.getElementById('presetFileInput').addEventListener('change', function(e) {
+    if (e.target.files[0]) handlePresetFileImport(e.target.files[0]);
+    e.target.value = '';
   });
 }
 
@@ -2374,6 +2406,237 @@ document.getElementById('wallpaperUpload').addEventListener('change', e => {
   };
   reader.readAsDataURL(file);
 });
+
+// ======== Configuration Presets ========
+
+function loadPresets() {
+  try {
+    const saved = localStorage.getItem(PRESETS_KEY);
+    if (saved) {
+      presets = JSON.parse(saved);
+      if (!Array.isArray(presets)) presets = [];
+    } else {
+      presets = [];
+    }
+  } catch(e) {
+    presets = [];
+  }
+  refreshPresetList();
+}
+
+function savePresets() {
+  try {
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
+  } catch(e) {
+    toast('保存预设失败: ' + e.message, 'error');
+  }
+  refreshPresetList();
+}
+
+function refreshPresetList() {
+  const sel = document.getElementById('presetSelect');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">-- 选择预设 --</option>';
+  presets.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = p.note ? p.name + ' (' + p.note + ')' : p.name;
+    sel.appendChild(opt);
+  });
+  if (currentVal && sel.querySelector('option[value="' + currentVal + '"]')) {
+    sel.value = currentVal;
+  }
+}
+
+function applyPresetSettings(settings) {
+  if (settings.currentModel !== undefined) {
+    currentModel = settings.currentModel;
+    const sel = document.getElementById('modelSelect');
+    if (sel) sel.value = currentModel;
+    fetch('/api/model', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({model:currentModel}) }).catch(function(){});
+  }
+  if (settings.exportColWidth !== undefined) {
+    exportColWidth = settings.exportColWidth;
+    var slider = document.getElementById('exportColWidthSlider');
+    var input = document.getElementById('exportColWidthInput');
+    if (slider) slider.value = exportColWidth;
+    if (input) input.value = exportColWidth;
+  }
+  if (settings.exportColWidths !== undefined) {
+    exportColWidths = JSON.parse(JSON.stringify(settings.exportColWidths));
+  }
+  if (settings.exportRowHeight !== undefined) {
+    exportRowHeight = settings.exportRowHeight;
+    var slider = document.getElementById('exportRowHeightSlider');
+    var input = document.getElementById('exportRowHeightInput');
+    if (slider) slider.value = exportRowHeight;
+    if (input) input.value = exportRowHeight;
+  }
+  if (settings.exportRowHeights !== undefined) {
+    exportRowHeights = JSON.parse(JSON.stringify(settings.exportRowHeights));
+  }
+  if (settings.exportHeaderHeight !== undefined) {
+    exportHeaderHeight = settings.exportHeaderHeight;
+    var slider = document.getElementById('exportHeaderHeightSlider');
+    var input = document.getElementById('exportHeaderHeightInput');
+    if (slider) slider.value = exportHeaderHeight;
+    if (input) input.value = exportHeaderHeight;
+  }
+  if (settings.currentFontWeight !== undefined) {
+    currentFontWeight = settings.currentFontWeight;
+    var sel = document.getElementById('fontWeightSelect');
+    if (sel) sel.value = currentFontWeight;
+  }
+  if (settings.currentFontSize !== undefined) {
+    currentFontSize = settings.currentFontSize;
+    var slider = document.getElementById('fontSizeSlider');
+    var input = document.getElementById('fontSizeInput');
+    var preview = document.getElementById('fontSizePreview');
+    if (slider) slider.value = currentFontSize;
+    if (input) input.value = currentFontSize;
+    if (preview) preview.style.fontSize = currentFontSize + 'px';
+  }
+  if (settings.currentHeaderFontSize !== undefined) {
+    currentHeaderFontSize = settings.currentHeaderFontSize;
+    var slider = document.getElementById('headerFontSizeSlider');
+    var input = document.getElementById('headerFontSizeInput');
+    var preview = document.getElementById('headerFontSizePreview');
+    if (slider) slider.value = currentHeaderFontSize;
+    if (input) input.value = currentHeaderFontSize;
+    if (preview) preview.style.fontSize = currentHeaderFontSize + 'px';
+  }
+  if (settings.exportConfig !== undefined) {
+    exportConfig = JSON.parse(JSON.stringify(settings.exportConfig));
+    var bgW = document.getElementById('cfgBgWidth');
+    var bgH = document.getElementById('cfgBgHeight');
+    var pad = document.getElementById('cfgPadding');
+    if (bgW) bgW.value = exportConfig.bgWidth;
+    if (bgH) bgH.value = exportConfig.bgHeight;
+    if (pad) pad.value = exportConfig.padding;
+  }
+  refreshFineTunePanel();
+  refreshFineTuneRowPanel();
+  applyExportColWidths();
+  applyExportRowHeights();
+  updateTableSizeIndicator();
+  checkExportConfigWarning();
+  refreshPreview();
+}
+
+function savePreset() {
+  var name = prompt('请输入预设名称:');
+  if (!name || !name.trim()) return;
+  var nameTrimmed = name.trim();
+  var note = prompt('请输入备注说明（可选，留空跳过）:');
+  var noteTrimmed = note ? note.trim() : '';
+  if (presets.some(function(p) { return p.name === nameTrimmed; })) {
+    var overwrite = confirm('已存在同名预设"' + nameTrimmed + '"，是否覆盖？');
+    if (!overwrite) return;
+    presets = presets.filter(function(p) { return p.name !== nameTrimmed; });
+  }
+  var settings = {
+    currentModel: currentModel,
+    exportColWidth: exportColWidth,
+    exportColWidths: JSON.parse(JSON.stringify(exportColWidths)),
+    exportRowHeight: exportRowHeight,
+    exportRowHeights: JSON.parse(JSON.stringify(exportRowHeights)),
+    exportHeaderHeight: exportHeaderHeight,
+    currentFontWeight: currentFontWeight,
+    currentFontSize: currentFontSize,
+    currentHeaderFontSize: currentHeaderFontSize,
+    exportConfig: JSON.parse(JSON.stringify(exportConfig))
+  };
+  presets.push({ name: nameTrimmed, note: noteTrimmed, settings: settings });
+  savePresets();
+  toast('预设「' + nameTrimmed + '」已保存', 'success');
+  var sel = document.getElementById('presetSelect');
+  sel.value = presets.length - 1;
+}
+
+function loadPreset() {
+  var sel = document.getElementById('presetSelect');
+  var idx = parseInt(sel.value);
+  if (isNaN(idx) || idx < 0 || idx >= presets.length) {
+    toast('请先选择一个预设', 'error');
+    return;
+  }
+  if (!resultData) {
+    toast('请先识别尺码表后再加载预设', 'error');
+    return;
+  }
+  var preset = presets[idx];
+  applyPresetSettings(preset.settings);
+  toast('预设「' + preset.name + '」已应用', 'success');
+}
+
+function deletePreset() {
+  var sel = document.getElementById('presetSelect');
+  var idx = parseInt(sel.value);
+  if (isNaN(idx) || idx < 0 || idx >= presets.length) {
+    toast('请先选择一个预设', 'error');
+    return;
+  }
+  var preset = presets[idx];
+  if (!confirm('确定要删除预设「' + preset.name + '」吗？')) return;
+  presets.splice(idx, 1);
+  savePresets();
+  sel.value = '';
+  toast('预设已删除', 'info');
+}
+
+function exportPresets() {
+  if (presets.length === 0) {
+    toast('没有预设可导出', 'error');
+    return;
+  }
+  var blob = new Blob([JSON.stringify(presets, null, 2)], { type: 'application/json;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'sizeflow_presets_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('导出了 ' + presets.length + ' 个预设', 'success');
+}
+
+function importPresets() {
+  document.getElementById('presetFileInput').click();
+}
+
+function handlePresetFileImport(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) {
+        toast('导入失败: 文件格式无效（需要JSON数组）', 'error');
+        return;
+      }
+      var validCount = 0;
+      imported.forEach(function(p) {
+        if (p && p.name && p.settings && typeof p.settings === 'object') {
+          var existing = presets.findIndex(function(ex) { return ex.name === p.name; });
+          if (existing >= 0) {
+            presets[existing] = p;
+          } else {
+            presets.push(p);
+          }
+          validCount++;
+        }
+      });
+      if (validCount === 0) {
+        toast('导入失败: 未找到有效的预设数据', 'error');
+        return;
+      }
+      savePresets();
+      toast('成功导入 ' + validCount + ' 个预设', 'success');
+    } catch(err) {
+      toast('导入失败: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
 
 // ======== Splash Screen ========
 (function(){
