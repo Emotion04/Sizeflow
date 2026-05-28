@@ -585,17 +585,19 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
       <input type="number" id="exportColWidthInput" value="155" min="1" max="400" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
       <span style="font-size:12px;color:var(--text2);margin-left:8px;">字体：</span>
-      <select id="fontWeightSelect" style="padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;">
-        <option value="ultralight">极细</option>
-        <option value="thin">纤细</option>
-        <option value="light">细体</option>
-        <option value="regular">常规</option>
-        <option value="medium" selected>中黑</option>
-        <option value="semibold">中粗</option>
+      <select id="fontWeightSelect" style="padding:4px 6px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--text);cursor:pointer;outline:none;">
+        <option value="ultralight">极细 Ultralight</option>
+        <option value="thin">纤细 Thin</option>
+        <option value="light">细体 Light</option>
+        <option value="regular">常规 Regular</option>
+        <option value="medium" selected>中黑 Medium (推荐)</option>
+        <option value="semibold">中粗 Semibold</option>
       </select>
-      <span style="font-size:12px;color:var(--text2);margin-left:4px;">字号</span>
-      <select id="fontSizeSelect" style="padding:4px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;cursor:pointer;outline:none;"></select>
+      <span style="font-size:12px;color:var(--text2);margin-left:8px;">字号：</span>
+      <input type="range" id="fontSizeSlider" min="5" max="52" value="20" style="width:100px;cursor:pointer;">
+      <input type="number" id="fontSizeInput" value="20" min="5" max="52" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;">
       <span style="font-size:11px;color:var(--text2);">px</span>
+      <span id="fontSizePreview" style="font-size:20px;margin-left:4px;color:var(--text);transition:font-size .15s;">A</span>
       <button class="btn btn-outline btn-sm" id="fineTuneBtn" title="逐列微调宽度">微调列宽 ▾</button>
     </div>
     <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -972,15 +974,24 @@ function bindEvents() {
     refreshPreview();
   });
   // 字号选择
-  const fontSizeSel = document.getElementById('fontSizeSelect');
-  for (let s = 7; s <= 20; s++) {
-    const opt = document.createElement('option');
-    opt.value = s; opt.textContent = s;
-    if (s === 20) opt.selected = true;
-    fontSizeSel.appendChild(opt);
+  const fontSizeSlider = document.getElementById('fontSizeSlider');
+  const fontSizeInput = document.getElementById('fontSizeInput');
+  const fontSizePreview = document.getElementById('fontSizePreview');
+  function applyFontSize(v) {
+    v = Math.max(5, Math.min(52, parseInt(v) || 20));
+    currentFontSize = v;
+    fontSizeSlider.value = v;
+    fontSizeInput.value = v;
+    fontSizePreview.style.fontSize = v + 'px';
   }
-  fontSizeSel.addEventListener('change', function() {
-    currentFontSize = parseInt(this.value);
+  fontSizeSlider.addEventListener('input', function() {
+    applyFontSize(this.value);
+  });
+  fontSizeSlider.addEventListener('change', function() {
+    refreshPreview();
+  });
+  fontSizeInput.addEventListener('change', function() {
+    applyFontSize(this.value);
     refreshPreview();
   });
 
@@ -1504,7 +1515,7 @@ function refreshPreview() {
   return fetch('/api/apply-template', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: payload.colWidths, rowHeights: payload.rowHeights, headerHeight: payload.headerHeight, fontWeight: payload.fontWeight, exportConfig: payload.exportConfig })
+    body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: payload.colWidths, rowHeights: payload.rowHeights, headerHeight: payload.headerHeight, fontWeight: payload.fontWeight, fontSize: payload.fontSize, exportConfig: payload.exportConfig })
   }).then(r => r.json()).then(d => {
     if (d.success) {
       filledHtml = d.html;
@@ -2148,7 +2159,7 @@ async function exportPng() {
     const r = await fetch('/api/render-template-png', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: payload.colWidths, rowHeights: payload.rowHeights, headerHeight: payload.headerHeight, fontWeight: payload.fontWeight, exportConfig: payload.exportConfig })
+      body: JSON.stringify({ template: selectedTemplate, data: resultData, colWidths: payload.colWidths, rowHeights: payload.rowHeights, headerHeight: payload.headerHeight, fontWeight: payload.fontWeight, fontSize: payload.fontSize, exportConfig: payload.exportConfig })
     });
     if (r.ok) {
       const blob = await r.blob();
