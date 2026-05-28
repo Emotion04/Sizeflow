@@ -988,6 +988,7 @@ function bindEvents() {
     applyFontSize(this.value);
   });
   fontSizeSlider.addEventListener('change', function() {
+    applyFontSize(this.value);
     refreshPreview();
   });
   fontSizeInput.addEventListener('change', function() {
