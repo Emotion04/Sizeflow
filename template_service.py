@@ -54,7 +54,7 @@ def parse_template_headers(html):
 
 
 def fill_template(html, table_data, col_widths=None, row_heights=None,
-                  header_height=None, font_weight="medium", font_size=28, export_config=None):
+                  header_height=None, font_weight="medium", font_size=20, export_config=None):
     """将 OCR 数据填入模板 HTML，动态生成 thead 和 tbody"""
     headers = table_data.get("headers", [])
     rows = table_data.get("rows", [])

@@ -655,7 +655,7 @@ let exportHeaderHeight = 72;
 // 字体字重
 let currentFontWeight = 'medium';
 // 字号
-let currentFontSize = 28;
+let currentFontSize = 20;
 // 导出配置
 let exportConfig = { bgWidth: 1200, bgHeight: 0, padding: 55 };
 // 选区状态
@@ -976,10 +976,9 @@ function bindEvents() {
   for (let s = 7; s <= 20; s++) {
     const opt = document.createElement('option');
     opt.value = s; opt.textContent = s;
-    if (s === 28) opt.selected = true;
+    if (s === 20) opt.selected = true;
     fontSizeSel.appendChild(opt);
   }
-  fontSizeSel.value = 28; // 默认
   fontSizeSel.addEventListener('change', function() {
     currentFontSize = parseInt(this.value);
     refreshPreview();
