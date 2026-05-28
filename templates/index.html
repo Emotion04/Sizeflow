@@ -404,7 +404,7 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
     </div>
     <button id="wallpaperBtn" title="更换壁纸" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:8px;cursor:pointer;font-size:16px;padding:4px 8px;backdrop-filter:blur(8px);">&#127744;</button>
     <a href="https://www.dushu.com/meiwen/random/" target="_blank" title="摸鱼时刻" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:8px;cursor:pointer;font-size:13px;padding:5px 14px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);text-decoration:none;color:var(--text2);white-space:nowrap;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.22)';this.style.color='var(--text)';" onmouseout="this.style.background='rgba(255,255,255,.12)';this.style.color='var(--text2)';">🐟 摸鱼时刻</a>
-    <a href="https://github.com/Emotion04/Sizeflow/releases" target="_blank" class="ver" style="text-decoration:none;color:inherit;" title="查看GitHub发布页">Canary 3.9.0</a>
+    <a href="https://github.com/Emotion04/Sizeflow/releases" target="_blank" class="ver" style="text-decoration:none;color:inherit;" title="查看GitHub发布页">v1.6.0 正式版</a>
   </div>
 </header>
 
@@ -541,6 +541,83 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
         </div>
         <input type="file" id="presetFileInput" accept=".json" style="display:none;">
       </div>
+
+      <div class="card" id="adCard" style="padding:18px 24px;overflow:hidden;position:relative;cursor:default;">
+        <!-- 像素网格背景 -->
+        <div style="position:absolute;inset:0;background:
+          repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(79,110,246,.04) 3px, rgba(79,110,246,.04) 4px),
+          repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(79,110,246,.04) 3px, rgba(79,110,246,.04) 4px);
+          pointer-events:none;"></div>
+        <div style="position:relative;z-index:1;display:flex;align-items:center;gap:12px;">
+          <span id="adCrab" style="font-size:44px;line-height:1;display:inline-block;transition:transform .15s ease-out;flex-shrink:0;cursor:default;user-select:none;">&#129408;</span>
+          <div style="flex:1;min-width:0;">
+            <div style="
+              font-family:'PingFangSC','PingFang SC','Microsoft YaHei',sans-serif;
+              font-size:18px;font-weight:600;
+              background:linear-gradient(135deg, #c32a2a 0%, #ffd93d 20%, #6bcb77 40%, #4d96ff 60%, #9b59b6 80%, #ff6b6b 100%);
+              background-size:200% auto;
+              -webkit-background-clip:text;
+              -webkit-text-fill-color:transparent;
+              background-clip:text;
+              animation: rainbowShift 3s linear infinite;
+              letter-spacing:1px;
+            ">广告位招租</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px;letter-spacing:1px;">
+              ^ v ^ <br>
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes rainbowShift { to { background-position: 200% center; } }
+      </style>
+      <script>
+        (function() {
+          var card = document.getElementById('adCard');
+          var crab = document.getElementById('adCrab');
+          if (!card || !crab) return;
+          var ox = 0, oy = 0, avoiding = false;
+          card.addEventListener('mousemove', function(e) {
+            var rect = crab.getBoundingClientRect();
+            var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+            var dx = e.clientX - cx, dy = e.clientY - cy;
+            var dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 80) {
+              avoiding = true;
+              var angle = Math.atan2(dy, dx) + Math.PI;
+              ox = Math.cos(angle) * Math.min(24, (80-dist)*0.6);
+              oy = Math.sin(angle) * Math.min(24, (80-dist)*0.6);
+              crab.style.transform = 'translate(' + ox + 'px,' + oy + 'px)';
+            } else if (avoiding) {
+              avoiding = false;
+              ox *= 0.6; oy *= 0.6;
+              if (Math.abs(ox) < 0.5 && Math.abs(oy) < 0.5) {
+                ox = 0; oy = 0;
+                crab.style.transform = 'translate(0,0)';
+              } else {
+                crab.style.transform = 'translate(' + ox + 'px,' + oy + 'px)';
+              }
+            }
+          });
+          card.addEventListener('mouseleave', function() {
+            crab.style.transform = 'translate(0,0)';
+            ox = 0; oy = 0; avoiding = false;
+          });
+          var clicks = 0;
+          crab.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clicks++;
+            var r = clicks % 3;
+            if (r === 0) crab.textContent = '🦀';
+            else if (r === 1) crab.textContent = '🥀';
+            else crab.textContent = '🧐';
+            crab.style.transform = 'scale(1.3) rotate(20deg)';
+            setTimeout(function() {
+              crab.style.transform = 'scale(1) rotate(0deg)';
+            }, 200);
+          });
+        })();
+      </script>
     </div>
 
   </div>
