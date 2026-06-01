@@ -542,7 +542,7 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
         <input type="file" id="presetFileInput" accept=".json" style="display:none;">
       </div>
 
-      <div class="card" id="adCard" style="padding:18px 24px;overflow:hidden;position:relative;cursor:default;">
+      <div class="card" id="adCard" style="padding:18px 24px;overflow:hidden;position:relative;cursor:pointer;">
         <!-- 像素网格背景 -->
         <div style="position:absolute;inset:0;background:
           repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(79,110,246,.04) 3px, rgba(79,110,246,.04) 4px),
@@ -564,6 +564,7 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
             ">广告位招租</div>
             <div style="font-size:11px;color:var(--text2);margin-top:2px;letter-spacing:1px;">
               ^ v ^ <br>
+              本站访问 <span id="busuanzi_site_pv" style="font-weight:600;color:var(--text);">...</span> 次
             </div>
           </div>
         </div>
@@ -615,6 +616,9 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
             setTimeout(function() {
               crab.style.transform = 'scale(1) rotate(0deg)';
             }, 200);
+          });
+          card.addEventListener('click', function() {
+            window.location.href = 'mailto:infpc@msn.com';
           });
         })();
       </script>
@@ -2781,5 +2785,6 @@ function stopEasterEggTimer() {
 // ======== Start ========
 init();
 </script>
+<script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
 </body>
 </html>
