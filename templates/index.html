@@ -311,6 +311,37 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
 .update-banner .btn-update-close:hover { opacity:1; }
 @keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
 
+/* milestone toast */
+.milestone-toast {
+  position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-120px);
+  z-index:10000; padding:16px 36px; border-radius:20px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,.35);
+  box-shadow:0 8px 40px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.25);
+  font-size:18px; font-weight:700; color:#fff;
+  letter-spacing:.5px; white-space:nowrap;
+  pointer-events:none; user-select:none;
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
+}
+.milestone-toast::before {
+  content:''; position:absolute; inset:0; border-radius:20px; z-index:-1;
+  background:linear-gradient(135deg, rgba(255,255,255,.35) 0%, rgba(255,255,255,.02) 40%, rgba(255,255,255,.25) 60%, rgba(255,255,255,.08) 100%);
+  background-size:200% 200%;
+  animation:liquidFlow 4s ease-in-out infinite;
+}
+.milestone-toast::after {
+  content:''; position:absolute; inset:-2px; border-radius:22px; z-index:-2;
+  background:linear-gradient(135deg, rgba(255,255,255,.5), transparent 40%, rgba(255,255,255,.3) 70%, transparent);
+  opacity:.5; filter:blur(4px);
+}
+.milestone-toast.show { transform:translateX(-50%) translateY(0); }
+.milestone-toast.hide { transform:translateX(-50%) translateY(-120px); opacity:0; }
+@keyframes liquidFlow {
+  0%,100% { background-position:0% 50%; }
+  50% { background-position:100% 50%; }
+}
+
 .empty-state { text-align:center; padding:60px 20px; color:var(--text2); }
 .empty-state .icon { font-size:56px; margin-bottom:12px; opacity:.3; }
 
@@ -419,6 +450,8 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
 
 <div class="container">
 
+  <!-- Milestone Toast -->
+  <div class="milestone-toast" id="milestoneToast"></div>
   <!-- Update Banner -->
   <div class="update-banner" id="updateBanner">
     <span class="update-icon">&#128640;</span>
@@ -2786,5 +2819,41 @@ function stopEasterEggTimer() {
 init();
 </script>
 <script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+<script>
+(function() {
+  var toast = document.getElementById('milestoneToast');
+  var pvEl = document.getElementById('busuanzi_site_pv');
+  if (!toast || !pvEl) return;
+
+  var timer = null;
+  function check() {
+    var text = (pvEl.textContent || '').replace(/,/g, '').trim();
+    var count = parseInt(text, 10);
+    if (isNaN(count) || count <= 0) return;
+    if (count % 100 !== 0) return;
+
+    var key = 'sizeflow_ms_' + count;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+
+    toast.textContent = '🎉 ' + count + '次浏览达成！';
+    toast.classList.add('show');
+    toast.classList.remove('hide');
+
+    clearTimeout(timer);
+    timer = setTimeout(function() {
+      toast.classList.add('hide');
+      toast.classList.remove('show');
+    }, 6000);
+  }
+
+  // MutationObserver for busuanzi loading
+  var obs = new MutationObserver(check);
+  obs.observe(pvEl, { childList: true, characterData: true, subtree: true });
+
+  // Fallback: busuanzi may have already loaded before this script runs
+  if (pvEl.textContent && pvEl.textContent.trim() !== '...') check();
+})();
+</script>
 </body>
 </html>
