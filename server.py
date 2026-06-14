@@ -459,7 +459,7 @@ def api_changelog():
     # 尝试 git log
     try:
         result = subprocess.run(
-            ["git", "log", "-20", "--pretty=format:%h|%s|%ar"],
+            ["git", "log", "-20", "--pretty=format:%h|%s|%at"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             timeout=5, cwd=APP_DIR
         )
@@ -491,7 +491,7 @@ def sync_changelog_cache():
     cache_path = os.path.join(APP_DIR, "changelog_cache.json")
     try:
         result = subprocess.run(
-            ["git", "log", "-60", "--pretty=format:%h|%s|%ar"],
+            ["git", "log", "-60", "--pretty=format:%h|%s|%at"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             timeout=5, cwd=APP_DIR
         )

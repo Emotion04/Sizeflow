@@ -1,304 +1,304 @@
 {
   "commits": [
     {
+      "hash": "fc49ca8",
+      "msg": "广告位招租卡片：100倍数浏览里程碑液体玻璃提示",
+      "date": "1780369676"
+    },
+    {
+      "hash": "b8cef9b",
+      "msg": "广告位招租卡片：添加 mailto 点击事件 + 不蒜子访问量统计",
+      "date": "1780307438"
+    },
+    {
       "hash": "bfbb251",
       "msg": "v1.6.0 正式版",
-      "date": "4 days ago"
+      "date": "1779964444"
     },
     {
       "hash": "4f8422b",
       "msg": "Canary 3.54: 配置预设系统 + kraft paper模板去标题去Tips",
-      "date": "4 days ago"
+      "date": "1779957715"
     },
     {
       "hash": "4dba643",
       "msg": "Canary 3.53: 表头/内容字号独立控制——双滑块5-52px",
-      "date": "4 days ago"
+      "date": "1779954121"
     },
     {
       "hash": "1c69931",
       "msg": "Canary 3.52: 修复字号滑块在移动端失效——change事件补applyFontSize",
-      "date": "4 days ago"
+      "date": "1779952609"
     },
     {
       "hash": "30232ba",
       "msg": "Canary 3.51: 字号选择功能——滑块5-52px预览+导出全链路贯通",
-      "date": "4 days ago"
+      "date": "1779951792"
     },
     {
       "hash": "4db41a8",
       "msg": "Canary 3.46: 修复字号选择器——28px默认值不在7-20范围导致失效",
-      "date": "4 days ago"
+      "date": "1779939836"
     },
     {
       "hash": "a3b7bcd",
       "msg": "Canary 3.45: 新增字号选择器 7-20px",
-      "date": "4 days ago"
+      "date": "1779938891"
     },
     {
       "hash": "262b9ad",
       "msg": "Canary 3.50: 顶部栏添加摸鱼时刻按钮（低透明度玻璃特效）",
-      "date": "5 days ago"
+      "date": "1779878527"
     },
     {
       "hash": "16a9f99",
       "msg": "Canary 3.49: 更新日志缓存自动同步",
-      "date": "5 days ago"
+      "date": "1779878308"
     },
     {
       "hash": "f300f30",
       "msg": "Canary 3.49: 更新日志缓存+toast居中+鼠标光效z-index+开屏弹窗",
-      "date": "5 days ago"
+      "date": "1779877981"
     },
     {
       "hash": "15c0f41",
       "msg": "Canary 3.48: 修复;;导致CSS变量解析失败——line模板装饰线错位",
-      "date": "5 days ago"
+      "date": "1779877338"
     },
     {
       "hash": "da49fb3",
       "msg": "Canary 3.47: applyExportColWidths同步更新--line-offset",
-      "date": "5 days ago"
+      "date": "1779875175"
     },
     {
       "hash": "725992f",
       "msg": "Canary 3.46: 更新日志8s超时回退缓存 + line模板装饰线延伸到留白区域",
-      "date": "5 days ago"
+      "date": "1779874932"
     },
     {
       "hash": "bfc93bf",
       "msg": "Canary 3.46: 更新日志8s超时回退缓存 + line模板装饰线定位修复",
-      "date": "5 days ago"
+      "date": "1779874464"
     },
     {
       "hash": "9df2170",
       "msg": "Canary 3.44: selectTemplate也加上预览缩放逻辑",
-      "date": "5 days ago"
+      "date": "1779873089"
     },
     {
       "hash": "4ef096a",
       "msg": "Canary 3.43: iframe onload改addEventListener+1.5s fallback",
-      "date": "5 days ago"
+      "date": "1779872815"
     },
     {
       "hash": "7152b41",
       "msg": "Canary 3.42: 预览缩放改用onload+transform+console.log追踪",
-      "date": "5 days ago"
+      "date": "1779872680"
     },
     {
       "hash": "ff6b1ce",
       "msg": "Canary 3.41: 预览缩放改用zoom属性（比transform更可靠）",
-      "date": "5 days ago"
+      "date": "1779872478"
     },
     {
       "hash": "18046b6",
       "msg": "Canary 3.40: HTML预览智能缩放——iframe自适应容器宽度",
-      "date": "5 days ago"
+      "date": "1779872039"
     },
     {
       "hash": "b219bd0",
       "msg": "优化kraft paper模板配色: 表头#af9e84 + 底色#edede5",
-      "date": "5 days ago"
+      "date": "1779871490"
     },
     {
       "hash": "e2e901c",
       "msg": "Canary 3.39: 改用FontFace API显式加载字体到主document",
-      "date": "6 days ago"
+      "date": "1779793903"
     },
     {
       "hash": "fb71251",
       "msg": "Canary 3.38: 修复html2canvas导出字体——主document注入@font-face",
-      "date": "6 days ago"
+      "date": "1779792941"
     },
     {
       "hash": "af31751",
       "msg": "Canary 3.37: 修复Vercel静态字体服务——修正构建glob和路由目标",
-      "date": "6 days ago"
+      "date": "1779792303"
     },
     {
       "hash": "afd5bcf",
       "msg": "Canary 3.36: 修复字重仅2种样式 + Vercel导出挂死",
-      "date": "6 days ago"
+      "date": "1779790627"
     },
     {
       "hash": "f49fd4d",
       "msg": "Canary 3.35: 字体静态文件添加长期缓存头",
-      "date": "6 days ago"
+      "date": "1779788577"
     },
     {
       "hash": "b93fe90",
       "msg": "Fix: 字重切换在导出PNG和Vercel预览中失效",
-      "date": "6 days ago"
+      "date": "1779788051"
     },
     {
       "hash": "4675cf5",
       "msg": "docs: 项目概览 + CLAUDE.md 约定文件，新会话无缝接手",
-      "date": "6 days ago"
+      "date": "1779785761"
     },
     {
       "hash": "262bc79",
       "msg": "Canary 3.35: 重写@font-face注入 + th/td统一font-weight匹配选中字重",
-      "date": "6 days ago"
+      "date": "1779784750"
     },
     {
       "hash": "69de224",
       "msg": "Canary 3.34: Playwright等待字体加载完成再截图",
-      "date": "6 days ago"
+      "date": "1779781884"
     },
     {
       "hash": "fed726b",
       "msg": "Canary 3.33: th/td加inline font-family确保字体100%生效",
-      "date": "6 days ago"
+      "date": "1779781351"
     },
     {
       "hash": "99958bc",
       "msg": "Canary 3.32: 字体修复——HTML内@font-face URL直接替换为localhost绝对路径",
-      "date": "6 days ago"
+      "date": "1779780520"
     },
     {
       "hash": "1724c1c",
       "msg": "Canary 3.31: 修复导出字体——Playwright改用localhost URL加载字体",
-      "date": "6 days ago"
+      "date": "1779779774"
     },
     {
       "hash": "b50fe41",
       "msg": "Canary 3.30: 修复导出PNG字体——去除@font-face的font-weight限制",
-      "date": "6 days ago"
+      "date": "1779778898"
     },
     {
       "hash": "22811de",
       "msg": "Canary 3.29: html2canvas改本地加载，解决CDN被墙问题",
-      "date": "7 days ago"
+      "date": "1779697133"
     },
     {
       "hash": "5252f9d",
       "msg": "Canary 3.28: 紧急修复——cfgTableWidth不存在导致JS崩溃",
-      "date": "7 days ago"
+      "date": "1779695772"
     },
     {
       "hash": "fc43cd3",
       "msg": "debug: 复制函数加console.log追踪调用链",
-      "date": "7 days ago"
+      "date": "1779695645"
     },
     {
       "hash": "a2cb764",
       "msg": "Canary 3.27: _getSelectionColsRows增加resultData.rows空值防御",
-      "date": "7 days ago"
+      "date": "1779693792"
     },
     {
       "hash": "9c9cb22",
       "msg": "Canary 3.26: 修复debug端点——补全预设数据字段映射",
-      "date": "7 days ago"
+      "date": "1779692211"
     },
     {
       "hash": "16a807c",
       "msg": "Canary 3.25: Debug模式——预设数据快速预览跳过OCR",
-      "date": "7 days ago"
+      "date": "1779687995"
     },
     {
       "hash": "31b8ef1",
       "msg": "Canary 3.24: 消除32px偏差——表格cell竖直padding 2→0",
-      "date": "7 days ago"
+      "date": "1779687042"
     },
     {
       "hash": "6dd12c7",
       "msg": "Canary 3.23: 服务端body.screenshot + 表格尺寸状态指示器",
-      "date": "7 days ago"
+      "date": "1779684398"
     },
     {
       "hash": "424f335",
       "msg": "Canary 3.22: html/body加overflow:hidden消除32px渲染偏差",
-      "date": "7 days ago"
+      "date": "1779681841"
     },
     {
       "hash": "0fb2a16",
       "msg": "update changelog cache after rebase",
-      "date": "7 days ago"
+      "date": "1779680613"
     },
     {
       "hash": "0f55459",
       "msg": "Canary 3.21: 移除exportPng中对scoped函数的无效调用",
-      "date": "7 days ago"
+      "date": "1779680508"
     },
     {
       "hash": "e50bec3",
       "msg": "Canary 3.20: 紧急修复——checkExportConfigWarning移入try-catch内",
-      "date": "7 days ago"
+      "date": "1779679674"
     },
     {
       "hash": "f5df6d0",
       "msg": "Canary 3.19: 修复表格居中+警告计算+补全校验场景",
-      "date": "7 days ago"
+      "date": "1779678774"
     },
     {
       "hash": "965928d",
       "msg": "Canary 3.18: html2canvas scale 2→1 匹配服务端Playwright输出分辨率",
-      "date": "8 days ago"
+      "date": "1779621365"
     },
     {
       "hash": "c74dd21",
       "msg": "Canary 3.17: 修复导出警告计算——使用buildExportStylePayload保持一致",
-      "date": "8 days ago"
+      "date": "1779621114"
     },
     {
       "hash": "a4a0af2",
       "msg": "Canary 3.16: 服务端body去flexbox——html2canvas可直接渲染",
-      "date": "8 days ago"
+      "date": "1779620791"
     },
     {
       "hash": "34f4713",
       "msg": "修复更新日志乱码——用独立Python脚本替代shell管道",
-      "date": "8 days ago"
+      "date": "1779620623"
     },
     {
       "hash": "372d9c5",
       "msg": "Canary 3.15: 客户端导出——纯手工构建精确尺寸wrapper替代body渲染",
-      "date": "8 days ago"
+      "date": "1779620391"
     },
     {
       "hash": "ce19f9a",
       "msg": "Canary 3.14: 关键修复——html2canvas截图前body切display:block",
-      "date": "8 days ago"
+      "date": "1779619841"
     },
     {
       "hash": "d92764a",
       "msg": "Canary 3.13: 撤回snapdom——回退html2canvas+完整filledHtml",
-      "date": "8 days ago"
+      "date": "1779619781"
     },
     {
       "hash": "553a41e",
       "msg": "Canary 3.12: html2canvas替换为snapdom——解决Vercel/EXE导出全系bug",
-      "date": "8 days ago"
+      "date": "1779619463"
     },
     {
       "hash": "87b4889",
       "msg": "Canary 3.11: 彻底重写客户端导出——与服务端同公式+最简HTML零flexbox",
-      "date": "8 days ago"
+      "date": "1779619104"
     },
     {
       "hash": "8c3550b",
       "msg": "Canary 3.10: 修复Vercel导出尺寸失控——从filledHtml解析服务端body宽度",
-      "date": "8 days ago"
+      "date": "1779618595"
     },
     {
       "hash": "fe356f2",
       "msg": "Canary 3.9: 修复Vercel导出纯白图片(opacity:0导致html2canvas渲染透明)",
-      "date": "8 days ago"
+      "date": "1779617719"
     },
     {
       "hash": "95c4783",
       "msg": "Canary 3.9.0: 版本号升级 + 可点击跳转GitHub发布页",
-      "date": "8 days ago"
-    },
-    {
-      "hash": "30a0168",
-      "msg": "Canary 3.8: 新增背景高参数 + 死参数清理 + 导出警告提示",
-      "date": "8 days ago"
-    },
-    {
-      "hash": "256fad8",
-      "msg": "更新日志缓存同步全部22条git commit",
-      "date": "8 days ago"
+      "date": "1779616699"
     }
   ]
 }

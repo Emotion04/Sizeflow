@@ -908,19 +908,37 @@ async function loadChangelog() {
   if (list) list.innerHTML = '<span style="opacity:.4;">暂无更新日志</span>';
 }
 
+function timeAgo(ts) {
+  var diff = Math.max(0, Math.floor(Date.now()/1000) - ts);
+  if (diff < 3600) return Math.max(1, Math.floor(diff/60)) + ' 分钟前';
+  if (diff < 86400) return Math.floor(diff/3600) + ' 小时前';
+  if (diff < 2592000) return Math.floor(diff/86400) + ' 天前';
+  return Math.floor(diff/2592000) + ' 个月前';
+}
+
 function renderChangelog() {
   const list = document.getElementById('changelogList');
   const btn = document.getElementById('changelogMoreBtn');
   if (!list) return;
   const show = _changelogExpanded ? _allCommits : _allCommits.slice(0, 3);
-  list.innerHTML = show.map(c =>
-    `<div style="margin-bottom:3px;"><b style="color:var(--text);">${esc(c.hash)}</b> <span style="opacity:.6;">${esc(c.date)}</span><br>${esc(c.msg)}</div>`
-  ).join('');
+  list.innerHTML = show.map(function(c, i) {
+    var idx = _changelogExpanded ? i : i;
+    return '<div style="margin-bottom:3px;"><b style="color:var(--text);">' + esc(c.hash) + '</b> <span class="cl-date" data-ts="' + c.date + '" style="opacity:.6;">' + timeAgo(parseInt(c.date)||0) + '</span><br>' + esc(c.msg) + '</div>';
+  }).join('');
   if (_allCommits.length > 3) {
     btn.classList.remove('hidden');
-    btn.textContent = _changelogExpanded ? '收起 ▴' : `展开更多 ▾ (${_allCommits.length - 3}条)`;
+    btn.textContent = _changelogExpanded ? '收起 ▴' : '展开更多 ▾ (' + (_allCommits.length - 3) + '条)';
   }
 }
+
+// 每 30 秒刷新更新日志的相对时间
+function refreshChangelogTimes() {
+  document.querySelectorAll('.cl-date').forEach(function(el) {
+    var ts = parseInt(el.getAttribute('data-ts')) || 0;
+    if (ts) el.textContent = timeAgo(ts);
+  });
+}
+setInterval(refreshChangelogTimes, 3600000);
 
 async function checkAppUpdate() {
   try {
@@ -2853,6 +2871,27 @@ init();
 
   // Fallback: busuanzi may have already loaded before this script runs
   if (pvEl.textContent && pvEl.textContent.trim() !== '...') check();
+})();
+</script>
+<footer style="text-align:center;padding:12px 24px 20px;font-size:11px;color:var(--text2);opacity:.6;position:fixed;bottom:0;left:0;right:0;z-index:0;pointer-events:none;">
+  本站已运行 <span id="uptime" style="font-weight:500;">...</span>
+</footer>
+<script>
+// ======== Uptime ========
+(function(){
+  var START = new Date('2026-05-14T16:38:00+08:00');
+  var el = document.getElementById('uptime');
+  if (!el) return;
+  function pad(n){ return n<10?'0'+n:''+n; }
+  function tick(){
+    var d=Math.max(0,Date.now()-START.getTime());
+    var s=Math.floor(d/1000),day=Math.floor(s/86400);s%=86400;
+    var hr=Math.floor(s/3600);s%=3600;
+    var min=Math.floor(s/60);s%=60;
+    el.textContent=day+'天 '+pad(hr)+'时 '+pad(min)+'分 '+pad(s)+'秒';
+  }
+  tick();
+  setInterval(tick,1000);
 })();
 </script>
 </body>
