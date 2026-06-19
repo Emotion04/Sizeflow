@@ -58,6 +58,38 @@ def call_qwen(messages, model="qwen3-vl-plus", temperature=None):
     return text
 
 
+def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None):
+    """Qwen 流式调用，逐 token yield"""
+    if temperature is None:
+        temperature = TEMPERATURE
+
+    responses = dashscope.MultiModalConversation.call(
+        api_key=get_api_key(),
+        model=model,
+        messages=messages,
+        temperature=temperature,
+        top_p=0.01,
+        stream=True,
+    )
+
+    for response in responses:
+        if response.status_code != 200:
+            raise Exception(
+                f"API 调用失败 (HTTP {response.status_code})："
+                f"错误码 {response.code} — {response.message}"
+            )
+        if response.output and response.output.choices:
+            content = response.output.choices[0].message.content
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and "text" in item:
+                        yield item["text"]
+                    elif isinstance(item, str):
+                        yield item
+            elif isinstance(content, str):
+                yield content
+
+
 def call_ocr_vision(image_path, mappings, model):
     """AI 只做纯转录，返回原始文本"""
     prompt = """逐行抄写图片中最上方那张尺码表的数据。表格上方可能有合并单元格的标题行，跳过标题行，只抄表格内容。

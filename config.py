@@ -6,7 +6,7 @@ import json
 from dotenv import load_dotenv
 
 # ---- 路径 & 环境变量 ----
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.6.1"
 if getattr(sys, 'frozen', False):
     APP_DIR = os.path.dirname(sys.executable)
     env_path = os.path.join(APP_DIR, '.env')    

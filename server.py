@@ -16,8 +16,9 @@ from config import (
     current_model, current_mappings, _api_key,
     set_api_key, persist,
 )
-from vision import call_ocr_vision, parse_transcription, format_numbers, save_base64_image, call_qwen
+from vision import call_ocr_vision, parse_transcription, format_numbers, save_base64_image, call_qwen, call_qwen_stream
 from stylegen import generate_table_style, generate_table_from_image
+from copywriter import determine_waist_type, validate_copy, generate_pants_copy, COPYWRITER_SYSTEM, build_copy_prompt, parse_copy_json, validate_all_copies
 from updater import check_update
 
 # ---- Flask App ----
@@ -484,6 +485,137 @@ def api_changelog():
     return jsonify({"success": True, "commits": commits or []})
 
 # ---- Startup ----
+
+# ======== 文案生成模块 API ========
+
+@app.route("/api/copywriter/waist-type", methods=["POST"])
+def copywriter_waist_type():
+    """从 OCR 数据中提取前浪值，按规则判定腰型"""
+    try:
+        data = request.json or {}
+        size_data = data.get("size_data", {})
+        raw_text = data.get("raw_text", None)
+        result = determine_waist_type(size_data, raw_text=raw_text)
+        return jsonify({"success": True, **result})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/copywriter/validate", methods=["POST"])
+def copywriter_validate():
+    """扫描文案中的违禁词"""
+    try:
+        data = request.json or {}
+        text = data.get("text", "")
+        hits = validate_copy(text)
+        return jsonify({"success": True, "banned_hits": hits, "clean": len(hits) == 0})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/copywriter/generate", methods=["POST"])
+def copywriter_generate_sse():
+    """SSE 流式文案生成 — 参考 DeepSeek 代理模式"""
+    from flask import Response
+
+    # 在 generator 外部解析请求体（Flask request context 只在路由处理期间有效）
+    try:
+        req_data = request.json or {}
+    except Exception:
+        req_data = {}
+
+    tmp_paths = []
+
+    def generate():
+        nonlocal tmp_paths
+        try:
+            data = req_data
+            product_images = data.get("product_images", [])
+            size_data = data.get("size_data", {})
+            waist_type_override = data.get("waist_type_override", "")
+            model = data.get("model", "qwen3-vl-plus")
+            manual_tags = data.get("manual_tags", [])
+            count = min(data.get("count", 3), 5)
+
+            # 处理图片
+            image_paths = []
+            for img in product_images:
+                if not img:
+                    continue
+                if img.startswith("data:"):
+                    p = save_base64_image(img)
+                    tmp_paths.append(p)
+                    image_paths.append(p)
+                elif os.path.isfile(img):
+                    image_paths.append(img)
+
+            if not image_paths:
+                yield f"data: {json.dumps({'error': '未提供有效图片'})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
+            # 构建消息（复用 copywriter 的 prompt 构建）
+            waist_info = determine_waist_type(size_data)
+            if waist_type_override:
+                waist_info["waist_type"] = waist_type_override
+                waist_info["note"] = "(用户手动指定)"
+
+            prompt = build_copy_prompt(
+                product_image_count=len(image_paths),
+                size_data=size_data,
+                waist_info=waist_info,
+                manual_tags=manual_tags or [],
+                count=count,
+            )
+
+            system_msg = COPYWRITER_SYSTEM.replace("{{{{count}}}}", str(count))
+
+            user_content = []
+            for img_path in image_paths:
+                user_content.append({"image": f"file://{img_path}"})
+            user_content.append({"text": prompt})
+
+            messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_content},
+            ]
+
+            # 流式调用 AI，token by token
+            full_text = ""
+            for token in call_qwen_stream(messages, model=model, temperature=0.8):
+                full_text += token
+                yield f"data: {json.dumps({'token': token})}\n\n"
+
+            # 解析完整结果
+            result = parse_copy_json(full_text)
+            if "parse_error" in result:
+                yield f"data: {json.dumps({'error': result['parse_error']})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
+            compliance = validate_all_copies(result.get("copies", []))
+            yield f"data: {json.dumps({'copies': result.get('copies', []), 'compliance': compliance})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        except Exception as e:
+            traceback.print_exc()
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            yield "data: [DONE]\n\n"
+        finally:
+            for p in tmp_paths:
+                try: os.unlink(p)
+                except: pass
+
+    # 先解析请求体再返回 generator（Flask SSE 需要）
+    try:
+        _ = request.json  # 触发请求体解析
+    except Exception:
+        pass
+
+    return Response(generate(), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
 
 def sync_changelog_cache():
     """启动时自动同步 git log 到 changelog_cache.json"""

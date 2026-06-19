@@ -10,3 +10,6 @@ config.json
 # Python
 __pycache__/
 *.pyc
+
+# 
+A草稿/
