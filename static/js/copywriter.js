@@ -18,12 +18,10 @@ const CW = {
 '<div class="card-title"><span class="icon">📷</span>素材上传</div>'+
 '<div class="cw-upload-row"><div class="cw-upload-col">'+
 '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">裤子图片</div>'+
-'<div class="cw-image-slots" id="cwImageSlots">'+this._slot(0,'正面')+this._slot(1,'反面')+this._slot(2,'细节')+'</div></div>'+
+'<div class="cw-image-slots" id="cwImageSlots">'+this._slot(0)+this._slot(1)+'</div></div>'+
 '<div class="cw-upload-col">'+
 '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">尺码数据</div>'+
-'<div class="cw-size-source">'+
-'<label><input type="radio" name="cwSizeSource" value="existing" checked onchange="CW._onSS()"> 从尺码表结果选取</label>'+
-'<label><input type="radio" name="cwSizeSource" value="upload" onchange="CW._onSS()"> 上传尺码表图片识别</label>'+
+'<div class="cw-size-tabs" id="cwSizeTabs"><button class="cw-size-tab active" id="cwTabExist" onclick="CW._onSizeTab(\x27existing\x27)">📋 尺码表结果</button><button class="cw-size-tab" id="cwTabUpload" onclick="CW._onSizeTab(\x27upload\x27)">📏 上传识别</button></div>'+
 '<div id="cwSizeUp" class="upload-zone hidden" style="padding:30px 20px;margin-top:8px;"><div class="icon">📏</div><div>拖拽或点击上传尺码表</div><input type="file" id="cwSizeFile" accept="image/*" style="display:none;"></div>'+
 '<div id="cwSizeSt" style="font-size:12px;color:var(--text2);margin-top:6px;"></div>'+
 '<div class="cw-orbit-ring hidden" id="cwOrbit"><div class="orbit-track"><div class="orbit-dot"></div><div class="orbit-dot"></div><div class="orbit-dot"></div><div class="orbit-dot"></div><div class="orbit-dot"></div></div><div class="orbit-center"></div></div>'+
@@ -46,17 +44,38 @@ const CW = {
     this._loadHistory();
   },
 
-  _slot(i, label) { return '<div class="cw-image-slot" id="cwSlot'+i+'" data-slot="'+i+'"><div class="slot-label"><span class="icon">📷</span>'+label+'</div><button class="clear-slot" data-slot="'+i+'">&times;</button><input type="file" accept="image/*" id="cwSlotIn'+i+'" style="display:none;"></div>'; },
+  _slot(i) { var hint=i===0?'拖拽/粘贴/点击上传裤子图片':'补充图'; return '<div class="cw-image-slot'+(i===1?' cw-image-slot-sm':'')+'" id="cwSlot'+i+'" data-slot="'+i+'"><div class="slot-label"><span class="icon">'+(i===0?'📷':'🔍')+'</span>'+hint+'</div><button class="clear-slot" data-slot="'+i+'">&times;</button><input type="file" accept="image/*" id="cwSlotIn'+i+'" style="display:none;"></div>'; },
 
   _bindEvents() {
     var g = document.getElementById('cwGen'); if (g) g.addEventListener('click', function(){ CW.generate(); });
     var v = document.getElementById('cwVC'); if (v) v.addEventListener('change', function(){ CW.versionCount = parseInt(v.value); });
     var m = document.getElementById('cwModel'); if (m) m.addEventListener('change', function(){ CW.currentModel = m.value; });
     var t = document.getElementById('cwTagInput'); if (t) t.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); CW._addTag(t.value.trim()); t.value=''; }});
+    // Ctrl+V 粘贴图片到素材槽位
+    document.addEventListener('paste', function(e) {
+      if (CW.isGenerating) return;
+      var cwContainer = document.getElementById('copywriterContainer');
+      if (!cwContainer || cwContainer.classList.contains('hidden')) return;
+      var items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image/') === 0) {
+          e.preventDefault();
+          // 主槽空 → 填入主槽；主槽已有 → 填入尺码表
+          if (!CW.productImages[0]) {
+            CW._handleFile(0, items[i].getAsFile());
+          } else {
+            if (CW.sizeDataSource !== 'upload') CW._onSizeTab('upload');
+            CW._handleSizeFile(items[i].getAsFile());
+          }
+          return;
+        }
+      }
+    });
   },
 
   _bindSlots() {
-    for (var i=0;i<3;i++) (function(idx){
+    for (var i=0;i<2;i++) (function(idx){
       var s=document.getElementById('cwSlot'+idx), inp=document.getElementById('cwSlotIn'+idx);
       if(s&&inp){ s.addEventListener('click',function(e){ if(!e.target.classList.contains('clear-slot'))inp.click(); });
         inp.addEventListener('change',function(e){ if(e.target.files[0])CW._handleFile(idx,e.target.files[0]); });
@@ -92,14 +111,17 @@ const CW = {
   },
 
   // ======== Size source ========
-  _onSS(){ var v=document.querySelector('input[name="cwSizeSource"]:checked'); this.sizeDataSource=v?v.value:'existing';
+  _onSizeTab(src){ this.sizeDataSource=src;
     var u=document.getElementById('cwSizeUp'), s=document.getElementById('cwSizeSt');
-    if(this.sizeDataSource==='upload'){ if(u)u.classList.remove('hidden'); if(s)s.textContent='请上传尺码表图片'; this.sizeData=null; this._rawOcrText=null; }
+    var te=document.getElementById('cwTabExist'), tu=document.getElementById('cwTabUpload');
+    if(te&&tu){ te.classList.toggle('active',src==='existing'); tu.classList.toggle('active',src==='upload'); }
+    if(src==='upload'){ if(u)u.classList.remove('hidden'); if(s)s.textContent='请上传尺码表图片'; this.sizeData=null; this._rawOcrText=null; }
     else { if(u)u.classList.add('hidden'); if(typeof resultData!=='undefined'&&resultData){ this.sizeData=resultData; this._tryReadRaw(); } this._updateSS(); this._detectWaist(); }
     this._upGen(); },
+  _onSS(){ this._onSizeTab(this.sizeDataSource); },
   _updateSS(){ var s=document.getElementById('cwSizeSt'); if(!s)return; if(!this.sizeData||!this.sizeData.headers){ s.textContent='暂无尺码数据'; s.style.color='var(--text2)'; } },
   _updateSizeSourceUI(){ this._updateSS(); this._detectWaist(); this._upGen(); },
-  _upGen(){ var b=document.getElementById('cwGen'); if(!b)return; b.disabled=Object.keys(this.productImages).length===0||!this.sizeData||!this.sizeData.headers||this.isGenerating; },
+  _upGen(){ var b=document.getElementById('cwGen'); if(!b)return; b.disabled=!this.productImages[0]||!this.sizeData||!this.sizeData.headers||this.isGenerating; },
 
   // ======== Waist detection from raw OCR ========
   _detectWaist(){
@@ -165,7 +187,7 @@ const CW = {
   // ======== Generate (SSE streaming) ========
   async generate(){
     if(this.isGenerating)return;
-    if(Object.keys(this.productImages).length===0){ if(typeof toast==='function')toast('请先上传裤子图片','error'); return; }
+    if(!this.productImages[0]){ if(typeof toast==='function')toast('请先上传裤子图片','error'); return; }
     if(!this.sizeData){ if(typeof toast==='function')toast('请先提供尺码数据','error'); return; }
     this.isGenerating=true; this._upGen(); this._lastError='';
 

@@ -1669,6 +1669,17 @@ const GRADIENT_WALLPAPERS = [
   { id: 'gradient-willow',    name: '烟柳', css: 'linear-gradient(145deg, #ccd5ca 0%, #c8d2c5 25%, #d5d9cf 50%, #cbd2c6 75%, #d8ded3 100%)' },
   { id: 'gradient-heather',   name: '石楠', css: 'linear-gradient(125deg, #d0cbd6 0%, #c9c2d1 30%, #d6ced8 55%, #ccc5d3 80%, #d9d3dc 100%)' },
   { id: 'gradient-sand drift', name: '流沙', css: 'linear-gradient(150deg, #dcd5cb 0%, #d7cfc4 25%, #e0d9cf 50%, #d9d1c7 75%, #e4ddd4 100%)' },
+  { id: 'gradient-oat',        name: '燕麦', css: 'linear-gradient(135deg, #e2d9c8 0%, #ddd3c0 30%, #e8dfd0 55%, #dcd2c2 80%, #e5ddd0 100%)' },
+  { id: 'gradient-stone',      name: '青石', css: 'linear-gradient(148deg, #c8cdc8 0%, #c2c7c2 25%, #cdd2cc 50%, #c4c9c4 75%, #d0d5cf 100%)' },
+  { id: 'gradient-lavender',   name: '薰衣', css: 'linear-gradient(142deg, #d0c9d9 0%, #cbc4d5 30%, #d6d0de 55%, #cec7d7 80%, #d9d3e2 100%)' },
+  { id: 'gradient-sage',       name: '鼠尾', css: 'linear-gradient(138deg, #c8cfc0 0%, #c2cab9 25%, #cdd4c5 50%, #c5cdbc 75%, #d0d7c8 100%)' },
+  { id: 'gradient-slate',      name: '板岩', css: 'linear-gradient(155deg, #bbc0c8 0%, #b5bac3 25%, #c1c5cd 50%, #b8bdc5 75%, #c4c8d0 100%)' },
+  { id: 'gradient-rose dust',  name: '尘玫', css: 'linear-gradient(132deg, #d6c9cb 0%, #d1c3c6 30%, #dbcfd1 55%, #d3c6c9 80%, #ded3d5 100%)' },
+  { id: 'gradient-ivory',      name: '象牙', css: 'linear-gradient(145deg, #e8e2d8 0%, #e3dcd0 25%, #ebe6dc 50%, #e5ded4 75%, #eee9e0 100%)' },
+  { id: 'gradient-cloud',      name: '卷云', css: 'linear-gradient(160deg, #dde1e4 0%, #d7dbe0 25%, #e2e5e8 50%, #d9dde2 75%, #e5e8eb 100%)' },
+  { id: 'gradient-flax',       name: '亚麻', css: 'linear-gradient(140deg, #ddd6c5 0%, #d8d0be 30%, #e2dcc9 55%, #dad3c2 80%, #e5dfce 100%)' },
+  { id: 'gradient-pewter',     name: '锡灰', css: 'linear-gradient(152deg, #c5c5c5 0%, #bfbfbf 25%, #cacaca 50%, #c2c2c2 75%, #cdcdcd 100%)' },
+  { id: 'gradient-moss',       name: '苔痕', css: 'linear-gradient(143deg, #c4ccba 0%, #bec6b3 25%, #c9d1bf 50%, #c1c9b6 75%, #ccd4c2 100%)' },
 ];
 
 function getRandomGradient() {

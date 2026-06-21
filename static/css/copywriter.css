@@ -7,7 +7,7 @@
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-radius: 14px;
   padding: 4px;
-  margin: 0 auto 18px;
+  margin: 16px auto 18px;
   max-width: 88%;
   position: relative;
   overflow: hidden;
@@ -90,19 +90,22 @@
 
 /* ======== 双列上传区 ======== */
 .cw-upload-row {
-  display: flex; gap: 16px;
+  display: flex; gap: 16px; align-items: flex-start;
 }
-.cw-upload-col {
-  flex: 1; min-width: 0;
+.cw-upload-col:first-child {
+  flex: 0 1 70%; min-width: 0;
+}
+.cw-upload-col:last-child {
+  flex: 0 1 30%; min-width: 220px;
 }
 
 /* ======== 裤子图片多槽位上传 ======== */
 .cw-image-slots {
-  display: flex; gap: 10px; flex-wrap: wrap;
+  display: flex; gap: 12px; flex-wrap: nowrap; align-items: flex-end;
 }
 .cw-image-slot {
-  flex: 1; min-width: 120px; max-width: 200px;
-  aspect-ratio: 3/4;
+  flex: 1 1 0; min-width: 0;
+  height: 456px;
   border: 2px dashed rgba(79,110,246,.25);
   border-radius: var(--radius);
   display: flex; align-items: center; justify-content: center;
@@ -110,6 +113,12 @@
   background: rgba(255,255,255,.12);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   transition: all .2s;
+}
+.cw-image-slot-sm {
+  flex: 0 0 auto;
+  width: 38.2%; min-width: 100px;
+  height: 418px;
+  align-self: flex-end;
 }
 .cw-image-slot:hover {
   border-color: var(--primary);
@@ -136,11 +145,23 @@
 .cw-image-slot.has-image:hover .clear-slot { display: block; }
 
 /* ======== 尺码数据来源选择 ======== */
-.cw-size-source { margin-top: 14px; }
-.cw-size-source label {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 6px; font-size: 13px; color: var(--text);
-  cursor: pointer;
+#cwSizeUp { height: 316px; display: flex; align-items: center; justify-content: center; }
+.cw-size-tabs {
+  display: flex; gap: 0;
+  background: rgba(255,255,255,.08);
+  border-radius: 8px; padding: 3px;
+  margin-top: 8px;
+}
+.cw-size-tab {
+  flex: 1; padding: 6px 14px; text-align: center;
+  border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
+  color: rgba(26,35,50,.45); transition: all .25s;
+  border: none; background: transparent;
+}
+.cw-size-tab.active {
+  color: rgba(26,35,50,.9);
+  background: rgba(255,255,255,.45);
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 
 /* ======== 卖点 Tag 输入 ======== */
