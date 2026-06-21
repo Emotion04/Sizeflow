@@ -93,7 +93,7 @@
   display: flex; gap: 32px; align-items: flex-start;
 }
 .cw-upload-col:first-child {
-  flex: 0 1 70%; min-width: 0;
+  flex: 0 1 70%; min-width: 0; padding-right: 24px;
 }
 .cw-upload-col:last-child {
   flex: 0 1 30%; min-width: 220px;
@@ -119,6 +119,7 @@
   width: 32%; max-width: 240px; min-width: 90px;
   height: 418px;
   align-self: flex-end;
+  margin-right: 12px;
 }
 .cw-image-slot:hover {
   border-color: var(--primary);
