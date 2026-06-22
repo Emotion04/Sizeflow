@@ -13,19 +13,25 @@ var TK = {
   add: function(input, output) {
     var sum = (input || 0) + (output || 0);
     if (sum <= 0) return;
-    // 当次操作显示
-    var self = this;
+    // 当次实时更新
     if (this._lastEl) {
       this._lastEl.textContent = '+' + sum;
       this._lastEl.style.opacity = '1';
       clearTimeout(this._timer);
-      this._timer = setTimeout(function() { self._lastEl.style.opacity = '0'; }, 2000);
     }
-    // 累计增加
-    var old = this._total;
+    // 立即累计
     this._total += sum;
     this._save();
-    this._animateTotal(old, this._total);
+    this._renderTotal();
+  },
+
+  done: function() {
+    // 本次数字停留2秒后渐隐
+    var self = this;
+    if (this._lastEl) {
+      clearTimeout(this._timer);
+      this._timer = setTimeout(function() { self._lastEl.style.opacity = '0'; }, 2000);
+    }
   },
 
   _save: function() {
@@ -33,23 +39,7 @@ var TK = {
   },
 
   _renderTotal: function() {
-    if (this._totalEl) this._totalEl.textContent = '💰 ' + this._fmt(this._total);
-  },
-
-  _animateTotal: function(from, to) {
-    var self = this;
-    var d = to - from, steps = Math.min(30, Math.max(10, Math.ceil(d / 50)));
-    if (steps <= 0) { this._renderTotal(); return; }
-    var i = 0, interval = Math.max(20, Math.floor(1000 / steps));
-    var timer = setInterval(function() {
-      i++;
-      var v = Math.round(from + d * (i / steps));
-      if (self._totalEl) self._totalEl.textContent = '💰 ' + self._fmt(v) + ' ↑';
-      if (i >= steps) {
-        clearInterval(timer);
-        self._renderTotal();
-      }
-    }, interval);
+    if (this._totalEl) this._totalEl.textContent = this._fmt(this._total);
   },
 
   _fmt: function(n) { if (n < 1000) return String(n); if (n < 10000) return (n/1000).toFixed(1) + 'k'; if (n < 1000000) return Math.round(n/1000) + 'k'; return (n/1000000).toFixed(1) + 'M'; }

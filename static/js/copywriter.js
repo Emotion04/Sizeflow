@@ -229,10 +229,11 @@ const CW = {
       '<div class="cw-results-col-right"><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">📝 详情页文案</div><div id="cwSub1"></div></div></div>';
     for(var t=1;t<=2;t++){ var sg=document.getElementById('cwSub'+t); if(sg)for(var i=1;i<=3;i++)sg.innerHTML+='<div class="cw-version-card streaming" style="min-width:0;margin-bottom:12px;"><div class="best-badge">✅ 推荐</div><div class="cw-version-label">版本 '+i+'</div><div class="cw-stream-content" style="font-size:13px;color:var(--text2);white-space:pre-wrap;font-family:monospace;opacity:.5;"></div></div>'; }
     var streamWrap=document.getElementById('cwStreamWrap'), waitSpin=document.getElementById('cwWaitSpin'), waitText=document.getElementById('cwWaitText');
-    var firstToken=true;
+    var firstToken=true, localTokens=0;
 
     var images=[]; for(var k in this.productImages){ if(this.productImages[k])images.push(this.productImages[k]); }
     var wo=document.getElementById('cWOverride'), waistOv=wo?wo.value:'';
+    if(typeof TK!=='undefined') TK.add(0,0); // show counter area
 
     try {
       var r=await fetch('/api/copywriter/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_images:images,size_data:this.sizeData,waist_type_override:waistOv,model:this.currentModel,manual_tags:this.manualTags,count:3})});
@@ -250,8 +251,10 @@ const CW = {
             if(p.token){
               if(firstToken){ firstToken=false; if(waitSpin)waitSpin.remove(); if(waitText)waitText.textContent='正在生成文案...'; if(streamWrap)streamWrap.classList.remove('hidden'); if(st)st.textContent='流式输出中...'; }
               fullText+=p.token;
+              localTokens++;
+              if(typeof TK!=='undefined'&&localTokens%3===0) TK.add(0,3);
             }
-            if(p.usage&&typeof TK!=='undefined') TK.add(p.usage.input_tokens||0,p.usage.output_tokens||0);
+            if(p.usage&&typeof TK!=='undefined'){ TK.add(p.usage.input_tokens||0,p.usage.output_tokens||0); TK.done(); }
             if(p.copies){ this.generatedCopies=p.copies; this._compliance=p.compliance||[]; }
           } catch(e){}
         }
@@ -262,6 +265,7 @@ const CW = {
         }
       }
     } catch(e){ this._lastError=e.message; if(typeof toast==='function')toast('请求失败: '+e.message,'error'); }
+    if(typeof TK!=='undefined') TK.done();
 
     this.isGenerating=false; this._upGen();
     if(reGen)reGen.classList.remove('hidden'); if(copyAll)copyAll.classList.remove('hidden');

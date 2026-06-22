@@ -131,7 +131,7 @@ def call_ocr_vision(image_path, mappings, model):
 
     print(f"[OCR-转录] model={model}")
     usage_out = {}
-text = call_qwen(messages, model=model, usage_out=usage_out)
+    text = call_qwen(messages, model=model, usage_out=usage_out)
     print(f"[OCR-转录] result:\n{text[:600]}")
     return text, usage_out.get("data")
 
