@@ -15,7 +15,14 @@
 <div id="cursor-glow"></div>
 
 <header>
-  <div><h1>开心每一天~</h1></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <h1 style="font-size:18px;">开心每一天~</h1>
+    <div id="tokenPill" style="position:relative;display:flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;cursor:default;font-size:11px;color:var(--text2);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);white-space:nowrap;">
+      <span id="tokenTotal" style="color:var(--text);font-weight:500;" title="累计Token">Token: 0</span>
+      <span id="tokenStream" style="color:rgba(79,110,246,.7);font-family:monospace;min-width:24px;display:inline-block;"></span>
+      <div id="tokenPopup" class="hidden" style="position:absolute;top:100%;left:0;margin-top:8px;padding:12px 16px;background:rgba(255,255,255,.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.08);font-size:11px;color:var(--text);line-height:1.8;z-index:999;min-width:200px;white-space:nowrap;"></div>
+    </div>
+  </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <input id="apiKeyInput" placeholder="输入 DashScope API Key" style="width:200px;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:8px;font-size:12px;outline:none;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--text);">
     <button class="btn btn-primary btn-sm" id="saveKeyBtn">保存</button>
