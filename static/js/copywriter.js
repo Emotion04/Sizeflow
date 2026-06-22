@@ -1,11 +1,11 @@
 /* Sizeflow 文案生成模块 */
 const CW = {
-  productImages: {}, sizeDataSource: 'existing', sizeData: null, _rawOcrText: null,
+  productImages: {}, sizeDataSource: 'upload', sizeData: null, _rawOcrText: null,
   waistInfo: null, manualTags: [], versionCount: 3, currentModel: 'qwen3-vl-flash',
   generatedCopies: null, isGenerating: false, _selWaistIdx: 0, _lastError: '',
 
-  _injected: false, _eventsBound: false,
-  init() { if(!this._injected){ this._injectHTML(); this._injected=true; } if(!this._eventsBound){ this._bindEvents(); this._eventsBound=true; } this._bindSlots();
+  _injected: false, _eventsBound: false, _slotsBound: false,
+  init() { if(!this._injected){ this._injectHTML(); this._injected=true; } if(!this._eventsBound){ this._bindEvents(); this._eventsBound=true; } if(!this._slotsBound){ this._bindSlots(); this._slotsBound=true; }
     if (typeof currentModel !== 'undefined') this.currentModel = currentModel; },
   activate() { this._renderAllSlots(); this._tryReadRaw(); if (typeof resultData !== 'undefined' && resultData) { this.sizeData = resultData; this._updateSizeSourceUI(); } else { this._detectWaist(); this._renderWaist(); } },
   deactivate() {},
@@ -22,8 +22,8 @@ const CW = {
 '<div class="cw-image-slots" id="cwImageSlots">'+this._slot(0)+this._slot(1)+'</div></div>'+
 '<div class="cw-upload-col">'+
 '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">尺码数据</div>'+
-'<div class="cw-size-tabs" id="cwSizeTabs"><button class="cw-size-tab active" id="cwTabExist" onclick="CW._onSizeTab(\x27existing\x27)">📋 尺码表结果</button><button class="cw-size-tab" id="cwTabUpload" onclick="CW._onSizeTab(\x27upload\x27)">📏 上传识别</button></div>'+
-'<div id="cwSizeUp" class="upload-zone hidden" style="padding:30px 20px;margin-top:8px;"><div class="icon">📏</div><div>拖拽或点击上传尺码表</div><input type="file" id="cwSizeFile" accept="image/*" style="display:none;"></div>'+
+'<div class="cw-size-tabs" id="cwSizeTabs"><button class="cw-size-tab" id="cwTabExist" onclick="CW._onSizeTab(\x27existing\x27)">📋 尺码表结果</button><button class="cw-size-tab active" id="cwTabUpload" onclick="CW._onSizeTab(\x27upload\x27)">📏 上传识别</button></div>'+
+'<div id="cwSizeUp" class="upload-zone" style="padding:30px 20px;margin-top:8px;"><div class="icon">📏</div><div>拖拽或点击上传尺码表</div><input type="file" id="cwSizeFile" accept="image/*" style="display:none;"></div>'+
 '<div id="cwSizeSt" style="font-size:12px;color:var(--text2);margin-top:6px;"></div>'+
 '<div class="cw-orbit-ring hidden" id="cwOrbit"><div class="orbit-track"><div class="orbit-dot"></div><div class="orbit-dot"></div><div class="orbit-dot"></div><div class="orbit-dot"></div><div class="orbit-dot"></div></div><div class="orbit-center"></div></div>'+
 '<div class="cw-waist-row" style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 12px;background:rgba(255,255,255,.08);border-radius:8px;border:1px solid rgba(255,255,255,.15);">'+
@@ -40,7 +40,7 @@ const CW = {
 '<span style="font-size:12px;color:var(--text2);">版本数</span><select id="cwVC" style="padding:4px 6px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);color:var(--text);"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select>'+
 '<span style="font-size:12px;color:var(--text2);">模型</span><select id="cwModel" style="padding:4px 6px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);color:var(--text);"><option value="qwen3-vl-flash" selected>Qwen3-VL Flash</option><option value="qwen3-vl-plus">Qwen3-VL Plus</option><option value="qwen3.6-plus">Qwen3.6 Plus</option></select></div></div>'+
 '<div class="card hidden" id="cwResult"><div class="card-title"><span class="icon">✍️</span>文案生成结果<span style="font-size:12px;color:var(--text2);font-weight:400;" id="cwRSt"></span><span style="flex:1;"></span><button class="btn btn-outline btn-sm hidden" id="cwReGen" onclick="CW.regenerate()">🔄 重新生成</button><button class="btn btn-outline btn-sm hidden" id="cwCopyAll" onclick="CW.copyAll()">📋 复制全部</button></div><div id="cwGrid"></div><div class="cw-stream-raw hidden" id="cwRaw"></div></div>'+
-'<div class="card hidden" id="cwHistory"><div class="card-title"><span class="icon">📜</span>历史记录<button class="btn btn-outline btn-sm" onclick="CW._clearHistory()" style="margin-left:12px;font-size:10px;">清空</button></div><div id="cwHistoryList" style="max-height:500px;overflow-y:auto;"></div></div>';
+'<div class="card" id="cwHistory"><div class="card-title"><span class="icon">📜</span>历史记录<button class="btn btn-outline btn-sm" onclick="CW._clearHistory()" style="margin-left:12px;font-size:10px;">清空</button></div><div id="cwHistoryList" style="max-height:300px;overflow-y:auto;"></div></div>';
     this._bindSlots();
     this._loadHistory();
   },
@@ -123,40 +123,19 @@ const CW = {
   _onSS(){ this._onSizeTab(this.sizeDataSource); },
   _updateSS(){ var s=document.getElementById('cwSizeSt'); if(!s)return; if(!this.sizeData||!this.sizeData.headers){ s.textContent='暂无尺码数据'; s.style.color='var(--text2)'; } },
   _updateSizeSourceUI(){ this._updateSS(); this._detectWaist(); this._upGen(); },
-  _upGen(){ var b=document.getElementById('cwGen'); if(!b)return; b.disabled=!this.productImages[0]||!this.sizeData||!this.sizeData.headers||this.isGenerating; },
+  _upGen(){ var b=document.getElementById('cwGen'); if(!b)return; b.disabled=Object.keys(this.productImages).length===0||!this.sizeData||!this.sizeData.headers||this.isGenerating; },
 
   // ======== Waist detection from raw OCR ========
   _detectWaist(){
     var raw=this._rawOcrText;
     if(raw&&raw!=='(无)')console.log('[CW] RAW:',raw);
-    // ① 从 raw text 解析（原始字段名如"前浪连腰"）——最可靠
-    if(raw&&raw!=='(无)'){
-      var map=this._parseFront(raw);
-      if(map&&map.length>0){
-        var first=map[0], wt=CW._classify(first.front_rise);
-        this._selWaistIdx=0;
-        this.waistInfo={waist_type:wt||'未知',front_rise:first.front_rise,note:wt?('尺码'+first.size+',raw检测'):('值'+first.front_rise+'cm不在22-28cm')};
-        if(!wt&&typeof toast==='function')toast('前浪'+first.front_rise+'cm不在判定范围,请手动选腰型','info');
-        this._updateWaistStatus(); this._renderWaist(); return;
-      }
-    }
-    // ② fallback: 从 sizeData headers/rows 查找
-    var sd=this.sizeData;
-    if(sd&&sd.headers&&sd.rows&&sd.rows.length>0){
-      var fronts=['前浪','裆深','上裆','直裆','前裆','股上','上浪','前浪连腰'], fi=-1;
-      for(var i=0;i<sd.headers.length;i++){ var h=(sd.headers[i]||'').replace(/ /g,''); for(var j=0;j<fronts.length;j++){ if(h.indexOf(fronts[j])!==-1){ fi=i; break; } } if(fi!==-1)break; }
-      if(fi!==-1){
-        var v=parseFloat(String(sd.rows[0][fi]||'').replace(/[^0-9.]/g,''));
-        if(!isNaN(v)&&v>0){
-          var wt=CW._classify(v);
-          this.waistInfo={waist_type:wt||'未知',front_rise:v,note:wt?('尺寸表检测 '+v+'cm'):('值'+v+'cm不在判定范围')};
-          this._updateWaistStatus(); this._renderWaist(); return;
-        }
-      }
-    }
-    // ③ 都失败了
-    if(!raw||raw==='(无)'){ this.waistInfo={waist_type:'未知',front_rise:null,note:'暂无OCR数据'}; }
-    else { this.waistInfo={waist_type:'未知',front_rise:null,note:'raw中未找到前浪字段'}; }
+    if(!raw||raw==='(无)'){ this.waistInfo={waist_type:'未知',front_rise:null,note:'暂无OCR数据'}; this._updateWaistStatus(); this._renderWaist(); return; }
+    var map=this._parseFront(raw);
+    if(!map||map.length===0){ this.waistInfo={waist_type:'未知',front_rise:null,note:'raw中未找到前浪字段'}; this._updateWaistStatus(); this._renderWaist(); return; }
+    var first=map[0], wt=CW._classify(first.front_rise);
+    this._selWaistIdx=0;
+    this.waistInfo={waist_type:wt||'未知',front_rise:first.front_rise,note:wt?('尺码'+first.size+',raw检测'):('值'+first.front_rise+'cm不在22-28cm')};
+    if(!wt&&typeof toast==='function')toast('前浪'+first.front_rise+'cm不在判定范围,请手动选腰型','info');
     this._updateWaistStatus(); this._renderWaist();
   },
 
@@ -168,7 +147,7 @@ const CW = {
       if(parts.length<2)continue;
       var name=parts[0];
       if(name.indexOf('尺码')!==-1){ for(var i=1;i<parts.length;i++)sizeCols.push({idx:i,val:parts[i]}); }
-      else { var found=false; for(var ci=0;ci<['浪','裆','股上','前'].length;ci++){ if(name.indexOf(['浪','裆','股上','前'][ci])!==-1){ for(var j=1;j<parts.length;j++)frontCols.push({idx:j,val:parts[j]}); found=true; break; } } }
+      else { var kws=['前浪','裆深','上裆','直裆','前裆','股上']; var found=false; for(var ci=0;ci<kws.length;ci++){ if(name.indexOf(kws[ci])!==-1){ for(var j=1;j<parts.length;j++)frontCols.push({idx:j,val:parts[j]}); found=true; break; } } }
     }
     if(sizeCols.length===0||frontCols.length===0)return null;
     function cSize(v){ var s=v.replace(/码/g,'').trim(); s=s.replace(/\.0+$/,''); if(/^\d{1,2}$/.test(s)){ var n=parseInt(s,10); return (n>=20&&n<=50)?n:NaN; } if(/^[A-Z]{1,3}$/.test(s))return s.charCodeAt(0); return NaN; }
@@ -192,22 +171,8 @@ const CW = {
     d.textContent=(fr!==null&&fr!==undefined)?'（前浪 '+fr+'cm）':(this.waistInfo?(this.waistInfo.note||''):'');
     // 手动选腰型始终可见
     if(o)o.style.display='';
-    // 码数选择器：有raw数据时显示，否则尝试从sizeData提取
-    if(s){
-      s.style.display='none';
-      if(this._rawOcrText){
-        var map=this._parseFront(this._rawOcrText);
-        if(map&&map.length>0){ s.style.display=''; s.innerHTML=map.map(function(m,i){ return '<option value="'+i+'"'+(i===CW._selWaistIdx?' selected':'')+'>'+m.size+'码（前浪'+m.front_rise+'cm）</option>'; }).join(''); }
-      }
-      // 如果raw解析失败, 从sizeData构建简化版
-      if(s.style.display==='none'&&this.sizeData&&this.sizeData.headers&&this.sizeData.rows){
-        var ri=CW._findFrontIdx(this.sizeData.headers);
-        if(ri>=0&&this.sizeData.rows.length>0&&ri<this.sizeData.rows[0].length){
-          var fr=parseFloat(String(this.sizeData.rows[0][ri]||'').replace(/[^0-9.]/g,''));
-          if(!isNaN(fr)&&fr>0){ s.style.display=''; s.innerHTML='<option value="0" selected>最小码（前浪'+fr+'cm）</option>'; }
-        }
-      }
-    }
+    // 码数选择器：有raw数据时显示
+    if(s&&this._rawOcrText){ var map=this._parseFront(this._rawOcrText); if(map&&map.length>0){ s.style.display=''; s.innerHTML=map.map(function(m,i){ return '<option value="'+i+'"'+(i===CW._selWaistIdx?' selected':'')+'>'+m.size+'码（前浪'+m.front_rise+'cm）</option>'; }).join(''); } else s.style.display='none'; } else if(s)s.style.display='none';
   },
 
   _onWSize(){ var sel=document.getElementById('cwWSize'); if(!sel)return; var idx=parseInt(sel.value); if(isNaN(idx))return; this._selWaistIdx=idx; var map=this._parseFront(this._rawOcrText); if(!map||idx>=map.length)return; var m=map[idx], wt=CW._classify(m.front_rise); this.waistInfo={waist_type:wt||'未知',front_rise:m.front_rise,note:wt?('尺码'+m.size):('值'+m.front_rise+'cm不在22-28cm')}; this._renderWaist(); },
@@ -225,7 +190,7 @@ const CW = {
   // ======== Generate (SSE streaming) ========
   async generate(){
     if(this.isGenerating)return;
-    if(!this.productImages[0]){ if(typeof toast==='function')toast('请先上传裤子图片','error'); return; }
+    if(Object.keys(this.productImages).length===0){ if(typeof toast==='function')toast('请先上传裤子图片','error'); return; }
     if(!this.sizeData){ if(typeof toast==='function')toast('请先提供尺码数据','error'); return; }
     this.isGenerating=true; this._upGen(); this._lastError='';
 
@@ -250,7 +215,7 @@ const CW = {
     var wo=document.getElementById('cWOverride'), waistOv=wo?wo.value:'';
 
     try {
-      var r=await fetch('/api/copywriter/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_images:images,size_data:this.sizeData,waist_type_override:waistOv,model:this.currentModel,manual_tags:this.manualTags,count:3})});
+      var r=await fetch('/api/copywriter/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_images:images,size_data:this.sizeData,waist_type_override:waistOv,model:this.currentModel,manual_tags:this.manualTags,count:this.versionCount})});
       if(!r.ok)throw new Error('HTTP '+r.status);
       var reader=r.body.getReader(), decoder=new TextDecoder(), fullText='', buf='';
       while(true){
@@ -294,6 +259,7 @@ const CW = {
       // 4. 切换为结构化结果
       setTimeout(function(){ CW._renderResults(); }, 1200);
       this._addToHistory();
+      if(typeof toast==='function')toast('文案生成完成！','success');
     }
     else if(grid)grid.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger);">生成失败'+(this._lastError?': '+CW._esc(this._lastError):'')+'<br><small style="color:var(--text2);">API Key/额度/超时</small></div>';
   },
@@ -318,9 +284,6 @@ const CW = {
       return h;
     }
     var rc=document.getElementById('cwResult'); if(rc)rc.scrollIntoView({behavior:'smooth'});
-    var hc=document.getElementById('cwHistory'); if(hc)hc.classList.remove('hidden');
-    if(typeof toast==='function')toast('文案生成完成！','success');
-    this._addToHistory();
   },
 
   _copyVer(v,type){
@@ -348,8 +311,12 @@ const CW = {
   _saveHistory(){ try { if(this._history.length>50)this._history=this._history.slice(0,50); localStorage.setItem(this._HIST_KEY,JSON.stringify(this._history)); } catch(e){} this._renderHistory(); },
   _addToHistory(){
     if(!this.generatedCopies||this.generatedCopies.length===0)return;
+    // 去重：5秒内相同copies不重复添加
+    var now=Date.now(), copyFp=JSON.stringify(this.generatedCopies).slice(0,200);
+    if(this._lastCopyFp===copyFp&&(now-this._lastCopyTime)<5000)return;
+    this._lastCopyFp=copyFp; this._lastCopyTime=now;
     var self=this;
-    var id='cw_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+    var id='cw_'+now+'_'+Math.random().toString(36).substr(2,6);
     var imgRefs=[];
     var saveImages=[]; for(var k in this.productImages){ if(this.productImages[k]){ var rid=id+'_'+k; imgRefs.push({slot:k,ref:rid}); saveImages.push(IDB.put(rid,this.productImages[k])); } }
     Promise.all(saveImages).then(function(){
@@ -392,7 +359,6 @@ const CW = {
       });
     }
     var wo=document.getElementById('cWOverride'); if(wo&&h.waist&&h.waist.note==='(手动指定)')wo.value=h.waist.waist_type;
-    var card=document.getElementById('cwHistory'); if(card)card.classList.add('hidden');
     var res=document.getElementById('cwResult'); if(res)res.classList.remove('hidden');
     this._renderResults();
     setTimeout(function(){ var rc=document.getElementById('cwResult'); if(rc)rc.scrollIntoView({behavior:'smooth'}); },100);

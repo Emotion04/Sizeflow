@@ -1,6 +1,76 @@
 {
   "commits": [
     {
+      "hash": "9e8fdb9",
+      "msg": "v1.6.0: 腰型检测恢复raw优先——原始字段名\"前浪连腰\"最可靠",
+      "date": "1782111120"
+    },
+    {
+      "hash": "b542a45",
+      "msg": "v1.6.0: OCR后强制_renderWaist + sizeData腰型兜底 + 码数选择器支持",
+      "date": "1782110862"
+    },
+    {
+      "hash": "35f1c46",
+      "msg": "v1.6.0: Token弹窗IP显示优化——IP作为字段头+各IP用量排序",
+      "date": "1782110207"
+    },
+    {
+      "hash": "1d8d366",
+      "msg": "v1.6.0: 胶囊右移+更低透明度+Token字体70%不透明度",
+      "date": "1782105901"
+    },
+    {
+      "hash": "a226850",
+      "msg": "v1.6.0: 添加Token实时预览——左侧胶囊卡片+悬停统计弹窗",
+      "date": "1782103671"
+    },
+    {
+      "hash": "49718d1",
+      "msg": "v1.6.0: Token计数器简化——两元件: 流式跳动+绿加号→渐隐, 总数跳新值",
+      "date": "1782103292"
+    },
+    {
+      "hash": "89754af",
+      "msg": "v1.6.0: 双计数器——流式实时跳动+本次+总计, 动画分离",
+      "date": "1782103008"
+    },
+    {
+      "hash": "bcae58e",
+      "msg": "v1.6.0: Token计数去掉emoji+流式实时+2秒渐隐 + vision缩进修复",
+      "date": "1782102619"
+    },
+    {
+      "hash": "d4adcb3",
+      "msg": "v1.6.0: Token计数器 — 累计+当次操作, DashScope usage实时统计",
+      "date": "1782101673"
+    },
+    {
+      "hash": "a2164c8",
+      "msg": "v1.6.0: 腰型检测sizeData优先 + 主槽max-width 768px",
+      "date": "1782101409"
+    },
+    {
+      "hash": "da78091",
+      "msg": "v1.6.0: 主槽max-width 768px + 腰型检测增加sizeData回退",
+      "date": "1782100366"
+    },
+    {
+      "hash": "0bbabbb",
+      "msg": "v1.6.0: 紧急修复——cwResult卡片被误删导致生成文案无反应",
+      "date": "1782098875"
+    },
+    {
+      "hash": "bea85ad",
+      "msg": "v1.6.0: 历史会话系统 — 尺码表+文案双tab分别保存恢复",
+      "date": "1782098488"
+    },
+    {
+      "hash": "4292cde",
+      "msg": "v1.6.0: 修复tab切换丢失图片 + HTML重复注入导致OCR/生成崩溃",
+      "date": "1782097697"
+    },
+    {
       "hash": "1a2d9f1",
       "msg": "v1.6.0: 腰型行移至尺码数据列内 + 加大加粗更显眼",
       "date": "1782038409"
@@ -229,76 +299,6 @@
       "hash": "5252f9d",
       "msg": "Canary 3.28: 紧急修复——cfgTableWidth不存在导致JS崩溃",
       "date": "1779695772"
-    },
-    {
-      "hash": "fc43cd3",
-      "msg": "debug: 复制函数加console.log追踪调用链",
-      "date": "1779695645"
-    },
-    {
-      "hash": "a2cb764",
-      "msg": "Canary 3.27: _getSelectionColsRows增加resultData.rows空值防御",
-      "date": "1779693792"
-    },
-    {
-      "hash": "9c9cb22",
-      "msg": "Canary 3.26: 修复debug端点——补全预设数据字段映射",
-      "date": "1779692211"
-    },
-    {
-      "hash": "16a807c",
-      "msg": "Canary 3.25: Debug模式——预设数据快速预览跳过OCR",
-      "date": "1779687995"
-    },
-    {
-      "hash": "31b8ef1",
-      "msg": "Canary 3.24: 消除32px偏差——表格cell竖直padding 2→0",
-      "date": "1779687042"
-    },
-    {
-      "hash": "6dd12c7",
-      "msg": "Canary 3.23: 服务端body.screenshot + 表格尺寸状态指示器",
-      "date": "1779684398"
-    },
-    {
-      "hash": "424f335",
-      "msg": "Canary 3.22: html/body加overflow:hidden消除32px渲染偏差",
-      "date": "1779681841"
-    },
-    {
-      "hash": "0fb2a16",
-      "msg": "update changelog cache after rebase",
-      "date": "1779680613"
-    },
-    {
-      "hash": "0f55459",
-      "msg": "Canary 3.21: 移除exportPng中对scoped函数的无效调用",
-      "date": "1779680508"
-    },
-    {
-      "hash": "e50bec3",
-      "msg": "Canary 3.20: 紧急修复——checkExportConfigWarning移入try-catch内",
-      "date": "1779679674"
-    },
-    {
-      "hash": "f5df6d0",
-      "msg": "Canary 3.19: 修复表格居中+警告计算+补全校验场景",
-      "date": "1779678774"
-    },
-    {
-      "hash": "965928d",
-      "msg": "Canary 3.18: html2canvas scale 2→1 匹配服务端Playwright输出分辨率",
-      "date": "1779621365"
-    },
-    {
-      "hash": "c74dd21",
-      "msg": "Canary 3.17: 修复导出警告计算——使用buildExportStylePayload保持一致",
-      "date": "1779621114"
-    },
-    {
-      "hash": "a4a0af2",
-      "msg": "Canary 3.16: 服务端body去flexbox——html2canvas可直接渲染",
-      "date": "1779620791"
     }
   ]
 }

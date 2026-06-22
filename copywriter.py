@@ -226,6 +226,10 @@ def build_copy_prompt(product_image_count, size_data, waist_info, manual_tags, c
 首行示例：{dict(zip(headers, size_data['rows'][0])) if size_data['rows'] else '无数据'}
 """
 
+    # 动态构建 JSON 示例
+    type1_examples = ",\n    ".join([f'{{{{ "type": 1, "version": {i}, {"" if i == 1 else ""}"title_a": "...", "body_a": "..." }}}}' for i in range(1, count + 1)])
+    type2_examples = ",\n    ".join([f'{{{{ "type": 2, "version": {i}, {"" if i == 1 else ""}"color": "...", "fabric": "", "elasticity": "", "fit_type": "", "thickness": "适中", "softness": "适中", "items": [{{{{"title": "...", "desc": "..."}}}}] }}}}' for i in range(1, count + 1)])
+
     prompt = f"""请根据以下信息为这款裤子生成电商文案。
 
 【产品图片】
@@ -253,7 +257,7 @@ def build_copy_prompt(product_image_count, size_data, waist_info, manual_tags, c
 {STYLE_EXAMPLES}
 
 【输出要求】
-生成 2 种不同类型的文案，每种各 3 个版本（共 6 个版本）：
+生成 2 种不同类型的文案，每种各 {{count}} 个版本（共 {{total}} 个版本）：
 
 类型1 — 详情页文案：
   每个版本：title_a（标题6-12字）+ body_a（120-180字流水式叙述）
@@ -271,17 +275,12 @@ def build_copy_prompt(product_image_count, size_data, waist_info, manual_tags, c
 
 【输出格式】
 严格输出 JSON（不要 markdown 代码块）：
-{{
-  "copies": [
-    {{ "type": 1, "version": 1, "best": true, "title_a": "...", "body_a": "..." }},
-    {{ "type": 1, "version": 2, "title_a": "...", "body_a": "..." }},
-    {{ "type": 1, "version": 3, "title_a": "...", "body_a": "..." }},
-    {{ "type": 2, "version": 1, "best": true, "color": "...", "fabric": "", "elasticity": "", "fit_type": "", "thickness": "适中", "softness": "适中", "items": [{{"title": "...", "desc": "..."}}, ...] }},
-    {{ "type": 2, "version": 2, "color": "...", "fabric": "", "elasticity": "", "fit_type": "", "thickness": "适中", "softness": "适中", "items": [{{"title": "...", "desc": "..."}}, ...] }},
-    {{ "type": 2, "version": 3, "color": "...", "fabric": "", "elasticity": "", "fit_type": "", "thickness": "适中", "softness": "适中", "items": [{{"title": "...", "desc": "..."}}, ...] }}
+{{ "copies": [
+    {type1_examples},
+    {type2_examples}
   ]
 }}"""
-    return prompt
+    return prompt.replace("{{count}}", str(count)).replace("{{total}}", str(count * 2))
 
 
 def parse_copy_json(raw_text):
