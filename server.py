@@ -487,20 +487,6 @@ def api_changelog():
 
 # ---- Startup ----
 
-# ======== Token 云存储 ========
-# 服务端内存存储——Vercel Fluid Compute 同实例内持久
-_token_store = {"total": 0}
-
-@app.route("/api/token", methods=["GET"])
-def api_token_get():
-    return jsonify({"success": True, "total": _token_store.get("total", 0)})
-
-@app.route("/api/token", methods=["POST"])
-def api_token_post():
-    data = request.json or {}
-    _token_store["total"] = data.get("total", _token_store.get("total", 0))
-    return jsonify({"success": True, "total": _token_store["total"]})
-
 # ======== 文案生成模块 API ========
 
 @app.route("/api/copywriter/waist-type", methods=["POST"])
