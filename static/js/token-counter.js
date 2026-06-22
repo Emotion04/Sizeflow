@@ -98,19 +98,20 @@ var TK = {
   _showPopup: function() {
     var ip = this._ip || '...';
     this._updateStats();
-    var s = this._stats[ip] || { total: this._total, today: 0, month: 0 };
-    // top 5 IPs
+    var s = this._stats[ip] || { total: 0, today: 0, month: 0 };
     var ips = Object.keys(this._stats).sort(function(a,b){ return (this._stats[b].total||0) - (this._stats[a].total||0); }.bind(this));
-    var top5 = ips.slice(0, 5).map(function(k){ return k + ': ' + TK._fmt(TK._stats[k].total||0); }).join('<br>');
+    var ipList = ips.slice(0, 5).map(function(k){ var isMe = k === ip; return '<div style="'+(isMe?'color:var(--primary);font-weight:600;':'color:var(--text2);')+'">' + TK._esc(k) + ': <b>' + TK._fmt(TK._stats[k].total||0) + '</b></div>'; }).join('');
     this._popup.innerHTML =
-      '<div style="font-weight:600;margin-bottom:4px;">📊 Token 统计</div>' +
+      '<div style="font-weight:600;margin-bottom:4px;">Token 统计</div>' +
+      '<div style="font-size:12px;line-height:1.8;">' +
       'Total: <b>' + this._fmt(this._total) + '</b><br>' +
       'Today: <b>' + this._fmt(s.today||0) + '</b><br>' +
       'Month: <b>' + this._fmt(s.month||0) + '</b><br>' +
-      '<div style="margin-top:6px;padding-top:4px;border-top:1px solid rgba(0,0,0,.08);font-size:10px;color:var(--text2);">IP: ' + ip + '</div>' +
-      (ips.length > 1 ? '<div style="margin-top:4px;font-size:10px;color:var(--text2);">Top IP:<br>' + top5 + '</div>' : '');
+      '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(0,0,0,.08);font-size:11px;color:var(--text2);">IP:</div>' +
+      ipList + '</div>';
     this._popup.classList.remove('hidden');
   },
+  _esc: function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); },
 
   _fmt: function(n) { if (n < 1000) return String(n); if (n < 10000) return (n/1000).toFixed(1)+'k'; if (n < 1000000) return Math.round(n/1000)+'k'; return (n/1000000).toFixed(1)+'M'; }
 };
