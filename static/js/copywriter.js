@@ -129,21 +129,7 @@ const CW = {
   _detectWaist(){
     var raw=this._rawOcrText;
     if(raw&&raw!=='(无)')console.log('[CW] RAW:',raw);
-    // 优先从 sizeData 的 headers/rows 查找前浪（结构化数据更可靠）
-    var sd=this.sizeData;
-    if(sd&&sd.headers&&sd.rows&&sd.rows.length>0){
-      var fronts=['前浪','裆深','上裆','直裆','前裆','股上','上浪','前浪连腰'], fi=-1;
-      for(var i=0;i<sd.headers.length;i++){ var h=(sd.headers[i]||'').replace(/ /g,''); for(var j=0;j<fronts.length;j++){ if(h.indexOf(fronts[j])!==-1){ fi=i; break; } } if(fi!==-1)break; }
-      if(fi!==-1){
-        var v=parseFloat(String(sd.rows[0][fi]||'').replace(/cm|CM/ig,'').trim());
-        if(!isNaN(v)&&v>0){
-          var wt=CW._classify(v);
-          this.waistInfo={waist_type:wt||'未知',front_rise:v,note:wt?('尺寸表检测 '+v+'cm'):('值'+v+'cm不在判定范围')};
-          this._updateWaistStatus(); this._renderWaist(); return;
-        }
-      }
-    }
-    // fallback: 从 raw text 解析
+    // ① 从 raw text 解析（原始字段名如"前浪连腰"）——最可靠
     if(raw&&raw!=='(无)'){
       var map=this._parseFront(raw);
       if(map&&map.length>0){
@@ -154,7 +140,21 @@ const CW = {
         this._updateWaistStatus(); this._renderWaist(); return;
       }
     }
-    // 都失败了
+    // ② fallback: 从 sizeData headers/rows 查找
+    var sd=this.sizeData;
+    if(sd&&sd.headers&&sd.rows&&sd.rows.length>0){
+      var fronts=['前浪','裆深','上裆','直裆','前裆','股上','上浪','前浪连腰'], fi=-1;
+      for(var i=0;i<sd.headers.length;i++){ var h=(sd.headers[i]||'').replace(/ /g,''); for(var j=0;j<fronts.length;j++){ if(h.indexOf(fronts[j])!==-1){ fi=i; break; } } if(fi!==-1)break; }
+      if(fi!==-1){
+        var v=parseFloat(String(sd.rows[0][fi]||'').replace(/[^0-9.]/g,''));
+        if(!isNaN(v)&&v>0){
+          var wt=CW._classify(v);
+          this.waistInfo={waist_type:wt||'未知',front_rise:v,note:wt?('尺寸表检测 '+v+'cm'):('值'+v+'cm不在判定范围')};
+          this._updateWaistStatus(); this._renderWaist(); return;
+        }
+      }
+    }
+    // ③ 都失败了
     if(!raw||raw==='(无)'){ this.waistInfo={waist_type:'未知',front_rise:null,note:'暂无OCR数据'}; }
     else { this.waistInfo={waist_type:'未知',front_rise:null,note:'raw中未找到前浪字段'}; }
     this._updateWaistStatus(); this._renderWaist();
