@@ -1,6 +1,31 @@
 {
   "commits": [
     {
+      "hash": "1a2d9f1",
+      "msg": "v1.6.0: 腰型行移至尺码数据列内 + 加大加粗更显眼",
+      "date": "1782038409"
+    },
+    {
+      "hash": "3a000f1",
+      "msg": "v1.6.0: 腰型行移至卡片右下角 + 手动选择框加大",
+      "date": "1782038145"
+    },
+    {
+      "hash": "f172fdf",
+      "msg": "v1.6.0: 图片区与尺码区间隙——左侧padding-right 24px + 副槽margin-right 12px",
+      "date": "1782037813"
+    },
+    {
+      "hash": "b6456ef",
+      "msg": "v1.6.0: 左右两栏间隙增大到32px",
+      "date": "1782037684"
+    },
+    {
+      "hash": "790aa12",
+      "msg": "v1.6.0: 副槽位缩小+右边留间隙 + 更新日志缓存同步",
+      "date": "1782037577"
+    },
+    {
       "hash": "8997f27",
       "msg": "v1.6.0: 文案模块大改 + 更新日志时间戳修复",
       "date": "1782037279"
@@ -274,31 +299,6 @@
       "hash": "a4a0af2",
       "msg": "Canary 3.16: 服务端body去flexbox——html2canvas可直接渲染",
       "date": "1779620791"
-    },
-    {
-      "hash": "34f4713",
-      "msg": "修复更新日志乱码——用独立Python脚本替代shell管道",
-      "date": "1779620623"
-    },
-    {
-      "hash": "372d9c5",
-      "msg": "Canary 3.15: 客户端导出——纯手工构建精确尺寸wrapper替代body渲染",
-      "date": "1779620391"
-    },
-    {
-      "hash": "ce19f9a",
-      "msg": "Canary 3.14: 关键修复——html2canvas截图前body切display:block",
-      "date": "1779619841"
-    },
-    {
-      "hash": "d92764a",
-      "msg": "Canary 3.13: 撤回snapdom——回退html2canvas+完整filledHtml",
-      "date": "1779619781"
-    },
-    {
-      "hash": "553a41e",
-      "msg": "Canary 3.12: html2canvas替换为snapdom——解决Vercel/EXE导出全系bug",
-      "date": "1779619463"
     }
   ]
 }

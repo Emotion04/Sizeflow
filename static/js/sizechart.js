@@ -34,7 +34,7 @@ let selectedColumns = new Set();  // 复选框选中的列索引
 
 // ======== Init ========
 async function init() {
-  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate(), loadChangelog(), loadPresets()]);
+  await Promise.all([loadMappings(), loadModels(), loadKeyStatus(), loadTemplates(), loadWallpaperList(), checkAppUpdate(), loadChangelog(), loadPresets(), loadSCSessions()]);
   // 恢复上次壁纸，没有则默认"晨雾"莫兰迪渐变
   const wp = loadWallpaper();
   if (wp) {
@@ -636,6 +636,7 @@ function handleAnalyzeResult(d) {
   document.getElementById('styleCard').classList.remove('hidden');
   document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
   toast('识别成功！下方可选样式生成尺码表图片', 'success');
+  saveSCSession();
 }
 
 async function analyze() {
@@ -2086,6 +2087,52 @@ function stopEasterEggTimer() {
   tick();
   setInterval(tick,1000);
 })();
+
+// ======== Size Chart Sessions ========
+var SC_SESS_KEY = 'sizeflow_sc_sessions', _scSessions = [];
+
+function loadSCSessions(){ try{ var s=localStorage.getItem(SC_SESS_KEY); if(s){ _scSessions=JSON.parse(s); if(!Array.isArray(_scSessions))_scSessions=[]; } }catch(e){ _scSessions=[]; } renderSCSessionList(); }
+function saveSCSessions(){ try{ if(_scSessions.length>30)_scSessions=_scSessions.slice(0,30); localStorage.setItem(SC_SESS_KEY,JSON.stringify(_scSessions)); }catch(e){} renderSCSessionList(); }
+
+function saveSCSession(){
+  if(!resultData||!resultData.headers)return;
+  var id='sc_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+  var imgRef=null;
+  var b64=currentImage||currentImageB64;
+  var savePromise=b64?IDB.put(id+'_img',b64).then(function(){ imgRef=id+'_img'; }):Promise.resolve();
+  savePromise.then(function(){
+    _scSessions.unshift({id:id,time:new Date().toISOString(),mappings:JSON.parse(JSON.stringify(mappings)),model:typeof currentModel!=='undefined'?currentModel:'',resultData:JSON.parse(JSON.stringify(resultData)),imgRef:imgRef});
+    saveSCSessions();
+  }).catch(function(e){ console.error('Save SC session:',e); });
+}
+
+function loadSCSession(idx){
+  var h=_scSessions[idx]; if(!h)return;
+  if(h.imgRef){ IDB.get(h.imgRef).then(function(b64){ if(b64){ currentImage=b64; currentImageB64=b64; showPreview(b64); } }); }
+  if(h.resultData){ resultData=h.resultData; renderTable(resultData); document.getElementById('resultCard').classList.remove('hidden'); document.getElementById('styleCard').classList.remove('hidden'); }
+  if(h.mappings&&typeof mappings!=='undefined'){ mappings=h.mappings; saveMappings(); renderMappings(); }
+  if(h.model&&typeof currentModel!=='undefined'){ currentModel=h.model; var m=document.getElementById('modelSelect'); if(m)m.value=h.model; fetch('/api/model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:h.model})}).catch(function(){}); }
+  if(typeof toast==='function')toast('会话已恢复','success');
+}
+
+function deleteSCSession(idx){
+  var h=_scSessions[idx]; if(!h)return;
+  if(h.imgRef)IDB.del(h.imgRef);
+  _scSessions.splice(idx,1); saveSCSessions();
+  if(typeof toast==='function')toast('会话已删除','info');
+}
+
+function renderSCSessionList(){
+  var list=document.getElementById('scHistoryList'); if(!list)return;
+  if(_scSessions.length===0){ list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:12px;">暂无历史会话</div>'; return; }
+  list.innerHTML=_scSessions.map(function(h,i){
+    var ts=h.time?new Date(h.time):null, timeStr=ts?timeAgo(Math.floor(ts.getTime()/1000)):'';
+    var headers=h.resultData&&h.resultData.headers?h.resultData.headers.join(', '):'';
+    return '<div class="sc-history-item" style="padding:10px 14px;margin:4px 0;border-radius:10px;background:rgba(255,255,255,.08);cursor:pointer;transition:all .2s;position:relative;" onclick="loadSCSession('+i+')" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">'+
+      '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:var(--text2);">'+timeStr+'</span>'+(h.imgRef?'<span style="font-size:10px;color:var(--success);background:rgba(46,168,122,.12);padding:1px 6px;border-radius:4px;">📷</span>':'')+'<span style="flex:1;"></span><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteSCSession('+i+');" style="padding:1px 6px;font-size:10px;" title="删除此会话">🗑</button></div>'+
+      '<div style="font-size:12px;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(headers||'(无数据)')+'</div></div>';
+  }).join('')+'<div style="font-size:11px;color:var(--text2);text-align:center;padding:8px;">共 '+_scSessions.length+' 条会话</div>';
+}
 
 // ======== Start ========
 init();

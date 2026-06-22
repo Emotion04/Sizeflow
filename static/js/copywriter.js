@@ -253,6 +253,7 @@ const CW = {
       setTimeout(function(){ cards.forEach(function(c){ c.classList.add('brighten'); }); }, 350);
       // 4. 切换为结构化结果
       setTimeout(function(){ CW._renderResults(); }, 1200);
+      this._addToHistory();
     }
     else if(grid)grid.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger);">生成失败'+(this._lastError?': '+CW._esc(this._lastError):'')+'<br><small style="color:var(--text2);">API Key/额度/超时</small></div>';
   },
@@ -307,30 +308,61 @@ const CW = {
   _saveHistory(){ try { if(this._history.length>50)this._history=this._history.slice(0,50); localStorage.setItem(this._HIST_KEY,JSON.stringify(this._history)); } catch(e){} this._renderHistory(); },
   _addToHistory(){
     if(!this.generatedCopies||this.generatedCopies.length===0)return;
-    var entry={ time: new Date().toISOString(), copies: JSON.parse(JSON.stringify(this.generatedCopies)), waist: this.waistInfo?this.waistInfo.waist_type:'', model: this.currentModel };
-    this._history.unshift(entry); if(this._history.length>50)this._history.length=50;
-    this._saveHistory();
+    var self=this;
+    var id='cw_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+    var imgRefs=[];
+    var saveImages=[]; for(var k in this.productImages){ if(this.productImages[k]){ var rid=id+'_'+k; imgRefs.push({slot:k,ref:rid}); saveImages.push(IDB.put(rid,this.productImages[k])); } }
+    Promise.all(saveImages).then(function(){
+      var entry={id:id, time:new Date().toISOString(), copies:JSON.parse(JSON.stringify(self.generatedCopies)), waist:self.waistInfo?JSON.parse(JSON.stringify(self.waistInfo)):null, model:self.currentModel, tags:JSON.parse(JSON.stringify(self.manualTags)), versionCount:self.versionCount, sizeData:self.sizeData?JSON.parse(JSON.stringify(self.sizeData)):null, imgRefs:imgRefs };
+      self._history.unshift(entry); if(self._history.length>50){ var old=self._history.slice(50); self._history.length=50; old.forEach(function(o){ if(o.imgRefs)IDB.delMany(o.imgRefs.map(function(r){return r.ref;})); }); }
+      self._saveHistory();
+    }).catch(function(e){ console.error('Save session failed:',e); });
   },
   _renderHistory(){
     var list=document.getElementById('cwHistoryList'); if(!list)return;
-    if(this._history.length===0){ list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:12px;">暂无历史记录</div>'; return; }
+    if(this._history.length===0){ list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:12px;">暂无历史会话</div>'; return; }
     list.innerHTML=this._history.map(function(h,i){
       var ts=h.time?new Date(h.time):null, timeStr=ts?CW._fmtTime(ts):'';
       var preview=''; try { var c=h.copies[0]; preview=(c.title_a||(c.items&&c.items[0]?c.items[0].title:'')); } catch(e){}
-      return '<div class="cw-history-item" style="padding:10px 14px;margin:4px 0;border-radius:10px;background:rgba(255,255,255,.08);cursor:pointer;transition:all .2s;" onclick="CW._viewHistory('+i+')" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">'+
-        '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:var(--text2);">'+timeStr+'</span><span style="font-size:10px;color:var(--primary);background:rgba(79,110,246,.1);padding:1px 6px;border-radius:4px;">'+(h.waist||'')+'</span><span style="font-size:10px;color:var(--text2);">'+(h.model||'')+'</span></div>'+
+      var waist=h.waist&&h.waist.waist_type?h.waist.waist_type:'';
+      var imgCount=h.imgRefs?h.imgRefs.length:0;
+      return '<div class="cw-history-item" style="padding:10px 14px;margin:4px 0;border-radius:10px;background:rgba(255,255,255,.08);cursor:pointer;transition:all .2s;position:relative;" onclick="CW._viewHistory('+i+')" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">'+
+        '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:var(--text2);">'+timeStr+'</span>'+(waist?'<span style="font-size:10px;color:var(--primary);background:rgba(79,110,246,.1);padding:1px 6px;border-radius:4px;">'+CW._esc(waist)+'</span>':'')+(imgCount?'<span style="font-size:10px;color:var(--success);background:rgba(46,168,122,.12);padding:1px 6px;border-radius:4px;">📷'+imgCount+'</span>':'')+'<span style="font-size:10px;color:var(--text2);">'+CW._esc(h.model||'')+'</span><span style="flex:1;"></span><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();CW._deleteHistoryEntry('+i+');" style="padding:1px 6px;font-size:10px;" title="删除此会话">🗑</button></div>'+
         '<div style="font-size:13px;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+CW._esc(preview||'(无标题)')+'</div></div>';
-    }).join('')+'<div style="font-size:11px;color:var(--text2);text-align:center;padding:8px;">共 '+this._history.length+' 条记录（最多50条）</div>';
+    }).join('')+'<div style="font-size:11px;color:var(--text2);text-align:center;padding:8px;">共 '+this._history.length+' 条会话（最多50条）</div>';
+  },
+  _deleteHistoryEntry(idx){
+    var h=this._history[idx]; if(!h)return;
+    if(h.imgRefs&&h.imgRefs.length>0) IDB.delMany(h.imgRefs.map(function(r){return r.ref;}));
+    this._history.splice(idx,1); this._saveHistory();
+    if(typeof toast==='function')toast('会话已删除','info');
   },
   _viewHistory(idx){
     var h=this._history[idx]; if(!h)return;
+    var self=this;
     this.generatedCopies=h.copies; this._compliance=[];
+    if(h.sizeData){ this.sizeData=h.sizeData; this._updateSS(); this._upGen(); }
+    if(h.waist){ this.waistInfo=h.waist; this._renderWaist(); }
+    if(h.tags){ this.manualTags=h.tags; this._renderTags(); }
+    if(h.versionCount){ this.versionCount=h.versionCount; var vc=document.getElementById('cwVC'); if(vc)vc.value=h.versionCount; }
+    if(h.model){ this.currentModel=h.model; var m=document.getElementById('cwModel'); if(m)m.value=h.model; }
+    if(h.imgRefs&&h.imgRefs.length>0){
+      h.imgRefs.forEach(function(r){
+        IDB.get(r.ref).then(function(b64){ if(b64){ self.productImages[r.slot]=b64; self._renderSlot(parseInt(r.slot)); self._upGen(); } });
+      });
+    }
+    var wo=document.getElementById('cWOverride'); if(wo&&h.waist&&h.waist.note==='(手动指定)')wo.value=h.waist.waist_type;
     var card=document.getElementById('cwHistory'); if(card)card.classList.add('hidden');
     var res=document.getElementById('cwResult'); if(res)res.classList.remove('hidden');
     this._renderResults();
     setTimeout(function(){ var rc=document.getElementById('cwResult'); if(rc)rc.scrollIntoView({behavior:'smooth'}); },100);
   },
-  _clearHistory(){ if(confirm('确定清空全部历史记录？')){ this._history=[]; try { localStorage.removeItem(this._HIST_KEY); } catch(e){} this._renderHistory(); } },
+  _clearHistory(){ var self=this; if(confirm('确定清空全部历史会话？图片数据也将删除。')){
+    var allRefs=[]; self._history.forEach(function(h){ if(h.imgRefs)h.imgRefs.forEach(function(r){allRefs.push(r.ref);}); });
+    self._history=[]; try { localStorage.removeItem(self._HIST_KEY); } catch(e){}
+    self._renderHistory();
+    if(allRefs.length>0) IDB.delMany(allRefs);
+  } },
   _fmtTime(d){ var n=new Date(); var diff=n-d; var m=Math.floor(diff/60000); if(m<1)return '刚刚'; if(m<60)return m+'分钟前'; var h=Math.floor(m/60); if(h<24)return h+'小时前'; var days=Math.floor(h/24); if(days<7)return days+'天前'; return d.toLocaleDateString(); }
 };
 CW.init();

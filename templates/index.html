@@ -122,6 +122,10 @@
     <button id="changelogMoreBtn" class="btn btn-outline btn-sm hidden" style="margin-top:6px;width:100%;">展开更多 ▾</button>
   </div>
   <div class="card">
+    <div class="card-title"><span class="icon">📋</span>尺码表历史</div>
+    <div id="scHistoryList" style="font-size:12px;color:var(--text2);max-height:280px;overflow-y:auto;line-height:1.6;"></div>
+  </div>
+  <div class="card">
     <div class="card-title"><span class="icon">💾</span>配置预设</div>
     <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
       <select id="presetSelect" style="flex:1;padding:4px 6px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--text);cursor:pointer;outline:none;">
@@ -294,6 +298,7 @@
 </script>
 <script src="/static/js/ad-card.js"></script>
 <script src="/static/js/sizechart.js"></script>
+<script src="/static/js/indexedb.js"></script>
 <script src="/static/js/copywriter.js"></script>
 <script>
 function switchTab(tab){var sc=document.getElementById('sizechartContainer');var cw=document.getElementById('copywriterContainer');var bs=document.getElementById('tabBtnSizeChart');var bc=document.getElementById('tabBtnCopywriter');var bar=document.querySelector('.tab-bar');function exitAndEnter(from,to,dir,activateFn){if(from){from.classList.add(dir==='right'?'tab-exit-left':'tab-exit-right');setTimeout(function(){from.classList.add('hidden');from.classList.remove('tab-exit-left','tab-exit-right');to.classList.remove('hidden');to.offsetHeight;to.classList.add(dir==='right'?'tab-enter-right':'tab-enter-left');setTimeout(function(){to.classList.remove('tab-enter-right','tab-enter-left');},700);if(activateFn)activateFn();},320);}}if(tab==='sizechart'){if(bs)bs.classList.add('active');if(bc)bc.classList.remove('active');if(bar)bar.classList.remove('copywriter-active');exitAndEnter(cw,sc,'left',function(){if(typeof CW!=='undefined')CW.deactivate();});}else{if(bs)bs.classList.remove('active');if(bc)bc.classList.add('active');if(bar)bar.classList.add('copywriter-active');exitAndEnter(sc,cw,'right',function(){if(typeof CW!=='undefined'){CW.init();CW.activate();}});}}
