@@ -487,6 +487,69 @@ def api_changelog():
 
 # ---- Startup ----
 
+# ======== Token 云同步 (Upstash Redis) ========
+import urllib.request as _urllib
+
+UPSTASH_URL = "https://huge-wallaby-91990.upstash.io"
+UPSTASH_TOKEN = "gQAAAAAAAWdWAAIgcDEwMzM4MDIwYWZhMWI0MTAwOGRiYTQxOGVhMGFhMWRiNg"
+
+def _redis_get(key):
+    req = _urllib.Request(f"{UPSTASH_URL}/get/{key}", headers={"Authorization": f"Bearer {UPSTASH_TOKEN}"})
+    try:
+        resp = _urllib.urlopen(req, timeout=5)
+        return json.loads(resp.read()).get("result")
+    except Exception:
+        return None
+
+def _redis_set(key, val):
+    body = json.dumps([str(val)]).encode()
+    req = _urllib.Request(f"{UPSTASH_URL}/set/{key}", data=body, headers={"Authorization": f"Bearer {UPSTASH_TOKEN}", "Content-Type": "application/json"}, method="POST")
+    try:
+        _urllib.urlopen(req, timeout=5)
+    except Exception:
+        pass
+
+@app.route("/api/token", methods=["GET"])
+def api_token_get():
+    v = _redis_get("token_total")
+    ips_raw = _redis_get("token_ips") or "{}"
+    try:
+        ips = json.loads(ips_raw)
+    except Exception:
+        ips = {}
+    return jsonify({"success": True, "total": int(v) if v and v.isdigit() else 0, "ips": ips})
+
+@app.route("/api/token", methods=["POST"])
+def api_token_post():
+    data = request.json or {}
+    delta = data.get("delta", 0)
+    ip = data.get("ip", "")
+    ip_stats = data.get("ip_stats", {})
+    # 增量加法
+    old = int(_redis_get("token_total") or "0")
+    new_total = old + delta
+    _redis_set("token_total", new_total)
+    # 更新 IP 统计
+    if ip:
+        ips_raw = _redis_get("token_ips") or "{}"
+        try:
+            ips = json.loads(ips_raw)
+        except Exception:
+            ips = {}
+        if ip not in ips:
+            ips[ip] = {"total": 0, "today": 0, "month": 0}
+        if ip_stats.get("total"):
+            ips[ip]["total"] = (ips[ip].get("total", 0) or 0) + (ip_stats["total"] or 0) if isinstance(ip_stats.get("total"), (int, float)) else ip_stats.get("total", 0)
+        if ip_stats.get("today") is not None:
+            ips[ip]["today"] = (ips[ip].get("today", 0) or 0) + (ip_stats["today"] or 0) if isinstance(ip_stats.get("today"), (int, float)) else ip_stats.get("today", ips[ip].get("today", 0))
+        if ip_stats.get("month") is not None:
+            ips[ip]["month"] = (ips[ip].get("month", 0) or 0) + (ip_stats["month"] or 0) if isinstance(ip_stats.get("month"), (int, float)) else ip_stats.get("month", ips[ip].get("month", 0))
+        # 保留今天/月标记
+        ips[ip]["todayDate"] = ip_stats.get("todayDate", ips[ip].get("todayDate", ""))
+        ips[ip]["monthKey"] = ip_stats.get("monthKey", ips[ip].get("monthKey", ""))
+        _redis_set("token_ips", json.dumps(ips))
+    return jsonify({"success": True, "total": new_total})
+
 # ======== 文案生成模块 API ========
 
 @app.route("/api/copywriter/waist-type", methods=["POST"])

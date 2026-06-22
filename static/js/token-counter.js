@@ -10,6 +10,7 @@ var TK = {
     this._popup = document.getElementById('tokenPopup');
     this._pill = document.getElementById('tokenPill');
     try { var s = localStorage.getItem(this._key); if (s) this._total = parseInt(s) || 0; } catch(e) {}
+    this._syncFromServer();
     try { var st = localStorage.getItem(this._statsKey); if (st) this._stats = JSON.parse(st); } catch(e) {}
     this._renderTotal();
     this._fetchIP();
@@ -66,11 +67,40 @@ var TK = {
     // 更新 IP 统计
     this._updateStats();
     var ip = this._ip || 'unknown';
-    if (!this._stats[ip]) this._stats[ip] = { total: 0, today: 0, month: 0 };
+    if (!this._stats[ip]) this._stats[ip] = { total: 0, today: 0, month: 0, todayDate: '', monthKey: '' };
     this._stats[ip].total += finalVal;
     this._stats[ip].today += finalVal;
     this._stats[ip].month += finalVal;
     try { localStorage.setItem(this._statsKey, JSON.stringify(this._stats)); } catch(e) {}
+    // 同步到服务端
+    var now = new Date();
+    var todayStr = now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
+    var monthStr = now.getFullYear()+'-'+(now.getMonth()+1);
+    fetch('/api/token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({delta: finalVal, ip: ip, ip_stats: {total: finalVal, today: finalVal, month: finalVal, todayDate: todayStr, monthKey: monthStr}})}).catch(function(){});
+  },
+
+  _syncFromServer: function() {
+    var self = this;
+    fetch('/api/token').then(function(r){return r.json();}).then(function(d){
+      if(!d.success) return;
+      // 服务端总数是权威值
+      if(d.total > self._total) { self._total = d.total; self._renderTotal(); }
+      // 合并 IP 统计
+      if(d.ips) {
+        for(var ip in d.ips) {
+          if(!self._stats[ip]) self._stats[ip] = {};
+          var si = d.ips[ip];
+          self._stats[ip].total = Math.max(self._stats[ip].total||0, si.total||0);
+          self._stats[ip].today = Math.max(self._stats[ip].today||0, si.today||0);
+          self._stats[ip].month = Math.max(self._stats[ip].month||0, si.month||0);
+          if(si.todayDate) self._stats[ip].todayDate = si.todayDate;
+          if(si.monthKey) self._stats[ip].monthKey = si.monthKey;
+        }
+        try { localStorage.setItem(self._statsKey, JSON.stringify(self._stats)); } catch(e) {}
+      }
+      // 本地同步到服务端（delta = 0，确保值一致）
+      self._save();
+    }).catch(function(){});
   },
 
   _save: function() {
