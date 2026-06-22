@@ -106,7 +106,7 @@ const CW = {
       var map=typeof mappings!=='undefined'?mappings:{}, m=typeof currentModel!=='undefined'?currentModel:'qwen3-vl-flash';
       var r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64,mappings:map,model:m})});
       var d=await r.json();
-      if(d.success){ this.sizeData=d.data; if(d.raw)this._rawOcrText=d.raw; this._updateSS(); this._detectWaist(); this._upGen(); if(typeof toast==='function')toast('尺码表识别成功','success'); }
+      if(d.success){ this.sizeData=d.data; if(d.raw)this._rawOcrText=d.raw; this._updateSS(); this._detectWaist(); this._upGen(); this._renderWaist(); if(typeof toast==='function')toast('尺码表识别成功','success'); }
       else { if(st)st.textContent='识别失败: '+(d.error||'未知'); if(typeof toast==='function')toast('识别失败: '+d.error,'error'); }
     } catch(e){ if(st)st.textContent='请求失败: '+e.message; }
     if(orbit)orbit.classList.add('hidden'); if(up)up.classList.remove('hidden');
@@ -179,6 +179,7 @@ const CW = {
   },
 
   _classify(cm){ var r=this.waistRules||CW._defaultWaistRules(); for(var i=0;i<r.length;i++){ if(cm>=r[i].lo&&cm<=r[i].hi)return r[i].label; } return null; },
+  _findFrontIdx(headers){ var f=['前浪','裆深','上裆','直裆','前裆','股上','上浪','前浪连腰']; for(var i=0;i<headers.length;i++){ var h=(headers[i]||'').replace(/ /g,''); for(var j=0;j<f.length;j++){ if(h.indexOf(f[j])!==-1)return i; } } return -1; },
   _defaultWaistRules(){ return [{lo:0,hi:21.99,label:'低腰'},{lo:22,hi:24,label:'中低腰'},{lo:25,hi:28,label:'中高腰'},{lo:28.01,hi:99,label:'高腰'}]; },
 
   _updateWaistStatus(){ var s=document.getElementById('cwSizeSt'); if(!s)return; var wt=(this.waistInfo&&this.waistInfo.waist_type)||'未知'; var fr=this.waistInfo?this.waistInfo.front_rise:null; if(wt!=='未知'&&fr){ s.textContent='✅ 前浪连腰 '+fr+'cm → '+wt; s.style.color='var(--success)'; } else if(this.waistInfo&&this.waistInfo.note){ s.textContent='⚠ '+this.waistInfo.note; s.style.color='#e8a838'; } else { s.textContent='暂无腰型数据'; s.style.color='var(--text2)'; } },
@@ -191,8 +192,22 @@ const CW = {
     d.textContent=(fr!==null&&fr!==undefined)?'（前浪 '+fr+'cm）':(this.waistInfo?(this.waistInfo.note||''):'');
     // 手动选腰型始终可见
     if(o)o.style.display='';
-    // 码数选择器：有raw数据时显示
-    if(s&&this._rawOcrText){ var map=this._parseFront(this._rawOcrText); if(map&&map.length>0){ s.style.display=''; s.innerHTML=map.map(function(m,i){ return '<option value="'+i+'"'+(i===CW._selWaistIdx?' selected':'')+'>'+m.size+'码（前浪'+m.front_rise+'cm）</option>'; }).join(''); } else s.style.display='none'; } else if(s)s.style.display='none';
+    // 码数选择器：有raw数据时显示，否则尝试从sizeData提取
+    if(s){
+      s.style.display='none';
+      if(this._rawOcrText){
+        var map=this._parseFront(this._rawOcrText);
+        if(map&&map.length>0){ s.style.display=''; s.innerHTML=map.map(function(m,i){ return '<option value="'+i+'"'+(i===CW._selWaistIdx?' selected':'')+'>'+m.size+'码（前浪'+m.front_rise+'cm）</option>'; }).join(''); }
+      }
+      // 如果raw解析失败, 从sizeData构建简化版
+      if(s.style.display==='none'&&this.sizeData&&this.sizeData.headers&&this.sizeData.rows){
+        var ri=CW._findFrontIdx(this.sizeData.headers);
+        if(ri>=0&&this.sizeData.rows.length>0&&ri<this.sizeData.rows[0].length){
+          var fr=parseFloat(String(this.sizeData.rows[0][ri]||'').replace(/[^0-9.]/g,''));
+          if(!isNaN(fr)&&fr>0){ s.style.display=''; s.innerHTML='<option value="0" selected>最小码（前浪'+fr+'cm）</option>'; }
+        }
+      }
+    }
   },
 
   _onWSize(){ var sel=document.getElementById('cwWSize'); if(!sel)return; var idx=parseInt(sel.value); if(isNaN(idx))return; this._selWaistIdx=idx; var map=this._parseFront(this._rawOcrText); if(!map||idx>=map.length)return; var m=map[idx], wt=CW._classify(m.front_rise); this.waistInfo={waist_type:wt||'未知',front_rise:m.front_rise,note:wt?('尺码'+m.size):('值'+m.front_rise+'cm不在22-28cm')}; this._renderWaist(); },
