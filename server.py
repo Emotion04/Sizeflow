@@ -59,7 +59,7 @@ def analyze():
                 "error": f"无效的图片数据或文件不存在：{image_source[:80]}...",
             }), 400
 
-        raw_text = call_ocr_vision(image_path, mappings, model)
+        raw_text, usage = call_ocr_vision(image_path, mappings, model)
         result = parse_transcription(raw_text, mappings)
         format_numbers(result)
 
@@ -68,6 +68,7 @@ def analyze():
             "data": result,
             "raw": raw_text,
             "model": model,
+            "usage": usage,
         })
 
     except ValueError as e:
@@ -583,9 +584,14 @@ def copywriter_generate_sse():
 
             # 流式调用 AI，token by token
             full_text = ""
-            for token in call_qwen_stream(messages, model=model, temperature=0.8):
+            usage_out = {}
+            for token in call_qwen_stream(messages, model=model, temperature=0.8, usage_out=usage_out):
                 full_text += token
                 yield f"data: {json.dumps({'token': token})}\n\n"
+
+            # 返回 usage
+            if usage_out.get("data"):
+                yield f"data: {json.dumps({'usage': usage_out['data']})}\n\n"
 
             # 解析完整结果
             result = parse_copy_json(full_text)

@@ -30,8 +30,8 @@ def save_base64_image(b64_string):
     return tmp.name
 
 
-def call_qwen(messages, model="qwen3-vl-plus", temperature=None):
-    """通用 Qwen 多模态调用"""
+def call_qwen(messages, model="qwen3-vl-plus", temperature=None, usage_out=None):
+    """通用 Qwen 多模态调用。usage_out 可选 dict，调用后 usage_out['data'] = {input_tokens, output_tokens, total_tokens}"""
     if temperature is None:
         temperature = TEMPERATURE
 
@@ -49,6 +49,10 @@ def call_qwen(messages, model="qwen3-vl-plus", temperature=None):
             f"错误码 {response.code} — {response.message}"
         )
 
+    if usage_out is not None and hasattr(response, 'usage') and response.usage:
+        u = response.usage
+        usage_out["data"] = {"input_tokens": u.input_tokens or 0, "output_tokens": u.output_tokens or 0, "total_tokens": u.total_tokens or u.input_tokens + u.output_tokens}
+
     content = response.output.choices[0].message.content
     if isinstance(content, list):
         text = content[0]["text"]
@@ -58,8 +62,8 @@ def call_qwen(messages, model="qwen3-vl-plus", temperature=None):
     return text
 
 
-def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None):
-    """Qwen 流式调用，逐 token yield"""
+def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None, usage_out=None):
+    """Qwen 流式调用，逐 token yield。usage_out 可选 dict，调用后 usage_out['data'] = {input_tokens, output_tokens, total_tokens}"""
     if temperature is None:
         temperature = TEMPERATURE
 
@@ -72,7 +76,9 @@ def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None):
         stream=True,
     )
 
+    last_response = None
     for response in responses:
+        last_response = response
         if response.status_code != 200:
             raise Exception(
                 f"API 调用失败 (HTTP {response.status_code})："
@@ -88,6 +94,10 @@ def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None):
                         yield item
             elif isinstance(content, str):
                 yield content
+
+    if usage_out is not None and last_response and hasattr(last_response, 'usage') and last_response.usage:
+        u = last_response.usage
+        usage_out["data"] = {"input_tokens": u.input_tokens or 0, "output_tokens": u.output_tokens or 0, "total_tokens": u.total_tokens or u.input_tokens + u.output_tokens}
 
 
 def call_ocr_vision(image_path, mappings, model):
@@ -120,9 +130,10 @@ def call_ocr_vision(image_path, mappings, model):
     ]
 
     print(f"[OCR-转录] model={model}")
-    text = call_qwen(messages, model=model)
+    usage_out = {}
+text = call_qwen(messages, model=model, usage_out=usage_out)
     print(f"[OCR-转录] result:\n{text[:600]}")
-    return text
+    return text, usage_out.get("data")
 
 
 def _normalize_name(s):

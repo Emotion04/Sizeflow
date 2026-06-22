@@ -23,6 +23,8 @@
     <button class="btn btn-outline btn-sm" id="wallpaperBtn" style="background:rgba(255,255,255,.15);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-color:rgba(255,255,255,.15);">🖼️ 壁纸</button>
     <a href="https://infc.wang" target="_blank" class="btn btn-outline btn-sm" style="text-decoration:none;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-color:rgba(255,255,255,.15);">🐟 摸鱼时刻</a>
     <span class="ver" id="versionLabel">v1.6.1 Canary</span>
+      <span id="tokenTotal" style="font-size:11px;color:var(--text2);margin-left:8px;cursor:default;" title="累计Token消耗"></span>
+      <span id="tokenLast" style="font-size:11px;color:var(--primary);margin-left:4px;opacity:0;transition:opacity .3s;font-weight:600;" title="本次操作Token"></span>
   </div>
 </header>
 
@@ -297,6 +299,7 @@
 })();
 </script>
 <script src="/static/js/ad-card.js"></script>
+<script src="/static/js/token-counter.js"></script>
 <script src="/static/js/sizechart.js"></script>
 <script src="/static/js/indexedb.js"></script>
 <script src="/static/js/copywriter.js"></script>

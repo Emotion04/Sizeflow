@@ -251,6 +251,7 @@ const CW = {
               if(firstToken){ firstToken=false; if(waitSpin)waitSpin.remove(); if(waitText)waitText.textContent='正在生成文案...'; if(streamWrap)streamWrap.classList.remove('hidden'); if(st)st.textContent='流式输出中...'; }
               fullText+=p.token;
             }
+            if(p.usage&&typeof TK!=='undefined') TK.add(p.usage.input_tokens||0,p.usage.output_tokens||0);
             if(p.copies){ this.generatedCopies=p.copies; this._compliance=p.compliance||[]; }
           } catch(e){}
         }
