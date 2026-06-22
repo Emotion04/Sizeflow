@@ -4,9 +4,10 @@ const CW = {
   waistInfo: null, manualTags: [], versionCount: 3, currentModel: 'qwen3-vl-flash',
   generatedCopies: null, isGenerating: false, _selWaistIdx: 0, _lastError: '',
 
-  init() { this._injectHTML(); this._bindEvents();
+  _injected: false, _eventsBound: false,
+  init() { if(!this._injected){ this._injectHTML(); this._injected=true; } if(!this._eventsBound){ this._bindEvents(); this._eventsBound=true; } this._bindSlots();
     if (typeof currentModel !== 'undefined') this.currentModel = currentModel; },
-  activate() { this._tryReadRaw(); if (typeof resultData !== 'undefined' && resultData) { this.sizeData = resultData; this._updateSizeSourceUI(); } else { this._detectWaist(); this._renderWaist(); } },
+  activate() { this._renderAllSlots(); this._tryReadRaw(); if (typeof resultData !== 'undefined' && resultData) { this.sizeData = resultData; this._updateSizeSourceUI(); } else { this._detectWaist(); this._renderWaist(); } },
   deactivate() {},
   _tryReadRaw() { var e = document.getElementById('rawResponse'); if (e && e.textContent && e.textContent !== '(无)') this._rawOcrText = e.textContent; },
 
@@ -92,7 +93,8 @@ const CW = {
   // ======== Image ========
   _handleFile(idx,file){ var r=new FileReader(); r.onload=function(){ CW.productImages[idx]=r.result; CW._renderSlot(idx); CW._upGen(); }; r.readAsDataURL(file); },
   _clearSlot(idx){ delete this.productImages[idx]; this._renderSlot(idx); this._upGen(); var inp=document.getElementById('cwSlotIn'+idx); if(inp)inp.value=''; },
-  _renderSlot(idx){ var s=document.getElementById('cwSlot'+idx); if(!s)return; var img=this.productImages[idx]; if(img){ s.classList.add('has-image'); s.querySelector('.slot-label').style.display='none'; var el=s.querySelector('img'); if(!el){ el=document.createElement('img'); s.insertBefore(el,s.firstChild); } el.src=img; } else { s.classList.remove('has-image'); var el=s.querySelector('img'); if(el)el.remove(); s.querySelector('.slot-label').style.display=''; } },
+  _renderSlot(idx){ var s=document.getElementById('cwSlot'+idx); if(!s)return; var img=this.productImages[idx]; if(img){ s.classList.add('has-image'); var lbl=s.querySelector('.slot-label'); if(lbl)lbl.style.display='none'; var el=s.querySelector('img'); if(!el){ el=document.createElement('img'); s.insertBefore(el,s.firstChild); } el.src=img; } else { s.classList.remove('has-image'); var el=s.querySelector('img'); if(el)el.remove(); var lbl=s.querySelector('.slot-label'); if(lbl)lbl.style.display=''; } },
+  _renderAllSlots(){ for(var i=0;i<2;i++)this._renderSlot(i); },
 
   _handleSizeFile(file){ var r=new FileReader(); r.onload=function(){ CW._runOCR(r.result); }; r.readAsDataURL(file); },
 
