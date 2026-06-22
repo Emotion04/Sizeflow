@@ -402,4 +402,11 @@ td.cell-selected, th.cell-selected { background:rgba(79,110,246,.18); outline:1p
   table { font-size:11px; }
   th, td { padding:6px 8px; }
   .action-bar { flex-wrap:wrap; }
+
+/* Token 绿色加号动画 */
+@keyframes tkPlusIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
 }

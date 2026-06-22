@@ -637,7 +637,7 @@ function handleAnalyzeResult(d) {
   document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
   toast('识别成功！下方可选样式生成尺码表图片', 'success');
   saveSCSession();
-  if(d.usage&&typeof TK!=='undefined') TK.addOnce(d.usage.input_tokens||0,d.usage.output_tokens||0);
+  if(d.usage&&typeof TK!=='undefined') TK.streamDone(d.usage.input_tokens||0,d.usage.output_tokens||0);
 }
 
 async function analyze() {

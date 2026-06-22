@@ -252,7 +252,7 @@ const CW = {
               fullText+=p.token;
               if(typeof TK!=='undefined') TK.streamAdd(1);
             }
-            if(p.usage&&typeof TK!=='undefined') TK.streamDone();
+            if(p.usage&&typeof TK!=='undefined') TK.streamDone(p.usage.input_tokens||0,p.usage.output_tokens||0);
             if(p.copies){ this.generatedCopies=p.copies; this._compliance=p.compliance||[]; }
           } catch(e){}
         }
@@ -264,7 +264,7 @@ const CW = {
       }
     } catch(e){ this._lastError=e.message; if(typeof toast==='function')toast('请求失败: '+e.message,'error'); }
 
-    if(typeof TK!=='undefined'&&!firstToken) TK.streamDone();
+    if(typeof TK!=='undefined'&&!firstToken) TK.streamDone(0,0);
     this.isGenerating=false; this._upGen();
     if(reGen)reGen.classList.remove('hidden'); if(copyAll)copyAll.classList.remove('hidden');
     if(rawDiv)rawDiv.classList.add('hidden'); if(st)st.textContent='';
