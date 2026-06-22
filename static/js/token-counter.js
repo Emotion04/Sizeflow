@@ -9,7 +9,9 @@ var TK = {
     this._streamEl = document.getElementById('tokenStream');
     this._popup = document.getElementById('tokenPopup');
     this._pill = document.getElementById('tokenPill');
+    // localStorage 优先，然后从服务端同步
     try { var s = localStorage.getItem(this._key); if (s) this._total = parseInt(s) || 0; } catch(e) {}
+    this._syncFromServer();
     try { var st = localStorage.getItem(this._statsKey); if (st) this._stats = JSON.parse(st); } catch(e) {}
     this._renderTotal();
     this._fetchIP();
@@ -73,8 +75,19 @@ var TK = {
     try { localStorage.setItem(this._statsKey, JSON.stringify(this._stats)); } catch(e) {}
   },
 
+  _syncFromServer: function() {
+    var self = this;
+    fetch('/api/token').then(function(r){return r.json();}).then(function(d){
+      if(d.success && d.total > self._total) { self._total = d.total; self._renderTotal(); self._save(); }
+    }).catch(function(){});
+  },
+  _syncToServer: function() {
+    fetch('/api/token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({total:this._total})}).catch(function(){});
+  },
+
   _save: function() {
     try { localStorage.setItem(this._key, String(this._total)); } catch(e) {}
+    this._syncToServer();
   },
 
   _renderTotal: function() {
