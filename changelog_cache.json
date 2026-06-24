@@ -1,6 +1,26 @@
 {
   "commits": [
     {
+      "hash": "e98400b",
+      "msg": "v1.6.0: Upstash Redis Token云同步——增量式全局Token计数",
+      "date": "1782122426"
+    },
+    {
+      "hash": "e4b7b0b",
+      "msg": "Revert \"v1.6.0: Token云同步——服务端内存存储 + 客户端自动同步\"",
+      "date": "1782120964"
+    },
+    {
+      "hash": "af194f8",
+      "msg": "v1.6.0: Token云同步——服务端内存存储 + 客户端自动同步",
+      "date": "1782120669"
+    },
+    {
+      "hash": "2b62158",
+      "msg": "v1.6.0: 文案模块全面修复 + Vercel适配",
+      "date": "1782116963"
+    },
+    {
       "hash": "9e8fdb9",
       "msg": "v1.6.0: 腰型检测恢复raw优先——原始字段名\"前浪连腰\"最可靠",
       "date": "1782111120"
@@ -279,26 +299,6 @@
       "hash": "99958bc",
       "msg": "Canary 3.32: 字体修复——HTML内@font-face URL直接替换为localhost绝对路径",
       "date": "1779780520"
-    },
-    {
-      "hash": "1724c1c",
-      "msg": "Canary 3.31: 修复导出字体——Playwright改用localhost URL加载字体",
-      "date": "1779779774"
-    },
-    {
-      "hash": "b50fe41",
-      "msg": "Canary 3.30: 修复导出PNG字体——去除@font-face的font-weight限制",
-      "date": "1779778898"
-    },
-    {
-      "hash": "22811de",
-      "msg": "Canary 3.29: html2canvas改本地加载，解决CDN被墙问题",
-      "date": "1779697133"
-    },
-    {
-      "hash": "5252f9d",
-      "msg": "Canary 3.28: 紧急修复——cfgTableWidth不存在导致JS崩溃",
-      "date": "1779695772"
     }
   ]
 }

@@ -19,7 +19,7 @@ const CW = {
 '<div class="card-title"><span class="icon">📷</span>素材上传</div>'+
 '<div class="cw-upload-row"><div class="cw-upload-col">'+
 '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">裤子图片</div>'+
-'<div class="cw-image-slots" id="cwImageSlots">'+this._slot(0)+this._slot(1)+'</div></div>'+
+'<div class="cw-image-slots" id="cwImageSlots">'+this._slot(0)+'<div class="cw-image-slots-stack">'+this._slot(1)+this._slot(2)+'</div></div></div>'+
 '<div class="cw-upload-col">'+
 '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">尺码数据</div>'+
 '<div class="cw-size-tabs" id="cwSizeTabs"><button class="cw-size-tab" id="cwTabExist" onclick="CW._onSizeTab(\x27existing\x27)">📋 尺码表结果</button><button class="cw-size-tab active" id="cwTabUpload" onclick="CW._onSizeTab(\x27upload\x27)">📏 上传识别</button></div>'+
@@ -45,7 +45,17 @@ const CW = {
     this._loadHistory();
   },
 
-  _slot(i) { var hint=i===0?'拖拽/粘贴/点击上传裤子图片':'补充图'; return '<div class="cw-image-slot'+(i===1?' cw-image-slot-sm':'')+'" id="cwSlot'+i+'" data-slot="'+i+'"><div class="slot-label"><span class="icon">'+(i===0?'📷':'🔍')+'</span>'+hint+'</div><button class="clear-slot" data-slot="'+i+'">&times;</button><input type="file" accept="image/*" id="cwSlotIn'+i+'" style="display:none;"></div>'; },
+  _slot(i) {
+    var hints=['裤子照片','补充图 1','补充图 2'], icons=['📷','🔍','🔍'];
+    var s='<div class="cw-image-slot'+(i>0?' cw-image-slot-sm':'')+'" id="cwSlot'+i+'" data-slot="'+i+'"><div class="slot-label"><span class="icon">'+icons[i]+'</span>'+hints[i]+'</div><button class="clear-slot" data-slot="'+i+'">&times;</button><input type="file" accept="image/*" id="cwSlotIn'+i+'" style="display:none;"></div>';
+    if(i>0){
+      var tags=['正面','反面','侧面','细节'], defTag=i===1?2:i===2?3:0;
+      this.slotTags=this.slotTags||{};
+      this.slotTags[i]=this.slotTags[i]==null?defTag:this.slotTags[i];
+      s='<div class="cw-slot-wrap">'+s+'<div class="cw-tag-slider" id="cwTagSlider'+i+'"><button class="tag-arrow" onclick="CW._slideTag('+i+',-1)">◀</button><span class="tag-label">'+tags[this.slotTags[i]]+'</span><button class="tag-arrow" onclick="CW._slideTag('+i+',1)">▶</button></div></div>';
+    }
+    return s;
+  },
 
   _bindEvents() {
     var g = document.getElementById('cwGen'); if (g) g.addEventListener('click', function(){ CW.generate(); });
@@ -76,7 +86,7 @@ const CW = {
   },
 
   _bindSlots() {
-    for (var i=0;i<2;i++) (function(idx){
+    for (var i=0;i<3;i++) (function(idx){
       var s=document.getElementById('cwSlot'+idx), inp=document.getElementById('cwSlotIn'+idx);
       if(s&&inp){ s.addEventListener('click',function(e){ if(!e.target.classList.contains('clear-slot'))inp.click(); });
         inp.addEventListener('change',function(e){ if(e.target.files[0])CW._handleFile(idx,e.target.files[0]); });
@@ -95,7 +105,15 @@ const CW = {
   _handleFile(idx,file){ var r=new FileReader(); r.onload=function(){ CW.productImages[idx]=r.result; CW._renderSlot(idx); CW._upGen(); }; r.readAsDataURL(file); },
   _clearSlot(idx){ delete this.productImages[idx]; this._renderSlot(idx); this._upGen(); var inp=document.getElementById('cwSlotIn'+idx); if(inp)inp.value=''; },
   _renderSlot(idx){ var s=document.getElementById('cwSlot'+idx); if(!s)return; var img=this.productImages[idx]; if(img){ s.classList.add('has-image'); var lbl=s.querySelector('.slot-label'); if(lbl)lbl.style.display='none'; var el=s.querySelector('img'); if(!el){ el=document.createElement('img'); s.insertBefore(el,s.firstChild); } el.src=img; } else { s.classList.remove('has-image'); var el=s.querySelector('img'); if(el)el.remove(); var lbl=s.querySelector('.slot-label'); if(lbl)lbl.style.display=''; } },
-  _renderAllSlots(){ for(var i=0;i<2;i++)this._renderSlot(i); },
+  _renderAllSlots(){ for(var i=0;i<3;i++)this._renderSlot(i); },
+  _slideTag(i, dir){
+    var tags=['正面','反面','侧面','细节'];
+    this.slotTags=this.slotTags||{};
+    if(this.slotTags[i]==null)this.slotTags[i]=i===1?2:i===2?3:0;
+    this.slotTags[i]=(this.slotTags[i]+dir+tags.length)%tags.length;
+    var el=document.getElementById('cwTagSlider'+i);
+    if(el){ var lbl=el.querySelector('.tag-label'); if(lbl)lbl.textContent=tags[this.slotTags[i]]; }
+  },
 
   _handleSizeFile(file){ var r=new FileReader(); r.onload=function(){ CW._runOCR(r.result); }; r.readAsDataURL(file); },
 
