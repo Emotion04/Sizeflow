@@ -497,7 +497,15 @@ def _redis_get(key):
     req = _urllib.Request(f"{UPSTASH_URL}/get/{key}", headers={"Authorization": f"Bearer {UPSTASH_TOKEN}"})
     try:
         resp = _urllib.urlopen(req, timeout=5)
-        return json.loads(resp.read()).get("result")
+        result = json.loads(resp.read()).get("result")
+        if isinstance(result, str):
+            try:
+                parsed = json.loads(result)
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    return str(parsed[0])
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return result
     except Exception:
         return None
 
@@ -600,6 +608,7 @@ def copywriter_generate_sse():
             waist_type_override = data.get("waist_type_override", "")
             model = data.get("model", "qwen3-vl-plus")
             manual_tags = data.get("manual_tags", [])
+            notes = data.get("notes", "")
             count = min(data.get("count", 3), 5)
 
             # 处理图片
@@ -630,6 +639,7 @@ def copywriter_generate_sse():
                 size_data=size_data,
                 waist_info=waist_info,
                 manual_tags=manual_tags or [],
+                notes=notes or "",
                 count=count,
             )
 
