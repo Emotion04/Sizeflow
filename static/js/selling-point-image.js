@@ -62,9 +62,10 @@ const SPI = {
   },
 
   _toggleDlBtn() {
-    if (!this._dlBtn) return;
     const hasContent = this.sellingPoints.some(p => p.text && p.text.trim());
-    this._dlBtn.classList.toggle('show', hasContent);
+    if (this._dlBtn) this._dlBtn.classList.toggle('show', hasContent);
+    const wrap = document.getElementById('spiCanvasWrap');
+    if (wrap) wrap.classList.toggle('visible', hasContent);
   },
 
   _loadFont() {
@@ -230,6 +231,11 @@ const SPI = {
 
   exportPNG() {
     if (!this.canvas) return;
+    const hasContent = this.sellingPoints.some(p => p.text && p.text.trim());
+    if (!hasContent) {
+      if (typeof toast === 'function') toast('请先点击「AI 一键生成」生成卖点图', 'error');
+      return;
+    }
     const a = document.createElement('a');
     a.download = `卖点图_${new Date().toISOString().slice(0, 10)}.png`;
     a.href = this.canvas.toDataURL('image/png');
@@ -460,6 +466,19 @@ const SPI = {
     return ls;
   },
 };
+
+// ========== 文案说明弹窗 ==========
+function showGuide() {
+  if (localStorage.getItem('spi_guide_hidden')) return;
+  const el = document.getElementById('guideOverlay');
+  if (el) el.classList.add('show');
+}
+function dismissGuide() {
+  const el = document.getElementById('guideOverlay');
+  if (el) el.classList.remove('show');
+  const cb = document.getElementById('guideNoMore');
+  if (cb && cb.checked) localStorage.setItem('spi_guide_hidden', '1');
+}
 
 // 字体加载后初始化
 if (document.fonts && document.fonts.ready) {

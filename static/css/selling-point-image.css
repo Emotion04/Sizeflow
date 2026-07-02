@@ -11,22 +11,30 @@
 /* ======== SPI 卡片 ======== */
 #spiCard { margin-top: 16px; }
 
+/* ======== 按钮区统一 50% 透明度 ======== */
+#spiControls .btn { opacity: .5; }
+#spiControls .btn:hover { opacity: .85; }
+#spiControls .btn:active { opacity: 1; }
+
 /* ======== Canvas 容器 ======== */
 #spiCanvasWrap {
   background: rgba(0,0,0,.03);
   border-radius: 12px; padding: 10px; overflow: hidden;
   width: fit-content;
+  position: relative;
+  display: none;  /* 初始隐藏，文案生成后才显示 */
 }
+#spiCanvasWrap.visible { display: block; }
 #spiCanvas {
   display: block;
-  width: 220px; height: auto;
+  width: 300px; height: auto;
   border-radius: 6px;
   box-shadow: 0 2px 12px rgba(0,0,0,.06);
   cursor: default;
   transition: width .3s ease;
 }
 #spiCanvas.expanded {
-  width: 520px;
+  width: 500px;
 }
 
 /* ======== 提示文字 ======== */
@@ -34,24 +42,56 @@
   font-size: 10px; color: var(--text2); opacity: .6; line-height: 1.6;
 }
 
-/* ======== 标题流光效果 ======== */
-#spiCard .card-title {
-  background: linear-gradient(90deg, #c0a060, #e8d5a0, #f0e6c8, #e8d5a0, #c0a060);
-  background-size: 200% 100%;
+/* ======== 标题流光效果（仅命中标题文字，不碰按钮） ======== */
+#spiCard .spi-title-text {
+  background: linear-gradient(90deg,
+    #f59e0b, #ef4444, #8b5cf6, #3b82f6, #10b981, #f59e0b,
+    #ef4444, #8b5cf6, #3b82f6, #10b981
+  );
+  background-size: 300% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: spiShimmer 3s ease-in-out infinite;
+  animation: spiShimmer 4s linear infinite;
 }
 @keyframes spiShimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
 }
 
-/* ======== Canvas 下载按钮 ======== */
-#spiCanvasWrap {
-  position: relative;
+/* ======== 文案说明弹窗（玻璃拟态，不受主题影响） ======== */
+.guide-overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999; align-items: center; justify-content: center;
 }
+.guide-overlay.show { display: flex; }
+.guide-modal {
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 20px; padding: 28px 32px; max-width: 540px; width: 90%;
+  color: #e8e8ee; position: relative; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 4px 32px rgba(0,0,0,.3);
+}
+.guide-close {
+  position: absolute; top: 12px; right: 16px;
+  background: none; border: none; color: rgba(255,255,255,.5); font-size: 24px;
+  cursor: pointer; line-height: 1; transition: color .15s;
+}
+.guide-close:hover { color: #fff; }
+.guide-modal h3 { margin: 0 0 14px 0; font-size: 18px; color: #f0d89d; }
+.guide-body p { margin: 6px 0; font-size: 14px; line-height: 1.9; color: #dddde4; }
+.guide-body b { color: #f0d89d; }
+.guide-check {
+  display: flex; align-items: center; gap: 8px; margin-top: 18px;
+  font-size: 13px; color: rgba(255,255,255,.5); cursor: pointer;
+}
+.guide-check input[type="checkbox"] { accent-color: #f0d89d; }
+
+/* ======== Canvas 下载按钮 ======== */
 .spi-dl-overlay {
   position: absolute;
   top: 16px; right: 16px;

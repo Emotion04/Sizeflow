@@ -13,6 +13,7 @@
 <body>
 
 <div id="splash"><div id="splash-content"><h2>✨ 邀您体验新功能！</h2><p>点击任意处继续</p></div></div>
+<div id="guideOverlay" class="guide-overlay" onclick="dismissGuide()"><div class="guide-modal" onclick="event.stopPropagation()"><button class="guide-close" onclick="dismissGuide()">&times;</button><h3>🎨 新功能：AI 生成卖点手绘稿</h3><div class="guide-body"><p>在「文案生成」板块上传裤子照片并选择腰型后，点击下方「AI 一键生成卖点图」，就会自动分析照片里的面料、版型、洗水等特征，同时还能上传尺码表，结合尺码数据，生成该版型裤子的手绘风格设计稿。</p><p>生成后支持<b>拖拽</b>文字调整位置、<b>双击</b>修改文案、或者<b>右键</b>清除，以及图片导出 😊</p></div><label class="guide-check"><input type="checkbox" id="guideNoMore"> 下次不再显示</label></div></div>
 <div id="cursor-glow-ambient"></div>
 <div id="cursor-glow"></div>
 
@@ -315,7 +316,7 @@
 <script src="/static/js/selling-point-image.js"></script>
 <script src="/static/js/feedback.js"></script>
 <script>
-function switchTab(tab){var sc=document.getElementById('sizechartContainer');var cw=document.getElementById('copywriterContainer');var bs=document.getElementById('tabBtnSizeChart');var bc=document.getElementById('tabBtnCopywriter');var bar=document.querySelector('.tab-bar');function exitAndEnter(from,to,dir,activateFn){if(from){from.classList.add(dir==='right'?'tab-exit-left':'tab-exit-right');setTimeout(function(){from.classList.add('hidden');from.classList.remove('tab-exit-left','tab-exit-right');to.classList.remove('hidden');to.offsetHeight;to.classList.add(dir==='right'?'tab-enter-right':'tab-enter-left');setTimeout(function(){to.classList.remove('tab-enter-right','tab-enter-left');},700);if(activateFn)activateFn();},320);}}if(tab==='sizechart'){if(bs)bs.classList.add('active');if(bc)bc.classList.remove('active');if(bar)bar.classList.remove('copywriter-active');exitAndEnter(cw,sc,'left',function(){if(typeof CW!=='undefined')CW.deactivate();});}else{if(bs)bs.classList.remove('active');if(bc)bc.classList.add('active');if(bar)bar.classList.add('copywriter-active');exitAndEnter(sc,cw,'right',function(){if(typeof CW!=='undefined'){CW.init();CW.activate();}});}}
+function switchTab(tab){var sc=document.getElementById('sizechartContainer');var cw=document.getElementById('copywriterContainer');var bs=document.getElementById('tabBtnSizeChart');var bc=document.getElementById('tabBtnCopywriter');var bar=document.querySelector('.tab-bar');function exitAndEnter(from,to,dir,activateFn){if(from){from.classList.add(dir==='right'?'tab-exit-left':'tab-exit-right');setTimeout(function(){from.classList.add('hidden');from.classList.remove('tab-exit-left','tab-exit-right');to.classList.remove('hidden');to.offsetHeight;to.classList.add(dir==='right'?'tab-enter-right':'tab-enter-left');setTimeout(function(){to.classList.remove('tab-enter-right','tab-enter-left');},700);if(activateFn)activateFn();},320);}}if(tab==='sizechart'){if(bs)bs.classList.add('active');if(bc)bc.classList.remove('active');if(bar)bar.classList.remove('copywriter-active');exitAndEnter(cw,sc,'left',function(){if(typeof CW!=='undefined')CW.deactivate();});}else{if(bs)bs.classList.remove('active');if(bc)bc.classList.add('active');if(bar)bar.classList.add('copywriter-active');exitAndEnter(sc,cw,'right',function(){if(typeof CW!=='undefined'){CW.init();CW.activate();}if(typeof showGuide==='function')showGuide();});}}
 </script>
 <script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
 <script>
