@@ -30,18 +30,32 @@ def save_base64_image(b64_string):
     return tmp.name
 
 
-def call_qwen(messages, model="qwen3-vl-plus", temperature=None, usage_out=None):
-    """通用 Qwen 多模态调用。usage_out 可选 dict，调用后 usage_out['data'] = {input_tokens, output_tokens, total_tokens}"""
-    if temperature is None:
-        temperature = TEMPERATURE
+def _extract_usage(response, usage_out):
+    """共享 usage 提取：MultiModal / Generation response → usage_out['data']"""
+    if usage_out is not None and hasattr(response, 'usage') and response.usage:
+        u = response.usage
+        usage_out["data"] = {
+            "input_tokens": u.input_tokens or 0,
+            "output_tokens": u.output_tokens or 0,
+            "total_tokens": u.total_tokens or (u.input_tokens or 0) + (u.output_tokens or 0),
+        }
 
-    response = dashscope.MultiModalConversation.call(
-        api_key=get_api_key(),
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        top_p=0.01,
-    )
+
+def call_qwen(messages, model="qwen3-vl-plus", temperature=None, usage_out=None):
+    """通用调用（图片+文本 或 纯文本）。
+    messages 可以是多模态格式列表，或纯文本字符串（自动包装）。
+    不传 temperature / top_p，走模型默认参数。"""
+
+    # 纯文本字符串 → 自动包装为多模态消息格式
+    if isinstance(messages, str):
+        messages = [{"role": "user", "content": [{"text": messages}]}]
+
+    kwargs = {"api_key": get_api_key(), "model": model, "messages": messages}
+    if temperature is not None:
+        kwargs["temperature"] = temperature
+    # 注意：不传 top_p，走模型默认（避免限制输出多样性）
+
+    response = dashscope.MultiModalConversation.call(**kwargs)
 
     if response.status_code != 200:
         raise Exception(
@@ -49,17 +63,14 @@ def call_qwen(messages, model="qwen3-vl-plus", temperature=None, usage_out=None)
             f"错误码 {response.code} — {response.message}"
         )
 
-    if usage_out is not None and hasattr(response, 'usage') and response.usage:
-        u = response.usage
-        usage_out["data"] = {"input_tokens": u.input_tokens or 0, "output_tokens": u.output_tokens or 0, "total_tokens": u.total_tokens or u.input_tokens + u.output_tokens}
+    _extract_usage(response, usage_out)
 
     content = response.output.choices[0].message.content
     if isinstance(content, list):
-        text = content[0]["text"]
-    else:
-        text = content
-
-    return text
+        # 多模态响应 content 是 list[dict]，取第一个 text
+        first = content[0]
+        return first["text"] if isinstance(first, dict) else str(first)
+    return content
 
 
 def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None, usage_out=None):

@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import glob
+import re
 import traceback
 import threading
 import time
@@ -14,12 +15,13 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 from config import (
     APP_DIR, APP_VERSION, AVAILABLE_MODELS, DEFAULT_MAPPINGS,
     current_model, current_mappings, _api_key,
-    set_api_key, persist,
+    set_api_key, persist, get_api_key,
 )
 from vision import call_ocr_vision, parse_transcription, format_numbers, save_base64_image, call_qwen, call_qwen_stream
 from stylegen import generate_table_style, generate_table_from_image
 from copywriter import determine_waist_type, validate_copy, generate_pants_copy, COPYWRITER_SYSTEM, build_copy_prompt, parse_copy_json, validate_all_copies
 from updater import check_update
+import spi
 
 # ---- Flask App ----
 app = Flask(__name__)
@@ -517,6 +519,43 @@ def _redis_set(key, val):
     except Exception:
         pass
 
+# ======== 文案历史云同步 ========
+@app.route("/api/cw-history", methods=["GET"])
+def api_cw_history_get():
+    v = _redis_get("cw_history")
+    entries = []
+    try:
+        if v:
+            entries = json.loads(v)
+            if not isinstance(entries, list):
+                entries = []
+    except Exception:
+        entries = []
+    return jsonify({"success": True, "entries": entries})
+
+@app.route("/api/cw-history", methods=["POST"])
+def api_cw_history_post():
+    data = request.json or {}
+    entry = data.get("entry", {})
+    if entry:
+        v = _redis_get("cw_history")
+        entries = []
+        try:
+            if v:
+                entries = json.loads(v)
+        except Exception:
+            entries = []
+        entries.insert(0, entry)
+        if len(entries) > 30:
+            entries = entries[:30]
+        _redis_set("cw_history", json.dumps(entries))
+    return jsonify({"success": True})
+
+@app.route("/api/cw-history-clear", methods=["POST"])
+def api_cw_history_clear():
+    _redis_set("cw_history", "[]")
+    return jsonify({"success": True})
+
 @app.route("/api/token", methods=["GET"])
 def api_token_get():
     v = _redis_get("token_total")
@@ -694,6 +733,141 @@ def copywriter_generate_sse():
 
     return Response(generate(), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ======== 卖点图 AI 生图路由（异步任务模式） ========
+
+_spi_tasks = {}   # task_id → {status, result, error}
+_spi_lock = threading.Lock()
+
+
+def _spi_auto_generate_worker(task_id, image_path, size_data, waist_label, model):
+    """后台线程：Round1 VL 特征提取 → Round2 文本文案生成（含重试过滤）"""
+    try:
+        result = spi.analyze_and_generate(image_path, size_data, waist_label, model)
+        selling_points = result.get("selling_points")
+        if not selling_points or len([p for p in selling_points if p.get("text", "").strip()]) < 4:
+            selling_points = spi._fallback_points()
+
+        with _spi_lock:
+            _spi_tasks[task_id] = {
+                "status": "done",
+                "result": {
+                    "success": True,
+                    "selling_points": selling_points,
+                    "debug": {
+                        "r1_prompt": result.get("r1_prompt", ""),
+                        "r1_raw": result.get("r1_raw", ""),
+                        "r1_manifest": result.get("r1_manifest", {}),
+                        "r2_raw": result.get("r2_raw", ""),
+                        "retries": result.get("retries", 0),
+                        "leaks_cleaned": result.get("leaks_cleaned", False),
+                    },
+                },
+            }
+
+    except Exception as e:
+        traceback.print_exc()
+        with _spi_lock:
+            _spi_tasks[task_id] = {
+                "status": "error",
+                "error": str(e),
+                "selling_points": selling_points if 'selling_points' in dir() else [],
+            }
+
+
+@app.route("/api/spi/poll/<task_id>", methods=["GET"])
+def spi_poll(task_id):
+    """轮询任务状态"""
+    with _spi_lock:
+        task = _spi_tasks.get(task_id)
+
+    if not task:
+        return jsonify({"success": False, "error": "任务不存在"}), 404
+
+    return jsonify({"success": True, "status": task.get("status", "pending"),
+                    "result": task.get("result"), "error": task.get("error")})
+
+
+@app.route("/api/spi/auto-generate", methods=["POST"])
+def spi_auto_generate():
+    """全自动生成：上传裤子图 + 尺码表 + 腰型 → Round1 VL 特征 → Round2 文案"""
+    try:
+        data = request.json or {}
+        image_data = data.get("image", "")
+        size_data = data.get("size_data", {})
+        waist_label = data.get("waist_label", "")
+        model = data.get("model", "qwen3.7-plus")
+
+        if not image_data:
+            return jsonify({"success": False, "error": "未提供图片"}), 400
+
+        if not waist_label or waist_label == "未知":
+            return jsonify({"success": False, "error": "请先在文案板块识别尺码表或手动选择腰型"}), 400
+
+        if image_data.startswith("data:"):
+            image_path = save_base64_image(image_data)
+        else:
+            return jsonify({"success": False, "error": "无效的图片数据"}), 400
+
+        task_id = f"spi_auto_{int(time.time())}_{id(image_data)}"
+
+        with _spi_lock:
+            _spi_tasks[task_id] = {"status": "pending"}
+
+        thread = threading.Thread(
+            target=_spi_auto_generate_worker,
+            args=(task_id, image_path, size_data, waist_label, model),
+            daemon=True,
+        )
+        thread.start()
+
+        return jsonify({"success": True, "task_id": task_id, "status": "pending"})
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ======== Feedback (Upstash Redis) ========
+
+@app.route("/api/feedback", methods=["GET", "POST"])
+def feedback():
+    """GET: list feedback | POST: submit feedback (Upstash Redis)"""
+    if request.method == "GET":
+        try:
+            raw = _redis_get("spi_feedback") or "[]"
+            return jsonify({"success": True, "items": json.loads(raw)})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    try:
+        data = request.json or {}
+        text = data.get("text", "").strip()
+        fb_type = data.get("type", "feedback")
+        if not text:
+            return jsonify({"success": False, "error": "Input required"}), 400
+
+        key = "spi_feedback"
+        raw = _redis_get(key) or "[]"
+        items = json.loads(raw)
+        items.append({
+            "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "type": fb_type,
+            "text": text,
+        })
+        _redis_set(key, json.dumps(items, ensure_ascii=False))
+        return jsonify({"success": True, "count": len(items)})
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/feedback")
+def feedback_page():
+    """Simple admin page to view stored feedback"""
+    return render_template("feedback.html")
 
 
 def sync_changelog_cache():

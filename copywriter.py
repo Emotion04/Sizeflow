@@ -200,7 +200,7 @@ def validate_all_copies(copies):
     return results
 
 
-def build_copy_prompt(product_image_count, size_data, waist_info, manual_tags, count=3):
+def build_copy_prompt(product_image_count, size_data, waist_info, manual_tags, count=3, notes=""):
     """构建完整的多模态文案生成 prompt。
 
     Args:
@@ -249,6 +249,10 @@ def build_copy_prompt(product_image_count, size_data, waist_info, manual_tags, c
 【用户补充卖点标签】
 {tags_str}
 注意：以上标签是产品确实有的特征，请在文案中自然融入，不要逐条罗列。
+
+【用户补充说明】
+{notes if notes else '(无)'}
+注意：以上是用户手动补充的细节（版型特征、面料描述等），请自然融合到文案叙述中，不要逐条罗列，不要提及"用户补充"等字眼。
 
 【风格指南 — 调性】
 {STYLE_GUIDE}

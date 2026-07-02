@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sizeflow Feedback</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:#e0e0e0;padding:40px 20px;max-width:700px;margin:0 auto}
+  h1{font-size:24px;margin-bottom:8px;color:#fff}
+  h1 span{font-size:14px;color:#888;font-weight:400}
+  .controls{margin:20px 0;display:flex;gap:8px}
+  .controls button{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#ccc;cursor:pointer;font-size:13px}
+  .controls button:hover{background:rgba(255,255,255,.12)}
+  .controls button.active{background:rgba(100,140,255,.15);border-color:rgba(100,140,255,.3);color:#aac}
+  .item{padding:14px 16px;margin-bottom:8px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+  .item .meta{font-size:11px;color:#666;margin-bottom:6px;display:flex;gap:8px}
+  .item .meta .badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+  .badge.bug{background:rgba(255,100,100,.15);color:#f88}
+  .badge.feedback{background:rgba(100,180,255,.15);color:#8bf}
+  .item .text{font-size:14px;line-height:1.6;color:#ddd}
+  .empty{text-align:center;padding:60px 20px;color:#555;font-size:14px}
+  .loading{text-align:center;padding:40px;color:#666}
+  .error{color:#f66;text-align:center;padding:20px}
+</style></head>
+<body>
+<h1>Feedback <span id="count"></span></h1>
+<div class="controls">
+  <button class="active" data-filter="all">All</button>
+  <button data-filter="bug">Bugs</button>
+  <button data-filter="feedback">Feedback</button>
+  <button onclick="load()" style="margin-left:auto">Refresh</button>
+</div>
+<div id="list" class="loading">Loading...</div>
+
+<script>
+const API = '/api/feedback';
+let all = [], filter = 'all';
+
+async function load() {
+  const el = document.getElementById('list');
+  el.className = 'loading'; el.textContent = 'Loading...';
+  try {
+    const r = await fetch(API);
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    all = d.items || [];
+    render();
+  } catch(e) {
+    el.className = 'error'; el.textContent = 'Failed: ' + e.message;
+  }
+}
+
+function render() {
+  const el = document.getElementById('list');
+  const items = filter === 'all' ? all : all.filter(i => i.type === filter);
+  document.getElementById('count').textContent = '(' + all.length + ')';
+  if (!items.length) { el.className = 'empty'; el.textContent = 'No feedback yet.'; return; }
+  el.className = '';
+  el.innerHTML = items.reverse().map(i =>
+    '<div class="item"><div class="meta"><span>' + i.time + '</span><span class="badge ' + i.type + '">' + i.type + '</span></div><div class="text">' + esc(i.text) + '</div></div>'
+  ).join('');
+}
+
+function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+document.querySelectorAll('.controls button[data-filter]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.controls button[data-filter]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    filter = b.dataset.filter;
+    render();
+  });
+});
+
+load();
+</script>
+</body></html>

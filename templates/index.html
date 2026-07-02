@@ -6,11 +6,13 @@
 <title>尺码表转换工具</title>
 <link rel="stylesheet" href="/static/css/main.css">
 <link rel="stylesheet" href="/static/css/copywriter.css">
+<link rel="stylesheet" href="/static/css/selling-point-image.css">
+<link rel="stylesheet" href="/static/css/feedback.css">
 <script src="/static/js/html2canvas.min.js"></script>
 </head>
 <body>
 
-<div id="splash"><div id="splash-content"><h2>✨ 欢迎体验新版本！</h2><p>点击任意处继续</p></div></div>
+<div id="splash"><div id="splash-content"><h2>✨ 邀您体验新功能！</h2><p>点击任意处继续</p></div></div>
 <div id="cursor-glow-ambient"></div>
 <div id="cursor-glow"></div>
 
@@ -310,6 +312,8 @@
 <script src="/static/js/sizechart.js"></script>
 <script src="/static/js/indexedb.js"></script>
 <script src="/static/js/copywriter.js"></script>
+<script src="/static/js/selling-point-image.js"></script>
+<script src="/static/js/feedback.js"></script>
 <script>
 function switchTab(tab){var sc=document.getElementById('sizechartContainer');var cw=document.getElementById('copywriterContainer');var bs=document.getElementById('tabBtnSizeChart');var bc=document.getElementById('tabBtnCopywriter');var bar=document.querySelector('.tab-bar');function exitAndEnter(from,to,dir,activateFn){if(from){from.classList.add(dir==='right'?'tab-exit-left':'tab-exit-right');setTimeout(function(){from.classList.add('hidden');from.classList.remove('tab-exit-left','tab-exit-right');to.classList.remove('hidden');to.offsetHeight;to.classList.add(dir==='right'?'tab-enter-right':'tab-enter-left');setTimeout(function(){to.classList.remove('tab-enter-right','tab-enter-left');},700);if(activateFn)activateFn();},320);}}if(tab==='sizechart'){if(bs)bs.classList.add('active');if(bc)bc.classList.remove('active');if(bar)bar.classList.remove('copywriter-active');exitAndEnter(cw,sc,'left',function(){if(typeof CW!=='undefined')CW.deactivate();});}else{if(bs)bs.classList.remove('active');if(bc)bc.classList.add('active');if(bar)bar.classList.add('copywriter-active');exitAndEnter(sc,cw,'right',function(){if(typeof CW!=='undefined'){CW.init();CW.activate();}});}}
 </script>

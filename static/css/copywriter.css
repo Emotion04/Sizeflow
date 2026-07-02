@@ -125,27 +125,34 @@
 .cw-slot-wrap {
   display: flex; flex-direction: column; gap: 0;
 }
-/* 标签滑块 */
-.cw-tag-slider {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  height: 28px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
+/* 标签横向选择 + 补充说明 */
+.cw-tag-tabs {
+  display: flex; gap: 0;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
   border-top: none;
   border-radius: 0 0 10px 10px;
-  font-size: 11px; color: var(--text2);
-  cursor: default;
+  overflow: hidden;
 }
-.cw-tag-slider .tag-arrow {
-  background: none; border: none; color: var(--text2);
-  cursor: pointer; font-size: 10px; padding: 2px 4px;
-  opacity: .5; transition: opacity .15s;
+.cw-tag-tab {
+  flex: 1; padding: 3px 0; text-align: center;
+  font-size: 10px; color: rgba(26,35,50,.35);
+  border: none; background: transparent; cursor: pointer;
+  transition: all .2s;
 }
-.cw-tag-slider .tag-arrow:hover { opacity: 1; }
-.cw-tag-slider .tag-label {
-  min-width: 28px; text-align: center; font-weight: 500;
-  color: var(--text);
+.cw-tag-tab.active {
+  color: var(--text); font-weight: 600;
+  background: rgba(255,255,255,.25);
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
+.cw-note-input {
+  width: 100%; padding: 3px 6px; margin-top: 2px;
+  border: 1px solid rgba(255,255,255,.1); border-radius: 6px;
+  font-size: 10px; background: rgba(255,255,255,.05);
+  color: var(--text); outline: none;
+}
+.cw-note-input:focus { border-color: rgba(79,110,246,.3); }
+.cw-note-input::placeholder { color: var(--text2); opacity: .4; }
 .cw-image-slot:hover {
   border-color: var(--primary);
   background: rgba(79,110,246,.06);

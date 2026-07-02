@@ -35,12 +35,14 @@ const CW = {
 '</div></div></div>'+
 '<div style="font-size:13px;font-weight:600;color:var(--text);margin-top:12px;">🏷️ 补充卖点标签</div>'+
 '<div class="cw-tags-wrap" id="cwTagsWrap"><input class="cw-tag-input" id="cwTagInput" placeholder="输入卖点后回车..." maxlength="20"></div>'+
+'<textarea id="cwNotes" placeholder="补充说明（版型特征、面料手感、水洗效果等，AI会自然融合到文案中）" style="width:100%;height:52px;margin-top:10px;padding:8px 12px;border:1px solid rgba(255,255,255,.15);border-radius:8px;font-size:12px;resize:none;outline:none;background:rgba(255,255,255,.06);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--text);line-height:1.5;"></textarea>'+
 '<div class="cw-generate-row" style="margin-top:14px;">'+
 '<button class="btn btn-primary" id="cwGen" style="padding:12px 32px;font-size:15px;font-weight:600;" disabled>🚀 生成文案</button>'+
 '<span style="font-size:12px;color:var(--text2);">版本数</span><select id="cwVC" style="padding:4px 6px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);color:var(--text);"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select>'+
 '<span style="font-size:12px;color:var(--text2);">模型</span><select id="cwModel" style="padding:4px 6px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.1);color:var(--text);"><option value="qwen3-vl-flash" selected>Qwen3-VL Flash</option><option value="qwen3-vl-plus">Qwen3-VL Plus</option><option value="qwen3.6-plus">Qwen3.6 Plus</option></select></div></div>'+
 '<div class="card hidden" id="cwResult"><div class="card-title"><span class="icon">✍️</span>文案生成结果<span style="font-size:12px;color:var(--text2);font-weight:400;" id="cwRSt"></span><span style="flex:1;"></span><button class="btn btn-outline btn-sm hidden" id="cwReGen" onclick="CW.regenerate()">🔄 重新生成</button><button class="btn btn-outline btn-sm hidden" id="cwCopyAll" onclick="CW.copyAll()">📋 复制全部</button></div><div id="cwGrid"></div><div class="cw-stream-raw hidden" id="cwRaw"></div></div>'+
-'<div class="card" id="cwHistory"><div class="card-title"><span class="icon">📜</span>历史记录<button class="btn btn-outline btn-sm" onclick="CW._clearHistory()" style="margin-left:12px;font-size:10px;">清空</button></div><div id="cwHistoryList" style="max-height:300px;overflow-y:auto;"></div></div>';
+'<div class="card" id="spiCard"><div class="card-title"><span class="icon">🎨</span>AI生成卖点手绘稿<span style="flex:1;"></span><button class="btn btn-outline btn-sm" id="spiExpand" style="font-size:11px;">🔍 展开</button><button class="btn btn-outline btn-sm" id="spiFeedbackTab" style="font-size:11px;margin-left:4px;">💬 反馈</button><button class="btn btn-outline btn-sm" id="spiDebugBtn" style="font-size:11px;margin-left:4px;" title="调试面板">🐛</button></div><div id="spiDebug" style="display:none;margin-bottom:12px;padding:14px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:13px;font-family:monospace;color:#fff;max-height:400px;overflow-y:auto;white-space:pre-wrap;line-height:1.7;"></div><div id="spiLayout" style="display:flex;gap:12px;align-items:flex-start;"><div id="spiUploadSlot" style="flex:0 0 220px;height:280px;border:1.5px dashed rgba(255,255,255,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.03);overflow:hidden;position:relative;" title="上传裤子照片"><span id="spiUploadHint" style="font-size:13px;color:var(--text2);text-align:center;line-height:1.5;">📷<br>点击或拖拽<br>上传裤子照片</span><img id="spiUploadPreview" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"><input type="file" id="spiFileInput" accept="image/*" style="display:none;"></div><div id="spiControls" style="display:flex;flex-direction:column;gap:6px;min-width:140px;"><button class="btn btn-primary" id="spiGen" style="padding:8px 16px;font-size:13px;">🎨 AI 一键生成</button><button class="btn btn-outline btn-sm" id="spiExport">💾 导出 PNG</button><button class="btn btn-outline btn-sm" id="spiReset">↺ 重置</button><div style="margin-top:4px;"><span style="font-size:11px;color:var(--text2);">模型</span><select id="spiModel" style="width:100%;padding:4px 6px;margin-top:2px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:11px;background:rgba(255,255,255,.1);color:var(--text);"><option value="qwen3.7-plus" selected>Qwen3.7 Plus</option><option value="qwen3.7-max">Qwen3.7 Max</option><option value="qwen3.6-max-preview">Qwen3.6 Max</option><option value="glm-5.1">GLM-5.1</option></select></div><div id="spiStatus" style="margin-top:6px;font-size:11px;color:var(--text2);line-height:1.5;"></div><div class="spi-hint">拖拽=调整位置<br>双击=编辑<br>右键=清除</div></div><div id="spiCanvasWrap" style="flex:1;min-width:0;"><canvas id="spiCanvas" width="1080" height="1600"></canvas></div></div></div>'+
+'<div class="card" id="cwHistory"><div class="card-title"><span class="icon">📜</span>历史记录<button class="btn btn-outline btn-sm" id="cwCloudToggle" onclick="CW._toggleCloud()" style="margin-left:8px;font-size:10px;opacity:.6;" title="切换本地/云端历史">☁️ 本地</button><button class="btn btn-outline btn-sm" onclick="CW._clearHistory()" style="margin-left:4px;font-size:10px;">清空</button></div><div id="cwHistoryList" style="max-height:300px;overflow-y:auto;"></div></div>';
     this._bindSlots();
     this._loadHistory();
   },
@@ -49,10 +51,11 @@ const CW = {
     var hints=['裤子照片','补充图 1','补充图 2'], icons=['📷','🔍','🔍'];
     var s='<div class="cw-image-slot'+(i>0?' cw-image-slot-sm':'')+'" id="cwSlot'+i+'" data-slot="'+i+'"><div class="slot-label"><span class="icon">'+icons[i]+'</span>'+hints[i]+'</div><button class="clear-slot" data-slot="'+i+'">&times;</button><input type="file" accept="image/*" id="cwSlotIn'+i+'" style="display:none;"></div>';
     if(i>0){
-      var tags=['正面','反面','侧面','细节'], defTag=i===1?2:i===2?3:0;
+      var tags=['正面','反面','侧面','细节','水洗标'], defTag=i===1?2:i===2?3:0;
       this.slotTags=this.slotTags||{};
       this.slotTags[i]=this.slotTags[i]==null?defTag:this.slotTags[i];
-      s='<div class="cw-slot-wrap">'+s+'<div class="cw-tag-slider" id="cwTagSlider'+i+'"><button class="tag-arrow" onclick="CW._slideTag('+i+',-1)">◀</button><span class="tag-label">'+tags[this.slotTags[i]]+'</span><button class="tag-arrow" onclick="CW._slideTag('+i+',1)">▶</button></div></div>';
+      var tagBtns=''; for(var t=0;t<tags.length;t++)tagBtns+='<button class="cw-tag-tab'+(t===this.slotTags[i]?' active':'')+'" onclick="CW._pickTag('+i+','+t+')">'+tags[t]+'</button>';
+      s='<div class="cw-slot-wrap">'+s+'<div class="cw-tag-tabs" id="cwTagTabs'+i+'">'+tagBtns+'</div></div>';
     }
     return s;
   },
@@ -62,6 +65,15 @@ const CW = {
     var v = document.getElementById('cwVC'); if (v) v.addEventListener('change', function(){ CW.versionCount = parseInt(v.value); });
     var m = document.getElementById('cwModel'); if (m) m.addEventListener('change', function(){ CW.currentModel = m.value; });
     var t = document.getElementById('cwTagInput'); if (t) t.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); CW._addTag(t.value.trim()); t.value=''; }});
+    // SPI 卖点图按钮事件委托
+    var grid=document.getElementById('cwGrid'); if(grid) grid.addEventListener('click', function(e){
+      var btn=e.target.closest('.spi-trigger'); if(!btn)return;
+      var version=parseInt(btn.dataset.version); if(!version||!CW.generatedCopies)return;
+      if(typeof SPI!=='undefined'){
+        if(!SPI._inited){ SPI.init(); }
+        SPI.activate(CW.generatedCopies);
+      }
+    });
     // Ctrl+V 粘贴图片到素材槽位
     document.addEventListener('paste', function(e) {
       if (CW.isGenerating) return;
@@ -106,13 +118,12 @@ const CW = {
   _clearSlot(idx){ delete this.productImages[idx]; this._renderSlot(idx); this._upGen(); var inp=document.getElementById('cwSlotIn'+idx); if(inp)inp.value=''; },
   _renderSlot(idx){ var s=document.getElementById('cwSlot'+idx); if(!s)return; var img=this.productImages[idx]; if(img){ s.classList.add('has-image'); var lbl=s.querySelector('.slot-label'); if(lbl)lbl.style.display='none'; var el=s.querySelector('img'); if(!el){ el=document.createElement('img'); s.insertBefore(el,s.firstChild); } el.src=img; } else { s.classList.remove('has-image'); var el=s.querySelector('img'); if(el)el.remove(); var lbl=s.querySelector('.slot-label'); if(lbl)lbl.style.display=''; } },
   _renderAllSlots(){ for(var i=0;i<3;i++)this._renderSlot(i); },
-  _slideTag(i, dir){
+  _pickTag(i, t){
     var tags=['正面','反面','侧面','细节'];
     this.slotTags=this.slotTags||{};
-    if(this.slotTags[i]==null)this.slotTags[i]=i===1?2:i===2?3:0;
-    this.slotTags[i]=(this.slotTags[i]+dir+tags.length)%tags.length;
-    var el=document.getElementById('cwTagSlider'+i);
-    if(el){ var lbl=el.querySelector('.tag-label'); if(lbl)lbl.textContent=tags[this.slotTags[i]]; }
+    this.slotTags[i]=t;
+    var el=document.getElementById('cwTagTabs'+i);
+    if(el){ var btns=el.querySelectorAll('.cw-tag-tab'); for(var b=0;b<btns.length;b++)btns[b].classList.toggle('active',b===t); }
   },
 
   _handleSizeFile(file){ var r=new FileReader(); r.onload=function(){ CW._runOCR(r.result); }; r.readAsDataURL(file); },
@@ -233,7 +244,8 @@ const CW = {
     var wo=document.getElementById('cWOverride'), waistOv=wo?wo.value:'';
 
     try {
-      var r=await fetch('/api/copywriter/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_images:images,size_data:this.sizeData,waist_type_override:waistOv,model:this.currentModel,manual_tags:this.manualTags,count:this.versionCount})});
+      var notes=document.getElementById('cwNotes'), notesText=notes?notes.value.trim():'';
+      var r=await fetch('/api/copywriter/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_images:images,size_data:this.sizeData,waist_type_override:waistOv,model:this.currentModel,manual_tags:this.manualTags,notes:notesText,count:this.versionCount})});
       if(!r.ok)throw new Error('HTTP '+r.status);
       var reader=r.body.getReader(), decoder=new TextDecoder(), fullText='', buf='';
       while(true){
@@ -297,11 +309,19 @@ const CW = {
         var c=group[j], isBest=c.version===bestV, tc='';
         if(type===1){ tc='<div class="cw-section-a"><div class="cw-title">'+CW._esc(c.title_a||'')+'</div><div class="cw-body">'+CW._esc(c.body_a||'')+'</div></div>'; }
         else { var par='颜色：'+(c.color||'')+' 面料成分： 弹力指数： 版型类型： 厚度指数：'+(c.thickness||'适中')+' 柔软指数：'+(c.softness||'适中'); var its=''; for(var k=0;k<(c.items||[]).length;k++)its+='<div style="margin-bottom:10px;"><b style="color:var(--text);font-size:13px;">'+CW._esc(c.items[k].title||'')+'</b><div style="font-size:13px;color:var(--text);line-height:1.6;margin-top:2px;">'+CW._esc(c.items[k].desc||'')+'</div></div>'; tc='<div class="cw-section-b"><div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.8;">'+CW._esc(par)+'</div>'+its+'</div>'; }
-        h+='<div class="cw-version-card'+(isBest?' best':' dimmed')+'" style="min-width:0;margin-bottom:12px;">'+(isBest?'<div class="best-badge">✅ 推荐</div>':'')+'<div class="cw-version-label">版本 '+c.version+'</div>'+tc+'<div class="cw-card-actions"><button class="btn btn-outline btn-sm" onclick="CW._copyVer('+c.version+','+type+')">📋 复制</button><button class="btn btn-outline btn-sm" onclick="CW._editCopy('+c.version+','+type+')">✏️ 编辑后复制</button></div></div>';
+        h+='<div class="cw-version-card'+(isBest?' best':' dimmed')+'" style="min-width:0;margin-bottom:12px;">'+(isBest?'<div class="best-badge">✅ 推荐</div>':'')+'<div class="cw-version-label">版本 '+c.version+'</div>'+tc+'<div class="cw-card-actions"><button class="btn btn-outline btn-sm" onclick="CW._copyVer('+c.version+','+type+')">📋 复制</button><button class="btn btn-outline btn-sm" onclick="CW._editCopy('+c.version+','+type+')">✏️ 编辑后复制</button>'+(type===2?'<button class="btn btn-outline btn-sm spi-trigger" data-version="'+c.version+'">🎨 生成卖点图</button>':'')+'</div></div>';
       }
       return h;
     }
     var rc=document.getElementById('cwResult'); if(rc)rc.scrollIntoView({behavior:'smooth'});
+  },
+
+  _openSPI(version){
+    if(!this.generatedCopies)return;
+    if(typeof SPI!=='undefined'){
+      if(!SPI._inited) SPI.init();
+      SPI.activate(this.generatedCopies);
+    }
   },
 
   _copyVer(v,type){
@@ -341,6 +361,11 @@ const CW = {
       var entry={id:id, time:new Date().toISOString(), copies:JSON.parse(JSON.stringify(self.generatedCopies)), waist:self.waistInfo?JSON.parse(JSON.stringify(self.waistInfo)):null, model:self.currentModel, tags:JSON.parse(JSON.stringify(self.manualTags)), versionCount:self.versionCount, sizeData:self.sizeData?JSON.parse(JSON.stringify(self.sizeData)):null, imgRefs:imgRefs };
       self._history.unshift(entry); if(self._history.length>50){ var old=self._history.slice(50); self._history.length=50; old.forEach(function(o){ if(o.imgRefs)IDB.delMany(o.imgRefs.map(function(r){return r.ref;})); }); }
       self._saveHistory();
+      // 同步到云端（仅结果和元数据，不含图片）
+      try {
+        var cloudEntry={time:entry.time, waist:entry.waist, model:entry.model, copies:entry.copies, preview:(entry.copies&&entry.copies[0]?(entry.copies[0].title_a||(entry.copies[0].items&&entry.copies[0].items[0]?entry.copies[0].items[0].title:'')):'')};
+        fetch('/api/cw-history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({entry:cloudEntry})}).catch(function(){});
+      } catch(e){}
     }).catch(function(e){ console.error('Save session failed:',e); });
   },
   _renderHistory(){
@@ -381,7 +406,45 @@ const CW = {
     this._renderResults();
     setTimeout(function(){ var rc=document.getElementById('cwResult'); if(rc)rc.scrollIntoView({behavior:'smooth'}); },100);
   },
-  _clearHistory(){ var self=this; if(confirm('确定清空全部历史会话？图片数据也将删除。')){
+  _cloudMode: false,
+  _toggleCloud(){
+    this._cloudMode=!this._cloudMode;
+    var btn=document.getElementById('cwCloudToggle');
+    if(btn){ btn.textContent=this._cloudMode?'💻 云端':'☁️ 本地'; btn.style.opacity=this._cloudMode?'1':'.6'; }
+    if(this._cloudMode){ this._loadCloudHistory(); } else { this._renderHistory(); }
+  },
+  async _loadCloudHistory(){
+    var list=document.getElementById('cwHistoryList'); if(list)list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:12px;">加载云端历史...</div>';
+    try {
+      var r=await fetch('/api/cw-history'); var d=await r.json();
+      if(d.success&&d.entries){
+        list.innerHTML=d.entries.map(function(h,i){
+          var ts=h.time?new Date(h.time):null, timeStr=ts?CW._fmtTime(ts):'';
+          var waist=h.waist&&h.waist.waist_type?h.waist.waist_type:'';
+          return '<div class="cw-history-item" style="padding:10px 14px;margin:4px 0;border-radius:10px;background:rgba(255,255,255,.08);cursor:pointer;transition:all .2s;position:relative;" onclick="CW._viewCloudEntry('+i+')" onmouseover="this.style.background=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">'+
+            '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:var(--text2);">'+timeStr+'</span>'+(waist?'<span style="font-size:10px;color:var(--primary);background:rgba(79,110,246,.1);padding:1px 6px;border-radius:4px;">'+CW._esc(waist)+'</span>':'')+'<span style="font-size:10px;color:var(--text2);">☁️</span></div>'+
+            '<div style="font-size:12px;color:var(--text);margin-top:4px;">'+CW._esc(h.preview||'(无标题)')+'</div></div>';
+        }).join('')+'<div style="font-size:11px;color:var(--text2);text-align:center;padding:8px;">共 '+d.entries.length+' 条云端记录</div>';
+      }
+    } catch(e){ if(list)list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:12px;">云端加载失败</div>'; }
+  },
+  _viewCloudEntry(idx){
+    if(!this._cloudEntries||idx>=this._cloudEntries.length)return;
+    var h=this._cloudEntries[idx]; if(!h)return;
+    this.generatedCopies=h.copies; this._compliance=[];
+    var res=document.getElementById('cwResult'); if(res)res.classList.remove('hidden');
+    this._renderResults();
+  },
+  _clearHistory(){ var self=this;
+    if(this._cloudMode){
+      if(!confirm('确定清空云端全部历史记录？'))return;
+      fetch('/api/cw-history-clear',{method:'POST'}).then(function(){
+        self._cloudEntries=[]; self._loadCloudHistory();
+        if(typeof toast==='function')toast('云端历史已清空','info');
+      }).catch(function(){});
+      return;
+    }
+    if(confirm('确定清空本地全部历史会话？图片数据也将删除。')){
     var allRefs=[]; self._history.forEach(function(h){ if(h.imgRefs)h.imgRefs.forEach(function(r){allRefs.push(r.ref);}); });
     self._history=[]; try { localStorage.removeItem(self._HIST_KEY); } catch(e){}
     self._renderHistory();

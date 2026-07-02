@@ -2013,9 +2013,21 @@ function handlePresetFileImport(file) {
 (function(){
   const splash = document.getElementById('splash');
   if (splash) {
-    const dismiss = () => { splash.style.opacity = '0'; splash.style.transition = 'opacity .3s'; setTimeout(() => splash.remove(), 350); };
+    const dismiss = () => {
+      const card = document.getElementById('splash-content');
+      if (card && !splash._dismissing) {
+        splash._dismissing = true;
+        card.style.transformOrigin = 'right bottom';
+        card.classList.add('genie-suck');
+        // 背景渐变淡出
+        splash.style.transition = 'opacity .3s .15s';
+        splash.style.opacity = '0';
+        card.addEventListener('animationend', () => splash.remove());
+        // 兜底
+        setTimeout(() => { if (splash.parentNode) splash.remove(); }, 600);
+      }
+    };
     splash.addEventListener('click', dismiss);
-    // 3 秒后自动消失
     setTimeout(dismiss, 4000);
   }
 })();

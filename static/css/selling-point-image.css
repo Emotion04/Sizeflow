@@ -1,0 +1,76 @@
+/* Sizeflow 卖点图生成模块 — SPI 样式 */
+
+/* ======== 手写字体注册 ======== */
+@font-face {
+  font-family: 'YShiWrittenSC';
+  src: url('/font/YShiWrittenSC-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* ======== SPI 卡片 ======== */
+#spiCard { margin-top: 16px; }
+
+/* ======== Canvas 容器 ======== */
+#spiCanvasWrap {
+  background: rgba(0,0,0,.03);
+  border-radius: 12px; padding: 10px; overflow: hidden;
+  width: fit-content;
+}
+#spiCanvas {
+  display: block;
+  width: 220px; height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  cursor: default;
+  transition: width .3s ease;
+}
+#spiCanvas.expanded {
+  width: 520px;
+}
+
+/* ======== 提示文字 ======== */
+.spi-hint {
+  font-size: 10px; color: var(--text2); opacity: .6; line-height: 1.6;
+}
+
+/* ======== 标题流光效果 ======== */
+#spiCard .card-title {
+  background: linear-gradient(90deg, #c0a060, #e8d5a0, #f0e6c8, #e8d5a0, #c0a060);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: spiShimmer 3s ease-in-out infinite;
+}
+@keyframes spiShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ======== Canvas 下载按钮 ======== */
+#spiCanvasWrap {
+  position: relative;
+}
+.spi-dl-overlay {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.15);
+  color: #fff;
+  font-size: 16px;
+  display: none;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+  z-index: 5;
+}
+.spi-dl-overlay:hover {
+  background: rgba(0,0,0,.75);
+  transform: scale(1.08);
+}
+.spi-dl-overlay.show { display: flex; }

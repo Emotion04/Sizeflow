@@ -24,9 +24,13 @@ var TK = {
 
   _fetchIP: function() {
     var self = this;
-    fetch('https://api.ipify.org?format=json').then(function(r){return r.json();}).then(function(d){
-      self._ip = d.ip; self._updateStats();
-    }).catch(function(){ self._ip = 'unknown'; });
+    fetch('https://api.ip.sb/geoip').then(function(r){return r.json();}).then(function(d){
+      self._ip = d.ip||d.query||'unknown'; self._updateStats();
+    }).catch(function(){
+      fetch('https://httpbin.org/ip').then(function(r){return r.json();}).then(function(d2){
+        self._ip = d2.origin||'unknown'; self._updateStats();
+      }).catch(function(){ self._ip = 'unknown'; });
+    });
   },
 
   _updateStats: function() {
