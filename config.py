@@ -84,7 +84,6 @@ def get_output_headers(mappings=None):
 # ---- 持久化合并 ----
 def persist():
     save_config({
-        "api_key": _api_key,
         "model": current_model,
         "mappings": current_mappings,
     })

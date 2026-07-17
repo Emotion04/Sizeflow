@@ -36,7 +36,7 @@ def build_style_prompt(data, style_desc):
 - 只输出HTML代码，不要其他内容"""
 
 
-def generate_table_style(data, style_desc, model="qwen3.6-plus"):
+def generate_table_style(data, style_desc, model="qwen3.7-plus"):
     """调用 Qwen 生成带样式的 HTML 尺码表"""
     prompt = build_style_prompt(data, style_desc)
     messages = [

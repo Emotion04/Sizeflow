@@ -5,7 +5,6 @@ dist/
 
 # Env & Config (contains API key)
 .env
-config.json
 
 # Python
 __pycache__/

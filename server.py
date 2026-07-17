@@ -196,7 +196,7 @@ def generate_style():
         data = request.json or {}
         table_data = data.get("data", {})
         style_desc = data.get("style", "简洁、现代、适合服装行业")
-        model = data.get("model", "qwen3.6-plus")
+        model = data.get("model", "qwen3.7-plus")
 
         if not table_data.get("headers") or not table_data.get("rows"):
             return jsonify({"success": False, "error": "缺少表格数据"}), 400

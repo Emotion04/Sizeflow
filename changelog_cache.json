@@ -1,6 +1,31 @@
 {
   "commits": [
     {
+      "hash": "d693c89",
+      "msg": "安全: 移除硬编码API Key, 改为.env读取",
+      "date": "1784274679"
+    },
+    {
+      "hash": "b4278b5",
+      "msg": "Canary 1.7.1: 弹窗引导+流光标题+导出保护+画布延迟显示",
+      "date": "1782984045"
+    },
+    {
+      "hash": "4fc8612",
+      "msg": "Canary 1.7.0: SPI卖点图重构——两轮AI pipeline独立模块+模型选择器+流光UI",
+      "date": "1782978683"
+    },
+    {
+      "hash": "3e68cb9",
+      "msg": "v1.6.0: 修复Redis读取——Upstash返回JSON数组而非纯字符串",
+      "date": "1782462741"
+    },
+    {
+      "hash": "e2b8c98",
+      "msg": "v1.6.0: 3槽布局+角度标签滑块+Upstash读写权限Token",
+      "date": "1782278768"
+    },
+    {
       "hash": "e98400b",
       "msg": "v1.6.0: Upstash Redis Token云同步——增量式全局Token计数",
       "date": "1782122426"
@@ -274,31 +299,6 @@
       "hash": "b93fe90",
       "msg": "Fix: 字重切换在导出PNG和Vercel预览中失效",
       "date": "1779788051"
-    },
-    {
-      "hash": "4675cf5",
-      "msg": "docs: 项目概览 + CLAUDE.md 约定文件，新会话无缝接手",
-      "date": "1779785761"
-    },
-    {
-      "hash": "262bc79",
-      "msg": "Canary 3.35: 重写@font-face注入 + th/td统一font-weight匹配选中字重",
-      "date": "1779784750"
-    },
-    {
-      "hash": "69de224",
-      "msg": "Canary 3.34: Playwright等待字体加载完成再截图",
-      "date": "1779781884"
-    },
-    {
-      "hash": "fed726b",
-      "msg": "Canary 3.33: th/td加inline font-family确保字体100%生效",
-      "date": "1779781351"
-    },
-    {
-      "hash": "99958bc",
-      "msg": "Canary 3.32: 字体修复——HTML内@font-face URL直接替换为localhost绝对路径",
-      "date": "1779780520"
     }
   ]
 }
