@@ -34,9 +34,8 @@ def save_config(data):
 
 _config = load_config()
 
-# ---- API Key（界面输入 > 配置文件 > .env > 内置默认） ----
-DEFAULT_API_KEY = "sk-2b658dc600cf44579e57db89c88a3273"
-_api_key = _config.get("api_key", "") or os.getenv("DASHSCOPE_API_KEY", "") or DEFAULT_API_KEY
+# ---- API Key（界面输入 > 配置文件 > .env） ----
+_api_key = _config.get("api_key", "") or os.getenv("DASHSCOPE_API_KEY", "")
 
 def get_api_key():
     if not _api_key:
