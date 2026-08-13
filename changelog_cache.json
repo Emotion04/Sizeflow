@@ -1,6 +1,16 @@
 {
   "commits": [
     {
+      "hash": "4506d88",
+      "msg": "Canary 1.7.2: 接入图像生成模型(GPT-Image2/Qwen-Image)+失败自动回退",
+      "date": "1786618490"
+    },
+    {
+      "hash": "6e98c92",
+      "msg": "v1.6.0: 安全加固——移除硬编码Key, .env优先, config.json不含Key",
+      "date": "1784276013"
+    },
+    {
       "hash": "d693c89",
       "msg": "安全: 移除硬编码API Key, 改为.env读取",
       "date": "1784274679"
@@ -289,16 +299,6 @@
       "hash": "afd5bcf",
       "msg": "Canary 3.36: 修复字重仅2种样式 + Vercel导出挂死",
       "date": "1779790627"
-    },
-    {
-      "hash": "f49fd4d",
-      "msg": "Canary 3.35: 字体静态文件添加长期缓存头",
-      "date": "1779788577"
-    },
-    {
-      "hash": "b93fe90",
-      "msg": "Fix: 字重切换在导出PNG和Vercel预览中失效",
-      "date": "1779788051"
     }
   ]
 }
