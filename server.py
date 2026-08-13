@@ -829,6 +829,40 @@ def spi_auto_generate():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# ======== SPI 图像生成（生图模型 + 失败回退） ========
+
+@app.route("/api/spi/generate-image", methods=["POST"])
+def spi_generate_image():
+    """图像生成：根据 prompt + 可选参考图，用生图模型生成手绘稿，失败自动回退"""
+    try:
+        data = request.json or {}
+        prompt = data.get("prompt", "")
+        image = data.get("image", "")          # base64 或 data URI（图生图可选）
+        model = data.get("model", "qwen-image-3.0")
+
+        if not prompt:
+            return jsonify({"success": False, "error": "缺少生图 prompt"}), 400
+
+        result = spi.generate_image_with_fallback(prompt, image, model)
+        if result.get("success"):
+            return jsonify({
+                "success": True,
+                "image": result["image"],
+                "model_used": result.get("model_used"),
+                "model_name": result.get("model_name"),
+                "fallback_chain": result.get("fallback_chain", []),
+            })
+        return jsonify({
+            "success": False,
+            "error": result.get("error", "生图失败"),
+            "fallback_chain": result.get("fallback_chain", []),
+        }), 500
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ======== Feedback (Upstash Redis) ========
 
 @app.route("/api/feedback", methods=["GET", "POST"])

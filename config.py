@@ -55,7 +55,15 @@ AVAILABLE_MODELS = [
     {"id": "qwen3-vl-plus",   "name": "Qwen3-VL Plus",   "desc": "视觉增强版"},
     {"id": "qwen3.5-flash",    "name": "Qwen3.5 flash",    "desc": "更快速"},
 
+    # 图像生成模型（生图）
+    {"id": "gpt-image-2",    "name": "GPT-Image2",    "desc": "OpenAI 兼容端点"},
+    {"id": "qwen-image",     "name": "Qwen-Image",    "desc": "阿里生图"},
+    {"id": "qwen-image-plus","name": "Qwen-Image Plus", "desc": "阿里生图高级"},
+
 ]
+
+# 生图模型 id 列表（回退逻辑用）
+IMAGE_MODELS = ["gpt-image-2", "qwen-image", "qwen-image-plus"]
 
 current_model = _config.get("model") or os.getenv("QWEN_MODEL", "qwen3-vl-flash")
 TEMPERATURE = float(os.getenv("QWEN_TEMPERATURE", "0.0"))

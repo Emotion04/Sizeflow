@@ -6,10 +6,16 @@ Round 2 (文本): 上游腰型 + Round1 manifest + 原表 → 6 槽卖点文案 
 原则：Round 1 是数据管道（只提取不解释），Round 2 是压缩器（多源→短句）。
 """
 
+import os
 import re
 import json
+import urllib.request
+
+import dashscope
+from dashscope import ImageSynthesis
 
 from vision import call_qwen
+from config import get_api_key
 
 
 # ======================================================================
@@ -437,3 +443,95 @@ def analyze_and_generate(
         "leaks_cleaned": r2_result["leaks_cleaned"],
         "r2_raw": r2_result["raw"],
     }
+
+
+# ======================================================================
+# 图像生成模型（生图）—— GPT-Image2 / Qwen-Image 3.0 / Pro，含失败回退
+# ======================================================================
+
+IMAGE_MODELS = ["gpt-image-2", "qwen-image", "qwen-image-plus"]
+
+_IMAGE_MODEL_NAMES = {
+    "gpt-image-2": "GPT-Image2",
+    "qwen-image": "Qwen-Image",
+    "qwen-image-plus": "Qwen-Image Plus",
+}
+
+
+def _gen_gpt_image2(prompt, image_b64, api_key):
+    """GPT-Image2（OpenAI 兼容端点 https://yundu.lol）"""
+    url = "https://yundu.lol/v1/images/generations"
+    payload = {
+        "model": "gpt-image-2",
+        "prompt": prompt,
+        "n": 1,
+        "size": "1024x1024",
+    }
+    if image_b64:
+        payload["image"] = image_b64  # 图生图
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        },
+        method="POST",
+    )
+    resp = urllib.request.urlopen(req, timeout=180)
+    d = json.loads(resp.read().decode("utf-8"))
+    item = (d.get("data") or [{}])[0]
+    if "b64_json" in item and item["b64_json"]:
+        return "data:image/png;base64," + item["b64_json"]
+    if item.get("url"):
+        return item["url"]
+    raise RuntimeError(f"GPT-Image2 返回无图片: {str(d)[:200]}")
+
+
+def _gen_qwen_image(prompt, image_b64, model, api_key):
+    """Qwen-Image 3.0 / Pro（dashscope ImageSynthesis）"""
+    kwargs = {"model": model, "prompt": prompt, "n": 1, "api_key": api_key}
+    if image_b64:
+        kwargs["ref_img"] = image_b64  # 图生图（草图转图）
+    resp = ImageSynthesis.call(**kwargs)
+    if resp.status_code != 200:
+        raise RuntimeError(f"{model} 生图失败: {getattr(resp, 'message', resp.status_code)}")
+    results = resp.output.results if resp.output else []
+    if not results:
+        raise RuntimeError(f"{model} 返回无图片")
+    return results[0].url
+
+
+def generate_image(prompt, image_b64, model):
+    """按模型分发到对应生图端点，返回图片 URL 或 data URI"""
+    if model == "gpt-image-2":
+        key = os.getenv("YUNDU_API_KEY", "")
+        if not key:
+            raise RuntimeError("未配置 YUNDU_API_KEY")
+        return _gen_gpt_image2(prompt, image_b64, key)
+    if model in ("qwen-image", "qwen-image-plus"):
+        return _gen_qwen_image(prompt, image_b64, model, get_api_key())
+    raise RuntimeError(f"未知生图模型: {model}")
+
+
+def generate_image_with_fallback(prompt, image_b64, preferred_model):
+    """首选模型失败后依次尝试其余模型。返回 {success, image, model_used, fallback_chain}"""
+    order = [preferred_model] if preferred_model in IMAGE_MODELS else []
+    order += [m for m in IMAGE_MODELS if m != preferred_model]
+
+    fallback_chain = []
+    for model in order:
+        try:
+            image = generate_image(prompt, image_b64, model)
+            return {
+                "success": True,
+                "image": image,
+                "model_used": model,
+                "model_name": _IMAGE_MODEL_NAMES.get(model, model),
+                "fallback_chain": fallback_chain,
+            }
+        except Exception as e:
+            fallback_chain.append({"model": model, "model_name": _IMAGE_MODEL_NAMES.get(model, model), "error": str(e)})
+
+    return {"success": False, "error": "全部生图模型失败", "fallback_chain": fallback_chain}

@@ -9,6 +9,7 @@ const SPI = {
   canvas: null,
   ctx: null,
   refImage: null,
+  sketchImage: null,         // AI 生成的手绘稿（生图模型输出）
   textboxes: [],
   sellingPoints: [],
   uploadedImage: null,       // SPI 专属上传图片
@@ -129,10 +130,21 @@ const SPI = {
     const ctx = this.ctx;
     ctx.fillStyle = '#f7f4ef';
     ctx.fillRect(0, 0, this._canvasW, this._canvasH);
-    if (this.refImage) {
+    if (this.sketchImage) {
+      // AI 生成的手绘稿：等比铺满画布
+      this._drawCover(ctx, this.sketchImage, 0, 0, this._canvasW, this._canvasH);
+    } else if (this.refImage) {
       ctx.drawImage(this.refImage, 0, this._offsetY(), this._refW, this._refH);
     }
     this.textboxes.forEach(tb => { if (tb.text) this._drawTb(ctx, tb); });
+  },
+
+  _drawCover(ctx, img, x, y, w, h) {
+    const ir = img.width / img.height, wr = w / h;
+    let dw, dh, dx, dy;
+    if (ir > wr) { dh = h; dw = h * ir; dx = x - (dw - w) / 2; dy = y; }
+    else { dw = w; dh = w / ir; dx = x; dy = y - (dh - h) / 2; }
+    ctx.drawImage(img, dx, dy, dw, dh);
   },
 
   _drawTb(ctx, tb) {
@@ -394,6 +406,75 @@ const SPI = {
     if (btn) btn.textContent = '🔍 展开';
   },
 
+  // ========== AI 生图（手绘稿） ==========
+
+  async generateSketch() {
+    if (this.isGenerating) return;
+    const btn = document.getElementById('spiGenImage');
+    const st = document.getElementById('spiStatus');
+
+    let img = this.uploadedImage || (CW && CW.productImages && CW.productImages[0]) || '';
+    if (!img) {
+      if (typeof toast === 'function') toast('请先上传裤子照片', 'error');
+      return;
+    }
+
+    const modelSel = document.getElementById('spiImageModel');
+    const model = modelSel ? modelSel.value : 'qwen-image';
+
+    this.isGenerating = true;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 生成中...'; }
+    if (st) st.textContent = 'AI 正在生成手绘稿...';
+
+    const prompt = '把这张裤子平铺照片转换成手绘素描风格的设计稿：保留裤子版型轮廓与关键细节，简洁线稿+淡彩，浅色干净背景，适合电商详情页展示，不出现文字。';
+
+    try {
+      const r = await fetch('/api/spi/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, image: img, model }),
+      });
+      const d = await r.json();
+
+      if (d.success) {
+        // 回退提示
+        if (d.fallback_chain && d.fallback_chain.length > 0) {
+          const first = d.fallback_chain[0];
+          if (typeof toast === 'function') toast(`「${first.model_name}」生成失败，已回退「${d.model_name}」`, 'info');
+        }
+        this._setSketchImage(d.image);
+        if (st) st.textContent = '✅ 手绘稿生成完成，可继续生成卖点文案叠加';
+        if (typeof toast === 'function') toast('手绘稿生成完成！', 'success');
+      } else {
+        const names = (d.fallback_chain || []).map(c => c.model_name).join('、');
+        const err = names ? `全部生图模型失败（${names}）` : (d.error || '生成失败');
+        if (st) st.textContent = '❌ ' + err;
+        if (typeof toast === 'function') toast('生图失败: ' + err, 'error');
+      }
+    } catch (e) {
+      console.error('[SPI] 生图失败:', e);
+      if (st) st.textContent = '❌ ' + e.message;
+      if (typeof toast === 'function') toast('生图失败: ' + e.message, 'error');
+    } finally {
+      this.isGenerating = false;
+      if (btn) { btn.disabled = false; btn.textContent = '🎨 生成手绘稿'; }
+    }
+  },
+
+  _setSketchImage(src) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      this.sketchImage = img;
+      this._show();
+      this.render();
+    };
+    img.onerror = () => {
+      if (typeof toast === 'function') toast('手绘稿图片加载失败', 'error');
+    };
+    img.src = src;
+  },
+
   _bindUI() {
     this._bindEvents();
 
@@ -414,6 +495,7 @@ const SPI = {
     }
 
     document.getElementById('spiGen')?.addEventListener('click', () => this.autoGenerate());
+    document.getElementById('spiGenImage')?.addEventListener('click', () => this.generateSketch());
     document.getElementById('spiExport')?.addEventListener('click', () => this.exportPNG());
     document.getElementById('spiReset')?.addEventListener('click', () => { this._initTb(); this._toggleDlBtn(); this.render(); this._collapse(); });
     let _debugTimer = null;
