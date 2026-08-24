@@ -38,6 +38,9 @@ def index():
 
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
+    """SSE 流式 OCR：可先推送 retrying 事件，再推送最终结果。
+    临时图片清理移入 generator 的 finally（外层 finally 会在惰性读取前删除文件）。"""
+    from flask import Response
     tmp_path = None
     try:
         data = request.json or {}
@@ -61,29 +64,35 @@ def analyze():
                 "error": f"无效的图片数据或文件不存在：{image_source[:80]}...",
             }), 400
 
-        raw_text, usage = call_ocr_vision(image_path, mappings, model)
-        result = parse_transcription(raw_text, mappings)
-        format_numbers(result)
+        def generate():
+            try:
+                retry_info = {}
+                raw_text, usage = call_ocr_vision(image_path, mappings, model, retry_info=retry_info)
+                result = parse_transcription(raw_text, mappings)
+                format_numbers(result)
+                if retry_info.pop("retried", False):
+                    yield f"data: {json.dumps({'retrying': True})}\n\n"
+                yield f"data: {json.dumps({'success': True, 'data': result, 'raw': raw_text, 'model': model, 'usage': usage})}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                traceback.print_exc()
+                yield f"data: {json.dumps({'success': False, 'error': str(e)})}\n\n"
+                yield "data: [DONE]\n\n"
+            finally:
+                if tmp_path and os.path.exists(tmp_path):
+                    try:
+                        os.unlink(tmp_path)
+                    except Exception:
+                        pass
 
-        return jsonify({
-            "success": True,
-            "data": result,
-            "raw": raw_text,
-            "model": model,
-            "usage": usage,
-        })
+        return Response(generate(), mimetype="text/event-stream",
+                        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            try:
-                os.unlink(tmp_path)
-            except Exception:
-                pass
 
 
 # ---- Debug Mode ----
@@ -697,9 +706,15 @@ def copywriter_generate_sse():
             # 流式调用 AI，token by token
             full_text = ""
             usage_out = {}
-            for token in call_qwen_stream(messages, model=model, temperature=0.8, usage_out=usage_out):
+            retry_info = {}
+            for token in call_qwen_stream(messages, model=model, temperature=0.8, usage_out=usage_out, retry_info=retry_info):
+                if retry_info.pop("retried", False):
+                    yield f"data: {json.dumps({'retrying': True})}\n\n"
                 full_text += token
                 yield f"data: {json.dumps({'token': token})}\n\n"
+            # 防空流未消费 retried 标志
+            if retry_info.pop("retried", False):
+                yield f"data: {json.dumps({'retrying': True})}\n\n"
 
             # 返回 usage
             if usage_out.get("data"):

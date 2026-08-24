@@ -134,9 +134,24 @@ const CW = {
     try {
       var map=typeof mappings!=='undefined'?mappings:{}, m=typeof currentModel!=='undefined'?currentModel:'qwen3-vl-flash';
       var r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64,mappings:map,model:m})});
-      var d=await r.json();
-      if(d.success){ this.sizeData=d.data; if(d.raw)this._rawOcrText=d.raw; this._updateSS(); this._detectWaist(); this._upGen(); this._renderWaist(); if(typeof toast==='function')toast('尺码表识别成功','success'); }
-      else { if(st)st.textContent='识别失败: '+(d.error||'未知'); if(typeof toast==='function')toast('识别失败: '+d.error,'error'); }
+      if(!r.ok){ var ed={}; try{ed=await r.json();}catch(e){} throw new Error(ed.error||('HTTP '+r.status)); }
+      // SSE 读取：可能先收到 retrying 事件，再收到最终结果
+      var reader=r.body.getReader(), decoder=new TextDecoder(), buf='', d=null;
+      while(true){
+        var chunk=await reader.read(); if(chunk.done)break;
+        buf+=decoder.decode(chunk.value,{stream:true});
+        var parts=buf.split('\n'); buf=parts.pop()||'';
+        for(var i=0;i<parts.length;i++){
+          var line=parts[i].trim(); if(line.indexOf('data: ')!==0)continue;
+          var payload=line.slice(6); if(payload==='[DONE]')continue;
+          try{ var p=JSON.parse(payload);
+            if(p.retrying){ if(typeof toast==='function')toast('连接超时，正在重试...','info'); continue; }
+            d=p;
+          }catch(e){}
+        }
+      }
+      if(d&&d.success){ this.sizeData=d.data; if(d.raw)this._rawOcrText=d.raw; this._updateSS(); this._detectWaist(); this._upGen(); this._renderWaist(); if(typeof toast==='function')toast('尺码表识别成功','success'); }
+      else { if(st)st.textContent='识别失败: '+((d&&d.error)||'未知'); if(typeof toast==='function')toast('识别失败: '+((d&&d.error)||'未知'),'error'); }
     } catch(e){ if(st)st.textContent='请求失败: '+e.message; }
     if(orbit)orbit.classList.add('hidden'); if(up)up.classList.remove('hidden');
   },
@@ -256,6 +271,7 @@ const CW = {
           var line=parts[li].trim(); if(line.indexOf('data: ')!==0)continue;
           var payload=line.slice(6); if(payload==='[DONE]')continue;
           try { var p=JSON.parse(payload);
+            if(p.retrying){ if(typeof toast==='function')toast('连接超时，正在重试...','info'); continue; }
             if(p.error){ this._lastError=p.error; if(typeof toast==='function')toast('生成失败: '+p.error,'error'); }
             if(p.token){
               if(firstToken){ firstToken=false; if(waitSpin)waitSpin.remove(); if(waitText)waitText.textContent='正在生成文案...'; if(streamWrap)streamWrap.classList.remove('hidden'); if(st)st.textContent='流式输出中...'; }

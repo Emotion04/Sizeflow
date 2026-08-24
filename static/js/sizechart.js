@@ -652,7 +652,28 @@ async function analyze() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: currentImage, mappings, model: currentModel })
     });
-    handleAnalyzeResult(await r.json());
+    if (!r.ok) { let ed = {}; try { ed = await r.json(); } catch(e){} throw new Error(ed.error || ('HTTP ' + r.status)); }
+    // SSE 读取：先可能收到 retrying 事件，再收到最终结果
+    const reader = r.body.getReader(), decoder = new TextDecoder();
+    let buf = '', final = null;
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buf += decoder.decode(chunk.value, { stream: true });
+      const parts = buf.split('\n'); buf = parts.pop() || '';
+      for (const line of parts) {
+        const t = line.trim();
+        if (t.indexOf('data: ') !== 0) continue;
+        const payload = t.slice(6);
+        if (payload === '[DONE]') continue;
+        try {
+          const p = JSON.parse(payload);
+          if (p.retrying) { toast('连接超时，正在重试...', 'info'); continue; }
+          final = p;
+        } catch(e) {}
+      }
+    }
+    handleAnalyzeResult(final || { success: false, error: '空响应' });
   } catch (e) {
     stopEasterEggTimer();
     document.getElementById('loadingCard').classList.add('hidden');

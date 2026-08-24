@@ -4,11 +4,33 @@ import re
 import json
 import base64
 import tempfile
+import traceback
+import requests
 import dashscope
 
 from config import get_api_key, TEMPERATURE, get_output_headers
 
 dashscope.base_http_api_url = "https://dashscope.aliyuncs.com/api/v1"
+
+# ---- 超时与重试 ----
+# dashscope 的 request_timeout 会原样透传给 requests 的 timeout 参数；
+# requests 接受 (connect, read) 元组 → 连接/读取超时分离：
+#   connect=10s 快速失败国际链路握手超时；read=300s 给足 OCR/生图时间，不切断进行中的生成。
+CONNECT_TIMEOUT = 10
+READ_TIMEOUT = 300
+CONNECT_RETRIES = 1  # 仅连接建立阶段超时自动重试次数（读取超时不重试）
+
+
+def _friendly_error(e):
+    """面向用户的中文提示 + 源错误（换行附带），方便用户截图反馈排错"""
+    raw = f"{type(e).__name__}: {e}"
+    if isinstance(e, requests.exceptions.ConnectTimeout):
+        return f"连接 AI 服务器超时（已自动重试，仍失败），请检查网络后重试。\n源错误: {raw}"
+    if isinstance(e, requests.exceptions.ReadTimeout):
+        return f"AI 响应超时（生成时间过长），请重试。\n源错误: {raw}"
+    if isinstance(e, requests.exceptions.ConnectionError):
+        return f"无法连接 AI 服务器（网络错误），请检查网络后重试。\n源错误: {raw}"
+    return str(e)
 
 
 def save_base64_image(b64_string):
@@ -41,21 +63,46 @@ def _extract_usage(response, usage_out):
         }
 
 
-def call_qwen(messages, model="qwen3-vl-plus", temperature=None, usage_out=None):
+def call_qwen(messages, model="qwen3-vl-plus", temperature=None, usage_out=None, retry_info=None):
     """通用调用（图片+文本 或 纯文本）。
     messages 可以是多模态格式列表，或纯文本字符串（自动包装）。
-    不传 temperature / top_p，走模型默认参数。"""
+    不传 temperature / top_p，走模型默认参数。
+    新增：连接建立阶段超时自动重试 1 次；retry_info(可选 dict) 重试后置 retry_info['retried']=True。
+    网络异常翻译为中文（原始异常仍 traceback 保留日志）。"""
 
     # 纯文本字符串 → 自动包装为多模态消息格式
     if isinstance(messages, str):
         messages = [{"role": "user", "content": [{"text": messages}]}]
 
-    kwargs = {"api_key": get_api_key(), "model": model, "messages": messages}
+    kwargs = {"api_key": get_api_key(), "model": model, "messages": messages,
+              "request_timeout": (CONNECT_TIMEOUT, READ_TIMEOUT)}
     if temperature is not None:
         kwargs["temperature"] = temperature
     # 注意：不传 top_p，走模型默认（避免限制输出多样性）
 
-    response = dashscope.MultiModalConversation.call(**kwargs)
+    try:
+        response = dashscope.MultiModalConversation.call(**kwargs)
+    except requests.exceptions.ConnectTimeout as e:
+        # ConnectTimeout 是 ConnectionError 的子类，必须先捕获
+        traceback.print_exc()
+        print(f"[call_qwen] 连接超时(phase=connect)，自动重试: {type(e).__name__}: {e}")
+        if retry_info is not None:
+            retry_info["retried"] = True
+        try:
+            response = dashscope.MultiModalConversation.call(**kwargs)
+        except requests.exceptions.ConnectTimeout as e2:
+            traceback.print_exc()
+            print(f"[call_qwen] 重试后仍连接超时，放弃: {type(e2).__name__}: {e2}")
+            raise Exception(_friendly_error(e2))
+    except requests.exceptions.ConnectionError as e:
+        # 非超时连接失败（DNS/拒连/SSL）——不重试，仅翻译
+        traceback.print_exc()
+        print(f"[call_qwen] 连接失败(phase=connect，非超时不重试): {type(e).__name__}: {e}")
+        raise Exception(_friendly_error(e))
+    except requests.exceptions.ReadTimeout as e:
+        traceback.print_exc()
+        print(f"[call_qwen] 读取超时(phase=read，不重试): {type(e).__name__}: {e}")
+        raise Exception(_friendly_error(e))
 
     if response.status_code != 200:
         raise Exception(
@@ -73,45 +120,80 @@ def call_qwen(messages, model="qwen3-vl-plus", temperature=None, usage_out=None)
     return content
 
 
-def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None, usage_out=None):
-    """Qwen 流式调用，逐 token yield。usage_out 可选 dict，调用后 usage_out['data'] = {input_tokens, output_tokens, total_tokens}"""
+def call_qwen_stream(messages, model="qwen3-vl-plus", temperature=None, usage_out=None, retry_info=None):
+    """Qwen 流式调用，逐 token yield。usage_out 可选 dict，调用后 usage_out['data'] = {input_tokens, output_tokens, total_tokens}
+    新增：首个 token 到达前连接超时自动重试 1 次；已产出 token 后的断流/读取超时一律不重试（避免重复流式内容）。
+    注意：generator 的网络请求在首次迭代时才发起，重试必须包在迭代循环外。"""
     if temperature is None:
         temperature = TEMPERATURE
 
-    responses = dashscope.MultiModalConversation.call(
-        api_key=get_api_key(),
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        top_p=0.01,
-        stream=True,
-    )
+    def _request():
+        return dashscope.MultiModalConversation.call(
+            api_key=get_api_key(),
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            top_p=0.01,
+            stream=True,
+            request_timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
+        )
 
+    attempt = 0
+    emitted = False
     last_response = None
-    for response in responses:
-        last_response = response
-        if response.status_code != 200:
-            raise Exception(
-                f"API 调用失败 (HTTP {response.status_code})："
-                f"错误码 {response.code} — {response.message}"
-            )
-        if response.output and response.output.choices:
-            content = response.output.choices[0].message.content
-            if isinstance(content, list):
-                for item in content:
-                    if isinstance(item, dict) and "text" in item:
-                        yield item["text"]
-                    elif isinstance(item, str):
-                        yield item
-            elif isinstance(content, str):
-                yield content
+    responses = None
+    while True:
+        try:
+            if responses is None:
+                responses = _request()
+            for response in responses:
+                last_response = response
+                if response.status_code != 200:
+                    raise Exception(
+                        f"API 调用失败 (HTTP {response.status_code})："
+                        f"错误码 {response.code} — {response.message}"
+                    )
+                if response.output and response.output.choices:
+                    content = response.output.choices[0].message.content
+                    if isinstance(content, list):
+                        for item in content:
+                            if isinstance(item, dict) and "text" in item:
+                                emitted = True
+                                yield item["text"]
+                            elif isinstance(item, str):
+                                emitted = True
+                                yield item
+                    elif isinstance(content, str):
+                        emitted = True
+                        yield content
+            break
+        except requests.exceptions.ConnectTimeout as e:
+            if attempt >= CONNECT_RETRIES or emitted:
+                traceback.print_exc()
+                print(f"[call_qwen_stream] 连接超时不再重试(attempt={attempt}, emitted={emitted}): {type(e).__name__}: {e}")
+                raise Exception(_friendly_error(e))
+            attempt += 1
+            traceback.print_exc()
+            print(f"[call_qwen_stream] 连接超时(phase=connect)，自动重试 {attempt}/{CONNECT_RETRIES}: {type(e).__name__}: {e}")
+            if retry_info is not None:
+                retry_info["retried"] = True
+            responses = None
+        except requests.exceptions.ConnectionError as e:
+            # 中途断流（如 ChunkedEncodingError，也是 ConnectionError）→ 不重试，仅翻译
+            traceback.print_exc()
+            print(f"[call_qwen_stream] 连接失败(phase=connect，非超时不重试): {type(e).__name__}: {e}")
+            raise Exception(_friendly_error(e))
+        except requests.exceptions.ReadTimeout as e:
+            traceback.print_exc()
+            print(f"[call_qwen_stream] 读取超时(phase=read，不重试): {type(e).__name__}: {e}")
+            raise Exception(_friendly_error(e))
 
     if usage_out is not None and last_response and hasattr(last_response, 'usage') and last_response.usage:
         u = last_response.usage
         usage_out["data"] = {"input_tokens": u.input_tokens or 0, "output_tokens": u.output_tokens or 0, "total_tokens": u.total_tokens or u.input_tokens + u.output_tokens}
 
 
-def call_ocr_vision(image_path, mappings, model):
+def call_ocr_vision(image_path, mappings, model, retry_info=None):
     """AI 只做纯转录，返回原始文本"""
     prompt = """逐行抄写图片中最上方那张尺码表的数据。表格上方可能有合并单元格的标题行，跳过标题行，只抄表格内容。
 严格忽略下方任何附属表格（洗前、洗后、成衣等副表一概不要）。
@@ -142,7 +224,7 @@ def call_ocr_vision(image_path, mappings, model):
 
     print(f"[OCR-转录] model={model}")
     usage_out = {}
-    text = call_qwen(messages, model=model, usage_out=usage_out)
+    text = call_qwen(messages, model=model, usage_out=usage_out, retry_info=retry_info)
     print(f"[OCR-转录] result:\n{text[:600]}")
     return text, usage_out.get("data")
 
