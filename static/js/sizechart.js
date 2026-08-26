@@ -116,6 +116,7 @@ async function loadChangelog() {
       _allCommits = d.commits;
       try { localStorage.setItem(CHANGELOG_CACHE_KEY, JSON.stringify(d.commits)); } catch(e) {}
       renderChangelog();
+      fillSplashUpdates();
       return;
     }
   } catch(e) {}
@@ -126,6 +127,7 @@ async function loadChangelog() {
     if (cached) {
       _allCommits = JSON.parse(cached);
       renderChangelog();
+      fillSplashUpdates();
       return;
     }
   } catch(e) {}
@@ -154,6 +156,20 @@ function renderChangelog() {
     btn.classList.remove('hidden');
     btn.textContent = _changelogExpanded ? '收起 ▴' : '展开更多 ▾ (' + (_allCommits.length - 3) + '条)';
   }
+}
+
+// 填充欢迎弹窗：本次 + 上次 更新内容
+function fillSplashUpdates() {
+  const box = document.getElementById('splash-updates');
+  if (!box) return;
+  if (!_allCommits || _allCommits.length === 0) { box.innerHTML = ''; return; }
+  const latest = _allCommits[0];
+  const prev = _allCommits[1];
+  const block = function(label, c) {
+    if (!c) return '';
+    return '<div style="margin-bottom:10px;"><div style="font-weight:700;font-size:12px;color:var(--primary);margin-bottom:3px;">' + esc(label) + ' <span style="opacity:.5;color:var(--text2);font-weight:400;">' + timeAgo(parseInt(c.date)||0) + '</span></div><div style="font-size:12.5px;color:var(--text);">' + esc(c.msg) + '</div></div>';
+  };
+  box.innerHTML = block('🚀 本次更新', latest) + block('📌 上次更新', prev);
 }
 
 // 每 30 秒刷新更新日志的相对时间
@@ -1436,24 +1452,20 @@ async function copySelectionAsText() {
   if (!sel) { toast('请拖选单元格或勾选列复选框', 'error'); return; }
   const { cols, minRow, maxRow, origTable } = sel;
 
+  // 无表头输出；单列 → 每格一行；多列 → tab 分隔保留列结构
+  const sep = cols.length === 1 ? '\n' : '\t';
   const lines = [];
-  // 先输出表头字段
-  cols.forEach(ci => {
-    const th = origTable.querySelector(`th.col-header[data-col="${ci}"]`);
-    lines.push(th ? (th.querySelector('.col-label')?.textContent || th.dataset.header || '') : '');
-  });
-  // 再输出数据行，每个单元格值一行
   for (let ri = minRow; ri <= maxRow; ri++) {
-    cols.forEach(ci => {
+    const rowVals = cols.map(ci => {
       const td = origTable.querySelector(`td[data-row="${ri}"][data-col="${ci}"]`);
-      const val = td ? td.textContent.trim() : '';
-      lines.push(val);
+      return td ? td.textContent.trim() : '';
     });
+    lines.push(rowVals.join(sep));
   }
   const text = lines.join('\n');
   try {
     await navigator.clipboard.writeText(text);
-    toast('选区文本已复制（每行一个值）', 'success');
+    toast('选区文本已复制' + (cols.length === 1 ? '（每行一个值）' : '（保留多列，无表头）'), 'success');
   } catch (err) {
     const ta = document.createElement('textarea');
     ta.value = text;

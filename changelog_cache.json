@@ -1,6 +1,16 @@
 {
   "commits": [
     {
+      "hash": "13d18ce",
+      "msg": "dev: 连接超时10s拆分+单次重试+SSE retrying事件+Vercel Analytics",
+      "date": "1787553905"
+    },
+    {
+      "hash": "ab278c7",
+      "msg": "更新日志: 增加了Qwen、GPT-Image2等图像生成模型的支持",
+      "date": "1786618700"
+    },
+    {
       "hash": "4506d88",
       "msg": "Canary 1.7.2: 接入图像生成模型(GPT-Image2/Qwen-Image)+失败自动回退",
       "date": "1786618490"
@@ -289,16 +299,6 @@
       "hash": "fb71251",
       "msg": "Canary 3.38: 修复html2canvas导出字体——主document注入@font-face",
       "date": "1779792941"
-    },
-    {
-      "hash": "af31751",
-      "msg": "Canary 3.37: 修复Vercel静态字体服务——修正构建glob和路由目标",
-      "date": "1779792303"
-    },
-    {
-      "hash": "afd5bcf",
-      "msg": "Canary 3.36: 修复字重仅2种样式 + Vercel导出挂死",
-      "date": "1779790627"
     }
   ]
 }
