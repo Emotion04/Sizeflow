@@ -1,0 +1,161 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3] [cursor=pointer]:
+    - heading "✨ 邀您体验新功能！" [level=2] [ref=e4]
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: 🚀 本次更新 7 天前
+        - generic [ref=e8]: "dev: 单/多列复制优化、交互优化"
+      - generic [ref=e9]:
+        - generic [ref=e10]: 📌 上次更新 10 天前
+        - generic [ref=e11]: "dev: 连接超时10s拆分+单次重试+SSE retrying事件+Vercel Analytics"
+    - paragraph [ref=e12]: 点击任意处继续
+  - banner [ref=e13]:
+    - generic [ref=e14]:
+      - heading "开心每一天~" [level=1] [ref=e15]
+      - generic "累计Token" [ref=e17]: "Token: 0"
+    - generic [ref=e18]:
+      - textbox "API Key 已配置" [ref=e19]
+      - button "保存" [ref=e20] [cursor=pointer]
+      - generic [ref=e21]: ✓
+      - button "🖼️ 壁纸" [ref=e22] [cursor=pointer]
+      - link "🐟 摸鱼时刻" [ref=e23] [cursor=pointer]:
+        - /url: https://infc.wang
+      - generic [ref=e24]: v1.6.1 Canary
+  - generic [ref=e25]:
+    - button "📏 尺码表工具" [ref=e26] [cursor=pointer]
+    - button "✍️ 文案生成" [ref=e27] [cursor=pointer]
+  - generic [ref=e29]:
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]: 📤
+            - text: 上传尺码表
+          - generic [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]: 📷
+            - generic [ref=e38]: 拖拽图片至此，或点击上传
+            - generic [ref=e39]: 支持 JPG / PNG / WebP
+            - generic [ref=e40]: 支持 Ctrl+V 粘贴剪贴板图片
+          - generic [ref=e41]:
+            - textbox "或输入本地文件路径（如 C:\\Users\\...\\尺码表.jpg）" [ref=e42]
+            - button "加载" [ref=e43] [cursor=pointer]
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]: 🔗
+            - text: 字段映射
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - textbox "工厂表头" [ref=e49]: 外长连腰A
+              - generic [ref=e50]: →
+              - textbox "用户表头" [ref=e51]: 加长裤长
+              - button "×" [ref=e52] [cursor=pointer]
+            - generic [ref=e53]:
+              - textbox "工厂表头" [ref=e54]: 外长连腰B
+              - generic [ref=e55]: →
+              - textbox "用户表头" [ref=e56]: 高个子裤长
+              - button "×" [ref=e57] [cursor=pointer]
+            - generic [ref=e58]:
+              - textbox "工厂表头" [ref=e59]: 外长连腰C
+              - generic [ref=e60]: →
+              - textbox "用户表头" [ref=e61]: 常规裤长
+              - button "×" [ref=e62] [cursor=pointer]
+            - generic [ref=e63]:
+              - textbox "工厂表头" [ref=e64]: 外长连腰D
+              - generic [ref=e65]: →
+              - textbox "用户表头" [ref=e66]: 小个子裤长
+              - button "×" [ref=e67] [cursor=pointer]
+            - generic [ref=e68]:
+              - textbox "工厂表头" [ref=e69]: 座围
+              - generic [ref=e70]: →
+              - textbox "用户表头" [ref=e71]: 臀围
+              - button "×" [ref=e72] [cursor=pointer]
+            - generic [ref=e73]:
+              - textbox "工厂表头" [ref=e74]: 脚围
+              - generic [ref=e75]: →
+              - textbox "用户表头" [ref=e76]: 脚围
+              - button "×" [ref=e77] [cursor=pointer]
+            - generic [ref=e78]:
+              - textbox "工厂表头" [ref=e79]: 脾围
+              - generic [ref=e80]: →
+              - textbox "用户表头" [ref=e81]: 大腿围
+              - button "×" [ref=e82] [cursor=pointer]
+            - generic [ref=e83]:
+              - textbox "工厂表头" [ref=e84]: 腰围（拉平量）
+              - generic [ref=e85]: →
+              - textbox "用户表头" [ref=e86]: 腰围
+              - button "×" [ref=e87] [cursor=pointer]
+          - generic [ref=e88]:
+            - textbox "工厂表头（如 腰围（拉平量））" [ref=e89]
+            - generic [ref=e90]: →
+            - textbox "用户表头（如 腰围）" [ref=e91]
+            - button "+ 添加" [ref=e92] [cursor=pointer]
+          - generic [ref=e93]:
+            - button "恢复默认" [ref=e94] [cursor=pointer]
+            - button "保存映射" [ref=e95] [cursor=pointer]
+          - generic [ref=e96]:
+            - generic [ref=e97]: 模型选择：
+            - combobox [ref=e98] [cursor=pointer]:
+              - option "Qwen3-VL Flash - 【推荐】视觉快速版" [selected]
+              - option "Qwen3.6 Flash - 最新最速，表格识别精准"
+              - option "Qwen3.6 Plus - 【屡次错误使用】最新最强，复杂表格推荐"
+              - option "Qwen3-VL Plus - 视觉增强版"
+              - option "Qwen3.5 flash - 更快速"
+              - option "GPT-Image2 - OpenAI 兼容端点"
+              - option "Qwen-Image - 阿里生图"
+              - option "Qwen-Image Plus - 阿里生图高级"
+          - generic [ref=e99]:
+            - button "🔍 开始识别" [disabled] [ref=e100]
+            - button "⚡DEBUG" [ref=e101] [cursor=pointer]
+          - generic [ref=e102]: 请先上传图片
+      - generic [ref=e103]:
+        - generic [ref=e104]: 📋
+        - generic [ref=e105]: 暂无图片预览
+    - generic [ref=e106]:
+      - generic [ref=e107]:
+        - generic [ref=e108]:
+          - generic [ref=e109]: 🔧
+          - text: 常用工具
+        - generic [ref=e110]:
+          - link "📏 BusStudio AI 尺码助手" [ref=e111] [cursor=pointer]:
+            - /url: https://bustudio.ai
+          - link "🌐 Sizeflow 官网" [ref=e112] [cursor=pointer]:
+            - /url: https://www.sizeflow.com
+      - generic [ref=e113]:
+        - generic [ref=e114]:
+          - generic [ref=e115]: 📝
+          - text: 更新日志
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - strong [ref=e118]: d70cd00
+            - text: "7 天前dev: 单/多列复制优化、交互优化"
+          - generic [ref=e119]:
+            - strong [ref=e120]: 13d18ce
+            - text: "10 天前dev: 连接超时10s拆分+单次重试+SSE retrying事件+Vercel Analytics"
+          - generic [ref=e121]:
+            - strong [ref=e122]: ab278c7
+            - text: "20 天前更新日志: 增加了Qwen、GPT-Image2等图像生成模型的支持"
+        - button "展开更多 ▾ (17条)" [ref=e123] [cursor=pointer]
+      - generic [ref=e124]:
+        - generic [ref=e125]:
+          - generic [ref=e126]: 📋
+          - text: 尺码表历史
+        - generic [ref=e127]: 暂无历史会话
+      - generic [ref=e129]:
+        - generic [ref=e130]:
+          - generic [ref=e131]: 💾
+          - text: 配置预设
+        - combobox [ref=e133] [cursor=pointer]:
+          - option "-- 选择预设 --" [selected]
+        - generic [ref=e134]:
+          - button "💾 保存当前" [ref=e135] [cursor=pointer]
+          - button "📂 应用预设" [ref=e136] [cursor=pointer]
+          - button "🗑️" [ref=e137] [cursor=pointer]
+          - button "📤 导出" [ref=e138] [cursor=pointer]
+          - button "📥 导入" [ref=e139] [cursor=pointer]
+      - generic [ref=e141] [cursor=pointer]:
+        - generic [ref=e142]: 🦀
+        - generic [ref=e143]:
+          - generic [ref=e144]: 广告位招租
+          - generic [ref=e145]: ^ v ^ 本站访问 ... 次
+  - contentinfo [ref=e146]: 本站已运行 ...
+  - generic [ref=e147]: 反馈问题
