@@ -5,7 +5,7 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 cache_path = os.path.join(APP_DIR, "changelog_cache.json")
 
 result = subprocess.run(
-    ["git", "log", "-30", "--pretty=format:%h|%s|%ar"],
+    ["git", "log", "-30", "--pretty=format:%h|%s|%at"],
     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     timeout=10, cwd=APP_DIR
 )

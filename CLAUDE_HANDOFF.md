@@ -84,7 +84,7 @@
 - `line.html` 线条用 CSS 变量 `--line-x` `--line-y`，JS 根据列宽/表头行高动态更新
 
 ## 已知待做
-1. **表格选区复制数据**：用户拖选单元格 → 写入剪贴板 → 粘贴到 PSD
+1. **表格选区复制为图片**：用户拖选单元格 → 渲染为 PNG → 写入剪贴板 → 粘贴到 PS
    - 计划已写在 `C:\Users\Emotion\.claude\plans\glimmering-enchanting-blum.md`
    - 用 html2canvas（已加载 CDN）渲染选中区域
    - `navigator.clipboard.write([new ClipboardItem({"image/png": blob})])`
