@@ -225,7 +225,7 @@ def generate_style_from_image():
         data = request.json or {}
         table_data = data.get("data", {})
         image_source = data.get("image", "")
-        model = data.get("model", "qwen3-vl-plus")
+        model = data.get("model", "qwen3-vl-flash")
 
         if not table_data.get("headers") or not table_data.get("rows"):
             return jsonify({"success": False, "error": "缺少表格数据"}), 400
@@ -654,7 +654,7 @@ def copywriter_generate_sse():
             product_images = data.get("product_images", [])
             size_data = data.get("size_data", {})
             waist_type_override = data.get("waist_type_override", "")
-            model = data.get("model", "qwen3-vl-plus")
+            model = data.get("model", "qwen3-vl-flash")
             manual_tags = data.get("manual_tags", [])
             notes = data.get("notes", "")
             count = min(data.get("count", 3), 5)
